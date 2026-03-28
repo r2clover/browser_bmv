@@ -3527,6 +3527,11 @@ class BMSViewer {
     _animate() {
         if (!this.isPlaying) return;
         const now = performance.now();
+
+        // 8ms未満のフレームはDOM更新をスキップ（音声位置計算は継続）
+        const _skipDraw = (now - (this._lastDrawTime || 0)) < 8;
+        if (!_skipDraw) this._lastDrawTime = now;
+
         const dt  = (now - this.lastTimestamp) / 1000;
         this.lastTimestamp = now;
 
@@ -3583,9 +3588,11 @@ class BMSViewer {
         const bpm = this._bpmAt(this.currentPixelPos);
         this._detectPassed(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
-        this._updatePositions();
-        // 拍連動グロー更新
-        this._updateJLGlow();
+        if (!_skipDraw) {
+            this._updatePositions();
+            // 拍連動グロー更新
+            this._updateJLGlow();
+        }
         const _posT   = this._px2bar(this.currentPixelPos);
         const _bpmT   = Math.round(bpm);
         const _greenRaw = Math.round(219125 / (bpm * this.hiSpeed));

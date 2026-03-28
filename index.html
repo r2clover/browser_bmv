@@ -212,7 +212,7 @@
         /* プレイエリア */
         .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:446px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); }
         .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:400px; position:relative; z-index:2; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
+        .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .lane.black-key { width:var(--black-lane-width); background:#000; }
         .lane.white-key { background:#1e1e1e; }
@@ -875,7 +875,7 @@
         }
         .lane-bomb {
             position:absolute; bottom:0; left:0; right:0;
-            height:200px; pointer-events:none; opacity:0; z-index:5;
+            height:200px; pointer-events:none; opacity:0; z-index:13;
         }
         .lane-bomb.boom { animation: beam-flash 0.20s ease-out forwards; }
         @keyframes beam-flash {
@@ -1000,7 +1000,7 @@
             height: 5px;
             background: #ff2222;
             box-shadow: 0 -6px 12px rgba(0,220,200,0.85), 0 -2px 6px rgba(0,255,220,0.6);
-            z-index: 20;
+            z-index: 12;
             pointer-events: none;
             border-radius: 2px;
         }
@@ -1271,7 +1271,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="hs-label" style="white-space:nowrap;">SPEED</span>
             <div class="green-box">
                 <button class="green-pm-btn" id="greenMinus">－</button>
-                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="250">
+                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="260">
                 <button class="green-pm-btn" id="greenPlus">＋</button>
             </div>
 
@@ -1805,7 +1805,7 @@ class BMSViewer {
         this.loopEnd         = 0;
         this.loopEnabled     = false;
         this.laneSwapReverse = null;
-        this.targetGreenNum  = 250;
+        this.targetGreenNum  = 260;
         this.combo           = 0;
         this.effectsEnabled  = true;   // 後方互換用（現在は未使用）
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
@@ -3861,6 +3861,8 @@ class BMSViewer {
             gd.classList.remove('great-just-pink', 'great-just-blue', 'great-just-green');
             gd.style.transition = 'none';
             gd.style.opacity    = '0';
+            document.getElementById('greatLabel').style.filter = 'none';
+            document.getElementById('greatCombo').style.filter = 'none';
         }
     }
 
@@ -3927,6 +3929,9 @@ class BMSViewer {
 
         disp.style.transition = 'none';
         disp.style.opacity    = '1';
+        // iOS Safari: フェードアウト時に filter を none にした場合の復元
+        document.getElementById('greatLabel').style.filter = '';
+        document.getElementById('greatCombo').style.filter = '';
 
         if (this.judgeMode === 'JUST') {
             // サイクルが止まっているときだけ起動（再生中は継続させ中断しない）
@@ -3979,6 +3984,9 @@ class BMSViewer {
                 }
                 disp.style.transition = 'none';
                 disp.style.opacity    = '0';
+                // iOS Safari: filter が親の opacity:0 を透過する不具合対策
+                document.getElementById('greatLabel').style.filter = 'none';
+                document.getElementById('greatCombo').style.filter = 'none';
             }, 500);
         }
     }

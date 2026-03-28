@@ -20,7 +20,7 @@
             -webkit-tap-highlight-color:transparent;
         }
         .container { display:flex; flex-direction:column; position:fixed; top:0; left:0; right:0; height:var(--locked-vh,100svh); overflow:hidden; }
-        .header { background:#1a1a1a; padding:8px 12px; border-bottom:2px solid #333; }
+        .header { background:#1a1a1a; padding:8px 12px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
         .song-title { font-size:14px; font-weight:bold; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .song-meta  {
             font-size:11px; color:#999; margin-bottom:6px;
@@ -180,7 +180,7 @@
         /* シークバー */
         .seek-wrap {
             background:#0d0d0d; padding:5px 0;
-            border-top:1px solid #222; touch-action:none; user-select:none;
+            border-top:1px solid #222; touch-action:none; user-select:none; flex-shrink:0;
         }
         .seek-inner {
             max-width:360px; margin:0 auto; padding:0 14px;
@@ -210,9 +210,9 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; position:relative; overflow:hidden; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); }
-        .lanes-container { position:absolute; bottom:46px; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:600px; position:relative; z-index:2; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
+        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:446px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); }
+        .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
+        .lane { width:var(--white-lane-width); height:400px; position:relative; z-index:2; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .lane.black-key { width:var(--black-lane-width); background:#000; }
         .lane.white-key { background:#1e1e1e; }
@@ -1840,8 +1840,8 @@ class BMSViewer {
         // SUD+
         this.sudEnabled = false;
         this.sudMode    = 'A';
-        this.sudCoverPx = 200;
-        this.sudBasePx   = 143;   // SUD+白数字の基準位置（px）
+        this.sudCoverPx = 60;
+        this.sudBasePx   = 0;     // SUD+白数字の基準位置（px）
         // DOM差分更新キャッシュ
         this._lastPosText   = null;
         this._lastBpmText   = null;
@@ -2841,8 +2841,8 @@ class BMSViewer {
         const bpm   = this._bpmAt(this.currentPixelPos);
         const green = Math.round(219125 / (bpm * this.hiSpeed));
         if (this.sudEnabled) {
-            const effH   = 457; // 600 - 143 (SUD+有効ゾーン: カバー143px〜600px)
-            const visEff = Math.max(0, Math.min(effH, 600 - this.sudCoverPx));
+            const effH   = 400; // SUD+有効ゾーン（0px基準）
+            const visEff = Math.max(0, Math.min(effH, 400 - this.sudCoverPx));
             if (this.sudMode === 'A') {
                 // モードA: SUD+位置に関係なく頭緑をそのまま表示
                 if (el) el.textContent = Math.round(this.targetGreenNum || green);
@@ -3236,7 +3236,7 @@ class BMSViewer {
         if (!this.bmsData || !this.quantizeMode) return;
         const division = this.quantizeMode === '16' ? 16 : 8;
         const gridUnit  = 1.0 / division;
-        const EPS       = 1e-9;
+        const EPS       = 0;
         const playable  = this.bmsData.notes.filter(n =>
             n.type==='normal' || n.type==='ln' || n.type==='bss' || n.type==='mss'
         );
@@ -3248,31 +3248,28 @@ class BMSViewer {
         const result = new Map();
         for (const notes of Object.values(byLane)) {
             const origPos = notes.map(n => n.position);
-            // 常に手前（時間的に前）のグリッドへfloorスナップ
             const snapped = notes.map(note => {
                 const bar  = Math.floor(note.position);
                 const frac = note.position - bar;
-                let s = Math.floor(frac / gridUnit + EPS) * gridUnit;
-                if (s < 0) s = 0;
+                let s = Math.round(frac / gridUnit) * gridUnit;
+                if (s >= 1.0) s = 1.0 - gridUnit;
+                if (s < 0)    s = 0;
                 return bar + s;
             });
             for (let i = 0; i < notes.length; i++) {
                 const cand = snapped[i];
-                // 元の位置がすでにグリッド上なら変更なし
                 if (Math.abs(cand - origPos[i]) < EPS) {
                     result.set(notes[i], origPos[i]); continue;
                 }
                 let collision = false;
-                // スナップ先に他ノーツの元位置が存在する場合はスキップ
                 for (let j = 0; j < notes.length; j++) {
                     if (j===i) continue;
                     if (Math.abs(origPos[j] - cand) < EPS) { collision=true; break; }
                 }
-                // スナップ先に他ノーツのスナップ後位置が重なる場合もスキップ
                 if (!collision) {
                     for (let j = 0; j < notes.length; j++) {
                         if (j===i) continue;
-                        if (Math.abs(snapped[j] - origPos[j]) < EPS) continue;
+                        if (Math.abs(snapped[j]-origPos[j]) < EPS) continue;
                         if (Math.abs(snapped[j] - cand) < EPS) { collision=true; break; }
                     }
                 }
@@ -3527,11 +3524,6 @@ class BMSViewer {
     _animate() {
         if (!this.isPlaying) return;
         const now = performance.now();
-
-        // 8ms未満のフレームはDOM更新をスキップ（音声位置計算は継続）
-        const _skipDraw = (now - (this._lastDrawTime || 0)) < 8;
-        if (!_skipDraw) this._lastDrawTime = now;
-
         const dt  = (now - this.lastTimestamp) / 1000;
         this.lastTimestamp = now;
 
@@ -3588,18 +3580,16 @@ class BMSViewer {
         const bpm = this._bpmAt(this.currentPixelPos);
         this._detectPassed(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
-        if (!_skipDraw) {
-            this._updatePositions();
-            // 拍連動グロー更新
-            this._updateJLGlow();
-        }
+        this._updatePositions();
+        // 拍連動グロー更新
+        this._updateJLGlow();
         const _posT   = this._px2bar(this.currentPixelPos);
         const _bpmT   = Math.round(bpm);
         const _greenRaw = Math.round(219125 / (bpm * this.hiSpeed));
         let _greenT = _greenRaw;
         if (this.sudEnabled) {
-            const _effH   = 457; // SUD+有効ゾーン高さ (600 - 143)
-            const _visEff = Math.max(0, Math.min(_effH, 600 - this.sudCoverPx));
+            const _effH   = 400; // SUD+有効ゾーン高さ（0px基準）
+            const _visEff = Math.max(0, Math.min(_effH, 400 - this.sudCoverPx));
             if (this.sudMode === 'A') {
                 // モードA: SUD+位置に関係なく頭緑をそのまま表示
                 _greenT = Math.round(this.targetGreenNum || _greenRaw);
@@ -3726,8 +3716,8 @@ class BMSViewer {
     _calcAdjustedHS(bpm, gn) {
         const baseHS = 219125 / (bpm * gn);
         if (this.sudEnabled && this.sudMode === 'A') {
-            const effH     = 457; // 600 - 143 (SUD+有効ゾーン: カバー144px〜600px)
-            const laneH    = 600;
+            const effH     = 400; // SUD+有効ゾーン（0px基準）
+            const laneH    = 400;
             const visEff   = Math.max(1, Math.min(effH, laneH - this.sudCoverPx));
             return Math.max(0.01, baseHS * (visEff / effH));
         }
@@ -3770,14 +3760,12 @@ class BMSViewer {
         cover.style.height  = this.sudCoverPx + 'px';
         const wn = document.getElementById('sudWhiteNum');
         if (wn) {
-            const raw = this.sudCoverPx - this.sudBasePx;
-            const val = Math.max(0, raw);
-            wn.textContent = String(val).padStart(3, '0');
+            wn.textContent = String(this.sudCoverPx).padStart(3, '0');
         }
     }
 
     _setSudCoverPx(px, rebuild = true) {
-        const MIN = 160, MAX = 600;
+        const MIN = 20, MAX = 400;
         this.sudCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._sudUpdateCoverDOM();
         if (rebuild && this.sudEnabled && this.sudMode === 'A') this._reapplyHS();

@@ -21,7 +21,9 @@
         }
         .container { display:flex; flex-direction:column; position:fixed; top:0; left:0; right:0; height:var(--locked-vh,100svh); overflow:hidden; }
         .header { background:#1a1a1a; padding:8px 12px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
-        .song-title { font-size:14px; font-weight:bold; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .song-title { font-size:14px; font-weight:bold; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
+        .song-title.loaded { cursor:pointer; }
+        .song-title.loaded:active { opacity:0.7; }
         .song-meta  {
             font-size:11px; color:#999; margin-bottom:6px;
             white-space:nowrap; overflow:hidden;
@@ -214,8 +216,10 @@
         .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
         .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
-        .play-area.bga-active .lane { background:rgba(17,17,17,0.55); }
-        .play-area.bga-active .lane.scratch { background:rgba(0,0,0,0.55); }
+        .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.scratch,
+        .play-area.bga-active .lane.black-key { background:rgba(0,0,0,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.white-key  { background:rgba(30,30,30,var(--bga-lane-alpha,0.95)); }
         .lane.black-key { width:var(--black-lane-width); background:#000; }
         .lane.white-key { background:#1e1e1e; }
 
@@ -1119,6 +1123,10 @@
         .detail-body::-webkit-scrollbar-track { background:transparent; }
         .detail-body::-webkit-scrollbar-thumb { background:#444; border-radius:3px; }
         .detail-body::-webkit-scrollbar-thumb:hover { background:#666; }
+        .song-info-row { display:flex; align-items:baseline; gap:8px; padding:6px 16px; border-bottom:1px solid #2a2a2a; }
+        .song-info-row:last-child { border-bottom:none; }
+        .song-info-label { flex-shrink:0; font-size:11px; color:#888; width:120px; }
+        .song-info-value { font-size:13px; color:#fff; word-break:break-all; }
         .detail-close {
             background:none; border:none; color:#aaa;
             font-size:20px; line-height:1; cursor:pointer; padding:2px 6px;
@@ -1325,6 +1333,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
     </div>
 
+<!-- 曲情報 オーバーレイ -->
+    <div class="detail-overlay" id="songInfoOverlay">
+        <div class="detail-backdrop" id="songInfoBackdrop"></div>
+        <div class="detail-panel" style="max-width:380px;">
+            <div class="detail-panel-header">
+                <span>曲情報</span>
+                <button class="detail-close" id="songInfoClose">✕</button>
+            </div>
+            <div class="detail-body" id="songInfoBody" style="gap:0;padding:4px 0;"></div>
+        </div>
+    </div>
+
 <!-- 詳細オプション オーバーレイ -->
     <div class="detail-overlay" id="detailOverlay">
         <div class="detail-backdrop" id="detailBackdrop"></div>
@@ -1343,6 +1363,27 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                            type="number" inputmode="decimal"
                            step="0.05" min="0.1" max="10" value="1.00">
                     <button class="rs-btn" id="rsPlus">＋</button>
+                </div>
+            </div>
+            <!-- REPEAT -->
+            <div class="detail-section">
+                <span class="detail-label">REPEAT</span>
+                <button class="loop-toggle" id="loopToggle">
+                    <span>🔁</span>
+                    <span id="loopToggleLabel">REPEAT OFF</span>
+                </button>
+                <div class="loop-box" style="margin-top:6px;">
+                    <div class="loop-section">
+                        <button class="loop-btn loop-btn-start" id="loopStartMinus">－</button>
+                        <input class="loop-input loop-input-start" id="loopStartInput" type="number" inputmode="numeric" min="0" value="0">
+                        <button class="loop-btn loop-btn-start" id="loopStartPlus">＋</button>
+                    </div>
+                    <span class="loop-sep">〜</span>
+                    <div class="loop-section">
+                        <button class="loop-btn loop-btn-end" id="loopEndMinus">－</button>
+                        <input class="loop-input loop-input-end" id="loopEndInput" type="number" inputmode="numeric" min="1" value="0">
+                        <button class="loop-btn loop-btn-end" id="loopEndPlus">＋</button>
+                    </div>
                 </div>
             </div>
             <!-- SUD+ モード -->
@@ -1365,8 +1406,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
                 <span class="detail-label">背景透過率</span>
                 <div class="vol-row">
-                    <input class="vol-slider" type="range" id="bgaOpacitySlider" min="0" max="100" value="30">
-                    <span class="vol-val" id="bgaOpacityVal">30</span>
+                    <input class="vol-slider" type="range" id="bgaOpacitySlider" min="0" max="100" value="5">
+                    <span class="vol-val" id="bgaOpacityVal">5</span>
                 </div>
             </div>
             <!-- JUDGE 演出切り替え -->
@@ -1398,13 +1439,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 </div>
             </div>
 <!-- WAV ON/OFF スイッチ -->
-            <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:6px;">
+            <div class="detail-section">
                 <span class="detail-label">WAV</span>
-                <div style="display:flex; gap:6px;">
-                    <button class="fx-btn on" id="wavBgm1Btn">BGM1</button>
-                    <button class="fx-btn on" id="wavBgm2Btn">BGM2</button>
-                    <button class="fx-btn on" id="wavKeyBtn">KEY</button>
-                </div>
+                <button class="fx-btn on" id="wavBgm1Btn">BGM1</button>
+                <button class="fx-btn on" id="wavBgm2Btn">BGM2</button>
+                <button class="fx-btn on" id="wavKeyBtn">KEY</button>
             </div>
             <!-- WAV BGM音量 (#00001〜#00101 小節0〜1) -->
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
@@ -1487,27 +1526,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
                 </div>
             </div>
-            <!-- REPEAT -->
-            <div class="detail-section">
-                <span class="detail-label">REPEAT</span>
-                <button class="loop-toggle" id="loopToggle">
-                    <span>🔁</span>
-                    <span id="loopToggleLabel">REPEAT OFF</span>
-                </button>
-                <div class="loop-box" style="margin-top:6px;">
-                    <div class="loop-section">
-                        <button class="loop-btn loop-btn-start" id="loopStartMinus">－</button>
-                        <input class="loop-input loop-input-start" id="loopStartInput" type="number" inputmode="numeric" min="0" value="0">
-                        <button class="loop-btn loop-btn-start" id="loopStartPlus">＋</button>
-                    </div>
-                    <span class="loop-sep">〜</span>
-                    <div class="loop-section">
-                        <button class="loop-btn loop-btn-end" id="loopEndMinus">－</button>
-                        <input class="loop-input loop-input-end" id="loopEndInput" type="number" inputmode="numeric" min="1" value="0">
-                        <button class="loop-btn loop-btn-end" id="loopEndPlus">＋</button>
-                    </div>
-                </div>
-            </div>
             </div><!-- /detail-body -->
         </div>
     </div>
@@ -1530,6 +1548,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
     <div class="play-area">
         <video id="bgaVideo" muted loop playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;"></video>
+        <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
         <div class="loading" id="loading" style="display:none;">読み込み中...</div>
         <div class="great-positioner">
             <div class="great-display" id="greatDisplay">
@@ -1580,6 +1599,7 @@ class BMSParser {
         this.wavDefs     = {};   // base-62  { id: filename }
         this.bmpDefs     = {};   // base-62  { id: filename }
         this.bgmEvents   = [];   // { position, wavId }
+        this.bgaEvents   = [];   // { position, bmpId }
         this.lnRawEvents = [];
     }
 
@@ -1599,7 +1619,8 @@ class BMSParser {
             barLengths: this.barLengths,
             wavDefs:    this.wavDefs,
             bmpDefs:    this.bmpDefs,
-            bgmEvents:  this.bgmEvents
+            bgmEvents:  this.bgmEvents,
+            bgaEvents:  this.bgaEvents
         };
     }
 
@@ -1647,6 +1668,14 @@ class BMSParser {
             const vals = this._split2(data);
             vals.forEach((v, i) => {
                 if (v !== '00') this.bgmEvents.push({ position: bar + i / vals.length, wavId: v });
+            });
+            return;
+        }
+        // ch04: BGAチャンネル（base-62 bmpId をそのまま保持）
+        if (ch === '04') {
+            const vals = this._split2(data);
+            vals.forEach((v, i) => {
+                if (v !== '00') this.bgaEvents.push({ position: bar + i / vals.length, bmpId: v });
             });
             return;
         }
@@ -2183,6 +2212,7 @@ class BMSViewer {
             const bmsEntries = entries.filter(f=>/\.(bms|bme)$/i.test(f.name));
             const wavEntries = entries.filter(f=>/\.(wav|ogg|mp3)$/i.test(f.name));
             const mp4Entries = entries.filter(f=>/\.mp4$/i.test(f.name));
+            const imgEntries = entries.filter(f=>/\.(bmp|png|jpg|jpeg|gif)$/i.test(f.name));
             if (!bmsEntries.length) throw new Error('ZIP内にBMS/BMEファイルが見つかりません');
 
             setStatus(`音源 ${wavEntries.length}件展開中...`,'#FFD700');
@@ -2202,13 +2232,21 @@ class BMSViewer {
                 if(base!==e.name) videoFileMap[base]=buf;
             }
 
+            const imageFileMap={};
+            for (const e of imgEntries) {
+                const buf=await e.async('arraybuffer');
+                imageFileMap[e.name]=buf;
+                const base=e.name.split('/').pop();
+                if(base!==e.name) imageFileMap[base]=buf;
+            }
+
             if (bmsEntries.length===1) {
                 const buf=await bmsEntries[0].async('arraybuffer');
                 const text=await this._decodeTextBuf(buf);
-                await this._loadBmsContent(text, wavFileMap, videoFileMap);
+                await this._loadBmsContent(text, wavFileMap, videoFileMap, imageFileMap);
             } else {
                 document.getElementById('loading').style.display='none';
-                this._showBmsSelector(bmsEntries, wavFileMap, videoFileMap);
+                this._showBmsSelector(bmsEntries, wavFileMap, videoFileMap, imageFileMap);
             }
         } catch(err) {
             document.getElementById('error').textContent='エラー: '+err.message;
@@ -2217,7 +2255,7 @@ class BMSViewer {
         }
     }
 
-    _showBmsSelector(bmsEntries, wavFileMap, videoFileMap={}) {
+    _showBmsSelector(bmsEntries, wavFileMap, videoFileMap={}, imageFileMap={}) {
         const overlay=document.getElementById('bmsSelectOverlay');
         const list   =document.getElementById('bmsSelectList');
         list.innerHTML='';
@@ -2233,7 +2271,7 @@ class BMSViewer {
                 try {
                     const buf=await entry.async('arraybuffer');
                     const text=await this._decodeTextBuf(buf);
-                    await this._loadBmsContent(text, wavFileMap, videoFileMap);
+                    await this._loadBmsContent(text, wavFileMap, videoFileMap, imageFileMap);
                 } catch(err) {
                     document.getElementById('error').textContent='エラー: '+err.message;
                     document.getElementById('loading').style.display='none';
@@ -2244,7 +2282,7 @@ class BMSViewer {
         overlay.style.display='block';
     }
 
-    async _loadBmsContent(text, wavFileMap, videoFileMap={}) {
+    async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}) {
         if (this.isPlaying){this.isPlaying=false;cancelAnimationFrame(this.animFrameId);}
         this._stopAudio();
         this.wavBuffers={};
@@ -2285,6 +2323,7 @@ class BMSViewer {
         _pb.classList.replace('btn-secondary', 'btn-success');
 
         this._loadBgaVideo(videoFileMap);
+        this._loadBgaImages(imageFileMap);
 
         if (wavFileMap&&Object.keys(wavFileMap).length>0) {
             await this._decodeWavFiles(wavFileMap);
@@ -2304,11 +2343,18 @@ class BMSViewer {
             this._bgaVideoBlobUrl = null;
         }
         vid.pause();
-        vid.src = '';
+        vid.removeAttribute('src');
+        vid.load();
         vid.style.display = 'none';
+        // 画像BGA側もリセット
+        const _imgEl = document.getElementById('bgaImage');
+        if (_imgEl) { _imgEl.src = ''; _imgEl.style.display = 'none'; _imgEl.dataset.bmpId = ''; }
+        if (this._bgaImageBlobUrls) {
+            Object.values(this._bgaImageBlobUrls).forEach(u => URL.revokeObjectURL(u));
+            this._bgaImageBlobUrls = {};
+        }
+        this._bgaEventsSorted = null;
         document.querySelector('.play-area').classList.remove('bga-active');
-        // BGA非表示時はレーンを不透明に戻す
-        document.querySelectorAll('.lane').forEach(el => { el.style.background = ''; });
 
         const bmpDefs = (this.bmsData && this.bmsData.bmpDefs) || {};
         if (!Object.keys(videoFileMap).length || !Object.keys(bmpDefs).length) return;
@@ -2338,6 +2384,79 @@ class BMSViewer {
         document.querySelector('.play-area').classList.add('bga-active');
         // 透過率を反映
         if (this._applyBgaOpacity) this._applyBgaOpacity(parseInt(document.getElementById('bgaOpacitySlider').value));
+    }
+
+    _loadBgaImages(imageFileMap) {
+        const img = document.getElementById('bgaImage');
+        if (!img) return;
+
+        // 前回の Blob URL を解放
+        if (this._bgaImageBlobUrls) {
+            Object.values(this._bgaImageBlobUrls).forEach(u => URL.revokeObjectURL(u));
+        }
+        this._bgaImageBlobUrls = {};
+        img.src = '';
+        img.style.display = 'none';
+        img.dataset.bmpId = '';
+
+        const bmpDefs = (this.bmsData && this.bmsData.bmpDefs) || {};
+        const bgaEvents = (this.bmsData && this.bmsData.bgaEvents) || [];
+        if (!bgaEvents.length || !Object.keys(imageFileMap).length) return;
+
+        // mp4 BGA がある場合は画像BGA不要
+        if (this._bgaVideoBlobUrl) return;
+
+        const norm = s => s.toLowerCase().replace(/\\/g, '/');
+        const mimeOf = f => {
+            if (/\.png$/i.test(f))  return 'image/png';
+            if (/\.gif$/i.test(f))  return 'image/gif';
+            if (/\.jpe?g$/i.test(f)) return 'image/jpeg';
+            return 'image/bmp';
+        };
+        const fileIndex = {};
+        for (const [name, buf] of Object.entries(imageFileMap)) {
+            fileIndex[norm(name)] = buf;
+            fileIndex[norm(name.split('/').pop())] = buf;
+        }
+
+        // 使用される bmpId の Blob URL を生成
+        const usedIds = new Set(bgaEvents.map(e => e.bmpId));
+        for (const id of usedIds) {
+            const filename = bmpDefs[id];
+            if (!filename) continue;
+            const key = norm(filename);
+            const buf = fileIndex[key] || fileIndex[key.split('/').pop()];
+            if (!buf) continue;
+            const blob = new Blob([buf], { type: mimeOf(filename) });
+            this._bgaImageBlobUrls[id] = URL.createObjectURL(blob);
+        }
+
+        if (!Object.keys(this._bgaImageBlobUrls).length) return;
+
+        // bgaEvents を位置順にソート
+        this._bgaEventsSorted = bgaEvents.slice().sort((a, b) => a.position - b.position);
+        img.style.display = this.bgaEnabled ? 'block' : 'none';
+        document.querySelector('.play-area').classList.add('bga-active');
+        if (this._applyBgaOpacity) this._applyBgaOpacity(parseInt(document.getElementById('bgaOpacitySlider').value));
+    }
+
+    _updateBgaImage() {
+        if (!this._bgaEventsSorted || !this._bgaEventsSorted.length) return;
+        const img = document.getElementById('bgaImage');
+        if (!img || img.style.display === 'none') return;
+
+        const currentPos = this._px2posFrac(this.currentPixelPos);
+        let activeId = null;
+        for (const ev of this._bgaEventsSorted) {
+            if (ev.position <= currentPos + 0.0001) activeId = ev.bmpId;
+            else break;
+        }
+        if (activeId === null) return;
+        const url = this._bgaImageBlobUrls && this._bgaImageBlobUrls[activeId];
+        if (url && img.dataset.bmpId !== activeId) {
+            img.src = url;
+            img.dataset.bmpId = activeId;
+        }
     }
 
     _barLen(b) { const v=this.bmsData.barLengths[b]; return (v!==undefined&&v>0)?v:1.0; }
@@ -2687,6 +2806,10 @@ class BMSViewer {
             } else if (!this.bgaEnabled && vid) {
                 vid.pause();
             }
+            const img = document.getElementById('bgaImage');
+            if (img && this._bgaImageBlobUrls && Object.keys(this._bgaImageBlobUrls).length) {
+                img.style.display = this.bgaEnabled ? 'block' : 'none';
+            }
         });
         // 背景透過率スライダー
         {
@@ -2694,13 +2817,7 @@ class BMSViewer {
             const valEl  = document.getElementById('bgaOpacityVal');
             const applyOpacity = (v) => {
                 valEl.textContent = v;
-                const alpha = v / 100;
-                document.querySelector('.play-area').style.setProperty('--lane-bg-alpha', alpha);
-                document.querySelectorAll('.lane').forEach(el => {
-                    el.style.background = el.classList.contains('scratch')
-                        ? `rgba(0,0,0,${1 - alpha})`
-                        : `rgba(17,17,17,${1 - alpha})`;
-                });
+                document.querySelector('.play-area').style.setProperty('--bga-lane-alpha', (1 - v / 100).toFixed(3));
             };
             slider.addEventListener('input', () => applyOpacity(parseInt(slider.value)));
             this._applyBgaOpacity = applyOpacity;
@@ -2725,6 +2842,63 @@ class BMSViewer {
             document.getElementById('detailBtn').addEventListener('click', open);
             document.getElementById('detailClose').addEventListener('click', close);
             document.getElementById('detailBackdrop').addEventListener('click', close);
+        }
+
+        // 曲情報ポップアップ
+        {
+            const overlay  = document.getElementById('songInfoOverlay');
+            const body     = document.getElementById('songInfoBody');
+            const close    = () => overlay.classList.remove('open');
+            document.getElementById('songInfoClose').addEventListener('click', close);
+            document.getElementById('songInfoBackdrop').addEventListener('click', close);
+
+            const openSongInfo = () => {
+                if (!this.bmsData) return;
+                const h = this.bmsData.headers;
+                const notes = this.bmsData.notes;
+
+                // 総ノーツ数（LN尾端を除く）
+                const playableNotes = notes.filter(n => n.type === 'normal' || n.type === 'ln');
+                const totalNotes = playableNotes.length;
+
+                // スクラッチ枚数（lane===0）
+                const scratchNotes = playableNotes.filter(n => n.lane === 0).length;
+                const keyNotes = totalNotes - scratchNotes;
+
+                // 曲の長さ
+                const lastPos = notes.reduce((m, n) => Math.max(m, n.endPosition ?? n.position), 0);
+                const totalSec = this._positionToSec(lastPos);
+                const mm = Math.floor(totalSec / 60);
+                const ss = Math.floor(totalSec % 60).toString().padStart(2, '0');
+
+                // BPM変化遷移
+                const initBpm = Math.round(h.bpm || 0);
+                const bpmSeq = [initBpm];
+                const sorted = (this.bmsData.bpmChanges || []).slice().sort((a, b) => a.position - b.position);
+                for (const ev of sorted) {
+                    const v = Math.round(ev.bpm);
+                    if (v !== bpmSeq[bpmSeq.length - 1]) bpmSeq.push(v);
+                }
+                const bpmStr = bpmSeq.length === 1 ? String(bpmSeq[0]) : bpmSeq.join(' → ');
+
+                const rows = [
+                    ['ジャンル',       h.genre    || '—'],
+                    ['曲名',           h.title    || '—'],
+                    ['アーティスト',   h.artist   || '—'],
+                    ['難易度',         h.playLevel != null ? h.playLevel : '—'],
+                    ['長さ',           `${mm}:${ss}`],
+                    ['小節数',         String(Math.max(0, this.maxBars - 2))],
+                    ['総ノーツ数',     String(totalNotes)],
+                    ['スクラッチ',     String(scratchNotes)],
+                    ['鍵盤打鍵数',     String(keyNotes)],
+                    ['BPM',            bpmStr],
+                ];
+                body.innerHTML = rows.map(([label, val]) =>
+                    `<div class="song-info-row"><span class="song-info-label">${label}</span><span class="song-info-value">${val}</span></div>`
+                ).join('');
+                overlay.classList.add('open');
+            };
+            document.getElementById('songTitle').addEventListener('click', openSongInfo);
         }
 
         // WAV音量スライダー
@@ -3694,6 +3868,7 @@ class BMSViewer {
         this._detectPassed(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
         this._updatePositions();
+        this._updateBgaImage();
         // 拍連動グロー更新
         this._updateJLGlow();
         const _posT   = this._px2bar(this.currentPixelPos);
@@ -4166,6 +4341,7 @@ class BMSViewer {
         this._syncCombo();
         this._resetEffectElements(); // シーク時にエフェクト要素の描画ゴミをクリア
         this._updatePositions();
+        this._updateBgaImage();
         this._updateSeekBar();
         if (this.isPlaying) this._startAudio();
     }
@@ -4196,7 +4372,9 @@ class BMSViewer {
     _updateUI() {
         if (!this.bmsData) return;
         const h=this.bmsData.headers;
-        document.getElementById('songTitle').textContent=h.title||'(タイトルなし)';
+        const _st = document.getElementById('songTitle');
+        _st.textContent = h.title || '(タイトルなし)';
+        _st.classList.add('loaded');
         const meta=[];
         if(h.artist)    meta.push('Artist: '+h.artist);
         if(h.genre)     meta.push('Genre: ' +h.genre);

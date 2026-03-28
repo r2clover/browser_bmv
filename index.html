@@ -811,7 +811,7 @@
         /* GREAT + コンボ */
         .great-positioner {
             position:absolute;
-            left:0; right:0; bottom:130px;
+            left:0; right:0; bottom:110px;
             text-align:center;
             pointer-events:none; z-index:30;
         }
@@ -828,7 +828,7 @@
         }
 
         .great-label, .great-combo {
-            font-size:64px; font-weight:800;
+            font-size:52px; font-weight:800;
             /* 上:#ffbf02 → 下:#fffdf4 グラデーション文字色 */
             background: linear-gradient(to bottom, #ffbf02 0%, #fffdf4 100%);
             -webkit-background-clip: text;
@@ -921,19 +921,13 @@
         .lane-explosion.explode {
             animation: explosion-ring 0.35s ease-out forwards;
         }
-        /* ボムB: 軽量版（2キーフレーム・リングなし・青白） */
+        /* ボムB: 超軽量版（opacity fade のみ・blur/gradient上書き/transform なし） */
         .lane-explosion.explode-lite {
-            animation: explosion-lite 0.30s ease-out forwards;
-            background: radial-gradient(circle,
-                rgba(220,240,255,0.95)  0%,
-                rgba( 80,180,255,0.60) 45%,
-                transparent 100%);
-            filter: blur(3px);
+            animation: explosion-lite 0.15s linear forwards;
         }
         @keyframes explosion-lite {
-            0%   { opacity: 1.00; transform: scale(0.20); }
-            40%  { opacity: 0.90; transform: scale(1.10); }
-            100% { opacity: 0;    transform: scale(1.80); }
+            0%   { opacity: 0.70; }
+            100% { opacity: 0; }
         }
         @keyframes explosion-ring {
             0%   { opacity: 0.80; transform: scale(0.20); }
@@ -1360,8 +1354,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">表示</span>
                 <button class="fx-btn on" id="judgementBtn">判定</button>
                 <button class="fx-btn on" id="beamBtn">ビーム</button>
-                <button class="fx-btn on" id="bombABtn">ボムA</button>
-                <button class="fx-btn" id="bombBBtn">ボムB</button>
+                <button class="fx-btn" id="bombABtn">ボムA</button>
+                <button class="fx-btn on" id="bombBBtn">ボムB</button>
                 <button class="fx-btn on" id="bpmGuideBtn">BPM</button>
             </div>
             <!-- JUDGE 演出切り替え -->
@@ -1822,8 +1816,8 @@ class BMSViewer {
         this._justAnimFrame   = null;   // JUST モード rAF ID
         this.beamEnabled      = true;
         this.bpmGuideEnabled  = true;  // キービーム ON/OFF
-        this.bombAEnabled     = true;  // ボムA: フルエフェクト ON/OFF
-        this.bombBEnabled     = false; // ボムB: 軽量エフェクト ON/OFF
+        this.bombAEnabled     = false; // ボムA: フルエフェクト ON/OFF
+        this.bombBEnabled     = true;  // ボムB: 軽量エフェクト ON/OFF
         this.wavBgm1Enabled   = true;  // BGM1 WAV ON/OFF (position<2)
         this.wavBgm2Enabled   = true;  // BGM2 WAV ON/OFF (position>=2)
         this.wavKeyEnabled    = true;  // KEY WAV ON/OFF
@@ -3874,6 +3868,13 @@ class BMSViewer {
         if (!this.beamEnabled) return;
         const template = this.bombElements[dl];
         if (!template) return;
+        if (this.bombBEnabled) {
+            // ボムB: DOM生成なし・テンプレートを直接再利用
+            template.classList.remove('boom');
+            void template.offsetWidth; // アニメーション再スタート
+            template.classList.add('boom');
+            return;
+        }
         const lane = template.parentElement;
         if (!lane) return;
         const clone = template.cloneNode(false);
@@ -3885,26 +3886,29 @@ class BMSViewer {
     /* ── エフェクト: 爆発リング ── */
     _triggerExplosion(dl) {
         if (!this.bombAEnabled && !this.bombBEnabled) return;
+        if (this.bombBEnabled) {
+            // ボムB: DOM生成なし・テンプレートを直接再利用
+            const el = this.explosionElements[dl];
+            if (!el) return;
+            el.classList.remove('explode-lite');
+            void el.offsetWidth; // アニメーション再スタート
+            el.classList.add('explode-lite');
+            return;
+        }
+        // ボムA: クローン方式（拡散リングあり）
         const elTemplate = this.explosionElements[dl];
         if (elTemplate && elTemplate.parentElement) {
             const elClone = elTemplate.cloneNode(false);
-            if (this.bombAEnabled) {
-                elClone.classList.add('explode');
-            } else {
-                elClone.classList.add('explode-lite');
-            }
+            elClone.classList.add('explode');
             elTemplate.parentElement.appendChild(elClone);
             elClone.addEventListener('animationend', () => elClone.remove(), { once: true });
         }
-        // 拡散リングはボムAのみ（ボムBは省略して軽量化）
-        if (this.bombAEnabled) {
-            const ringTemplate = this.ringElements[dl];
-            if (ringTemplate && ringTemplate.parentElement) {
-                const ringClone = ringTemplate.cloneNode(false);
-                ringClone.classList.add('ring-expand');
-                ringTemplate.parentElement.appendChild(ringClone);
-                ringClone.addEventListener('animationend', () => ringClone.remove(), { once: true });
-            }
+        const ringTemplate = this.ringElements[dl];
+        if (ringTemplate && ringTemplate.parentElement) {
+            const ringClone = ringTemplate.cloneNode(false);
+            ringClone.classList.add('ring-expand');
+            ringTemplate.parentElement.appendChild(ringClone);
+            ringClone.addEventListener('animationend', () => ringClone.remove(), { once: true });
         }
     }
 

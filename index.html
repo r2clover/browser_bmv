@@ -1146,7 +1146,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- リアルスピード（詳細オプションへ移動） -->
             <!-- 詳細オプションボタン -->
             <button class="btn btn-secondary" id="detailBtn">詳細</button>
-            <button class="btn btn-secondary" id="helpBtn">説明</button>
+            <div class="side-switch">
+                <button class="side-btn active" data-side="1P">1P</button>
+                <button class="side-btn"        data-side="2P">2P</button>
+            </div>
             <button class="sud-btn" id="sudBtn">SUD+</button>
             <button class="sud-btn" id="sudUpBtn" title="カバーを上へ">↑</button>
             <button class="sud-btn" id="sudDownBtn" title="カバーを下へ">↓</button>
@@ -1190,11 +1193,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- S-RANDOM / H-RANDOM ボタン -->
             <button class="rm-btn" id="sRandomBtn">S</button>
             <button class="rm-btn" id="hRandomBtn">H</button>
-            <!-- 1P/2P サイド切り替え -->
-            <div class="side-switch">
-                <button class="side-btn active" data-side="1P">1P</button>
-                <button class="side-btn"        data-side="2P">2P</button>
-            </div>
         </div>
         <div class="error" id="error"></div>
     </div>
@@ -1232,6 +1230,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
+            <!-- HELP -->
+            <div class="detail-section nowrap">
+                <button class="fx-btn" id="helpBtn" style="width:100%;">HELP</button>
+            </div>
             <!-- PLAY SPEED -->
             <div class="detail-section nowrap">
                 <span class="detail-label">PLAY SPEED</span>

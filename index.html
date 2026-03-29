@@ -845,6 +845,36 @@
                         inset 0 -2px 3px rgba(0,0,0,0.55);
             background: linear-gradient(to right, #cc0000 0%, #fed1ce 50%, #cc0000 100%);
         }
+        /* ── ノーツB（軽量版：box-shadow なし、シンプルグラデ） ── */
+        .notes-b .note.white-key {
+            box-shadow: none;
+            background: linear-gradient(to right, #606060 0%, #e0e0e0 50%, #606060 100%);
+        }
+        .notes-b .note.black-key {
+            box-shadow: none;
+            background: linear-gradient(to right, #1040a0 0%, #30d0f0 50%, #1040a0 100%);
+        }
+        .notes-b .note.scratch {
+            box-shadow: none;
+            background: linear-gradient(to right, #880000 0%, #f08080 50%, #880000 100%);
+        }
+        /* ── チャージノーツB（キャップ非表示） ── */
+        .charge-b .cn-white-start-cap, .charge-b .cn-white-end-cap,
+        .charge-b .cn-blue-start-cap,  .charge-b .cn-blue-end-cap,
+        .charge-b .bss-start-cap,      .charge-b .bss-end-cap { display: none !important; }
+        /* ── JUDGE SIMPLE（グラデ・発光・点滅なし） ── */
+        #greatDisplay.judge-simple .great-label,
+        #greatDisplay.judge-simple .great-combo {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            -webkit-text-fill-color: #ffdd55 !important;
+            filter: none !important;
+            text-shadow: none !important;
+        }
+        /* ── キービーム長 ── */
+        .beam-normal .lane-bomb { height: 50%; }
+        .beam-long   .lane-bomb { height: 100%; }
 
         #mainJudgmentLine {
             position: absolute;
@@ -1239,11 +1269,23 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="sudModeABtn">モードA</button>
                 <button class="fx-btn" id="sudModeBBtn">モードB</button>
             </div>
-            <!-- LN ヘッド描画モード -->
+            <!-- ノーツ描画 A/B -->
             <div class="detail-section nowrap">
-                <span class="detail-label">LN</span>
-                <button class="fx-btn on" id="lnModeABtn">モードA</button>
-                <button class="fx-btn" id="lnModeBBtn">モードB</button>
+                <span class="detail-label">ノーツ</span>
+                <button class="fx-btn on" id="notesStyleABtn">A</button>
+                <button class="fx-btn"    id="notesStyleBBtn">B</button>
+            </div>
+            <!-- チャージノーツ描画 A/B -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">チャージノーツ</span>
+                <button class="fx-btn on" id="chargeStyleABtn">A</button>
+                <button class="fx-btn"    id="chargeStyleBBtn">B</button>
+            </div>
+            <!-- チャージノーツ処理モード -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">チャージノーツ処理</span>
+                <button class="fx-btn on" id="lnModeABtn">通常</button>
+                <button class="fx-btn"    id="lnModeBBtn">判定ラインに残す</button>
             </div>
             <!-- 表示 ON/OFF -->
             <div class="detail-section nowrap">
@@ -1254,6 +1296,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="bombBBtn">ボムB</button>
                 <button class="fx-btn on" id="bpmGuideBtn">BPM</button>
                 <button class="fx-btn" id="bgaBtn">BGA</button>
+            </div>
+            <!-- キービーム長 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">キービーム</span>
+                <button class="fx-btn on" id="beamShortBtn">SHORT</button>
+                <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
+                <button class="fx-btn"    id="beamLongBtn">LONG</button>
             </div>
             <!-- 背景透過率 -->
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
@@ -1267,7 +1316,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section">
                 <span class="detail-label">JUDGE</span>
                 <button class="fx-btn on" id="judgeJustBtn">JUST</button>
-                <button class="fx-btn" id="judgeNormalBtn">NORMAL</button>
+                <button class="fx-btn"    id="judgeNormalBtn">NORMAL</button>
+                <button class="fx-btn"    id="judgeSimpleBtn">SIMPLE</button>
             </div>
             <!-- JUST カラーサイクル フレーム数 -->
             <div class="detail-section" id="justFrameSection">
@@ -1278,6 +1328,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     style="width:48px;">
                 <button class="loop-btn" id="justFramePlus">＋</button>
                 <span style="font-size:11px; color:#888;">フレーム毎に色変更</span>
+            </div>
+            <!-- 判定文字サイズ -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">判定文字サイズ</span>
+                <button class="loop-btn" id="judgeSizeMinus">－</button>
+                <input type="number" id="judgeSizeInput" min="10" max="200" value="56"
+                    class="loop-input" style="width:52px;">
+                <button class="loop-btn" id="judgeSizePlus">＋</button>
+                <span style="font-size:11px; color:#888;">px</span>
+            </div>
+            <!-- 判定文字高さ -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">判定文字高さ</span>
+                <button class="loop-btn" id="judgeHeightMinus">－</button>
+                <input type="number" id="judgeHeightInput" min="0" max="2000" value="110"
+                    class="loop-input" style="width:52px;">
+                <button class="loop-btn" id="judgeHeightPlus">＋</button>
+                <span style="font-size:11px; color:#888;">px</span>
             </div>
             <!-- クォンタイズ -->
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:6px;">
@@ -1718,6 +1786,9 @@ class BMSViewer {
         this._justAnimFrame   = null;   // JUST モード rAF ID
         this.beamEnabled      = true;
         this.bpmGuideEnabled  = true;  // キービーム ON/OFF
+        this.notesStyle       = 'A';     // ノーツ A/B
+        this.chargeStyle      = 'A';     // チャージノーツ A/B
+        this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG
         this.bombAEnabled     = false; // ボムA: フルエフェクト ON/OFF
         this.bombBEnabled     = true;  // ボムB: 軽量エフェクト ON/OFF
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
@@ -2601,17 +2672,17 @@ class BMSViewer {
             }
         });
 
-        // JUDGE モード切り替え（JUST / NORMAL）
-        document.getElementById('judgeJustBtn').addEventListener('click', () => {
-            this.judgeMode = 'JUST';
-            document.getElementById('judgeJustBtn').classList.add('on');
-            document.getElementById('judgeNormalBtn').classList.remove('on');
-        });
-        document.getElementById('judgeNormalBtn').addEventListener('click', () => {
-            this.judgeMode = 'NORMAL';
-            document.getElementById('judgeNormalBtn').classList.add('on');
-            document.getElementById('judgeJustBtn').classList.remove('on');
-        });
+        // JUDGE モード切り替え（JUST / NORMAL / SIMPLE）
+        const _setJudgeMode = (mode) => {
+            this.judgeMode = mode;
+            document.getElementById('judgeJustBtn').classList.toggle('on',   mode === 'JUST');
+            document.getElementById('judgeNormalBtn').classList.toggle('on', mode === 'NORMAL');
+            document.getElementById('judgeSimpleBtn').classList.toggle('on', mode === 'SIMPLE');
+            document.getElementById('greatDisplay').classList.toggle('judge-simple', mode === 'SIMPLE');
+        };
+        document.getElementById('judgeJustBtn').addEventListener('click',   () => _setJudgeMode('JUST'));
+        document.getElementById('judgeNormalBtn').addEventListener('click', () => _setJudgeMode('NORMAL'));
+        document.getElementById('judgeSimpleBtn').addEventListener('click', () => _setJudgeMode('SIMPLE'));
 
         // JUSTフレーム数入力・－＋ボタン
         const _jfInput = document.getElementById('justFrameInput');
@@ -2625,13 +2696,95 @@ class BMSViewer {
         document.getElementById('justFrameMinus').addEventListener('click', () => _setJF(this._justFrameInterval - 1));
         document.getElementById('justFramePlus').addEventListener('click',  () => _setJF(this._justFrameInterval + 1));
 
-        // JUST/NORMAL 切り替え時にフレーム数欄の表示制御
+        // JUDGE モード切り替え時にフレーム数欄の表示制御
         const _updateJustFrameVis = () => {
             document.getElementById('justFrameSection').style.display =
                 this.judgeMode === 'JUST' ? '' : 'none';
         };
         document.getElementById('judgeJustBtn').addEventListener('click',   _updateJustFrameVis);
         document.getElementById('judgeNormalBtn').addEventListener('click', _updateJustFrameVis);
+        document.getElementById('judgeSimpleBtn').addEventListener('click', _updateJustFrameVis);
+
+        // ノーツ A/B
+        document.getElementById('notesStyleABtn').addEventListener('click', () => {
+            this.notesStyle = 'A';
+            document.getElementById('notesStyleABtn').classList.add('on');
+            document.getElementById('notesStyleBBtn').classList.remove('on');
+            document.querySelector('.play-area').classList.remove('notes-b');
+        });
+        document.getElementById('notesStyleBBtn').addEventListener('click', () => {
+            this.notesStyle = 'B';
+            document.getElementById('notesStyleBBtn').classList.add('on');
+            document.getElementById('notesStyleABtn').classList.remove('on');
+            document.querySelector('.play-area').classList.add('notes-b');
+        });
+
+        // チャージノーツ A/B
+        document.getElementById('chargeStyleABtn').addEventListener('click', () => {
+            this.chargeStyle = 'A';
+            document.getElementById('chargeStyleABtn').classList.add('on');
+            document.getElementById('chargeStyleBBtn').classList.remove('on');
+            document.querySelector('.play-area').classList.remove('charge-b');
+        });
+        document.getElementById('chargeStyleBBtn').addEventListener('click', () => {
+            this.chargeStyle = 'B';
+            document.getElementById('chargeStyleBBtn').classList.add('on');
+            document.getElementById('chargeStyleABtn').classList.remove('on');
+            document.querySelector('.play-area').classList.add('charge-b');
+            // Bモード切替時は既存 ln-anim-f2 を除去
+            for (const el of this.noteElements) {
+                el.classList.remove('ln-anim-f2');
+            }
+        });
+
+        // キービーム長
+        const _setBeamLength = (len) => {
+            this.keyBeamLength = len;
+            document.getElementById('beamShortBtn').classList.toggle('on',  len === 'SHORT');
+            document.getElementById('beamNormalBtn').classList.toggle('on', len === 'NORMAL');
+            document.getElementById('beamLongBtn').classList.toggle('on',   len === 'LONG');
+            const pa = document.querySelector('.play-area');
+            pa.classList.remove('beam-normal', 'beam-long');
+            if (len === 'NORMAL') pa.classList.add('beam-normal');
+            if (len === 'LONG')   pa.classList.add('beam-long');
+        };
+        document.getElementById('beamShortBtn').addEventListener('click',  () => _setBeamLength('SHORT'));
+        document.getElementById('beamNormalBtn').addEventListener('click', () => _setBeamLength('NORMAL'));
+        document.getElementById('beamLongBtn').addEventListener('click',   () => _setBeamLength('LONG'));
+
+        // 判定文字サイズ
+        const _applyJudgeSize = () => {
+            const size = Math.max(10, Math.min(200, parseInt(document.getElementById('judgeSizeInput').value) || 56));
+            document.querySelectorAll('.great-label, .great-combo').forEach(el => { el.style.fontSize = size + 'px'; });
+        };
+        document.getElementById('judgeSizeInput').addEventListener('input', _applyJudgeSize);
+        document.getElementById('judgeSizeMinus').addEventListener('click', () => {
+            const inp = document.getElementById('judgeSizeInput');
+            inp.value = Math.max(10, (parseInt(inp.value) || 56) - 1);
+            _applyJudgeSize();
+        });
+        document.getElementById('judgeSizePlus').addEventListener('click', () => {
+            const inp = document.getElementById('judgeSizeInput');
+            inp.value = Math.min(200, (parseInt(inp.value) || 56) + 1);
+            _applyJudgeSize();
+        });
+
+        // 判定文字高さ
+        const _applyJudgeHeight = () => {
+            const h = Math.max(0, parseInt(document.getElementById('judgeHeightInput').value) || 110);
+            document.querySelector('.great-positioner').style.bottom = h + 'px';
+        };
+        document.getElementById('judgeHeightInput').addEventListener('input', _applyJudgeHeight);
+        document.getElementById('judgeHeightMinus').addEventListener('click', () => {
+            const inp = document.getElementById('judgeHeightInput');
+            inp.value = Math.max(0, (parseInt(inp.value) || 110) - 1);
+            _applyJudgeHeight();
+        });
+        document.getElementById('judgeHeightPlus').addEventListener('click', () => {
+            const inp = document.getElementById('judgeHeightInput');
+            inp.value = (parseInt(inp.value) || 110) + 1;
+            _applyJudgeHeight();
+        });
 
         // キービーム ON/OFF
         document.getElementById('beamBtn').addEventListener('click', () => {
@@ -3771,13 +3924,15 @@ class BMSViewer {
             }
         }
 
-        // LN発光筒アニメーション: 8フレームごとにframe1/frame2を切替
-        this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
-        if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
-            const isF2 = this._lnAnimFrameCount === 8;
-            for (const el of this.noteElements) {
-                if (el.classList.contains('note-ln')) {
-                    el.classList.toggle('ln-anim-f2', isF2);
+        // LN発光筒アニメーション: チャージノーツAのみ 8フレームごとにframe1/frame2を切替
+        if (this.chargeStyle === 'A') {
+            this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
+            if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
+                const isF2 = this._lnAnimFrameCount === 8;
+                for (const el of this.noteElements) {
+                    if (el.classList.contains('note-ln')) {
+                        el.classList.toggle('ln-anim-f2', isF2);
+                    }
                 }
             }
         }
@@ -4140,7 +4295,7 @@ class BMSViewer {
                 disp.style.opacity    = '0';
             }, 500);
 
-        } else {
+        } else if (this.judgeMode === 'NORMAL') {
             // NORMAL: JUSTサイクルを停止し、カラーを除去して黄色表示に戻す
             if (this._justAnimFrame) {
                 cancelAnimationFrame(this._justAnimFrame);
@@ -4165,6 +4320,20 @@ class BMSViewer {
                 disp.style.transition = 'none';
                 disp.style.opacity    = '0';
                 // iOS Safari: filter が親の opacity:0 を透過する不具合対策
+                document.getElementById('greatLabel').style.filter = 'none';
+                document.getElementById('greatCombo').style.filter = 'none';
+            }, 500);
+
+        } else {
+            // SIMPLE: サイクル・点滅なし、静的表示
+            if (this._justAnimFrame) {
+                cancelAnimationFrame(this._justAnimFrame);
+                this._justAnimFrame = null;
+            }
+            disp.classList.remove(...JUST_COLORS);
+            this._greatFadeTimer = setTimeout(() => {
+                disp.style.transition = 'none';
+                disp.style.opacity    = '0';
                 document.getElementById('greatLabel').style.filter = 'none';
                 document.getElementById('greatCombo').style.filter = 'none';
             }, 500);

@@ -224,6 +224,18 @@
         .lane.white-key { background:#1e1e1e; }
 
 
+        /* LN 判定ライン前（未消化）暗幕 */
+        .ln-dim-mask {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events:none;
+            background:rgba(0,0,4,0.80);
+            z-index:2;
+        }
+        /* LN/BSS キャップ類は暗幕より前面 */
+        .cn-blue-note-start, .cn-blue-note-end, .cn-blue-start-cap, .cn-blue-end-cap,
+        .cn-white-note-start, .cn-white-note-end, .cn-white-start-cap, .cn-white-end-cap,
+        .bss-note-start, .bss-note-end, .bss-start-cap, .bss-end-cap { z-index:3; }
+
         /* ── ロングノーツ ── */
         .note-ln {
             position:absolute; width:100%; left:0;
@@ -1392,6 +1404,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="sudModeABtn">モードA</button>
                 <button class="fx-btn" id="sudModeBBtn">モードB</button>
             </div>
+            <!-- LN ヘッド描画モード -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">LN</span>
+                <button class="fx-btn on" id="lnModeABtn">モードA</button>
+                <button class="fx-btn" id="lnModeBBtn">モードB</button>
+            </div>
             <!-- 表示 ON/OFF -->
             <div class="detail-section nowrap">
                 <span class="detail-label">表示</span>
@@ -1867,6 +1885,7 @@ class BMSViewer {
         this.bombAEnabled     = false; // ボムA: フルエフェクト ON/OFF
         this.bombBEnabled     = true;  // ボムB: 軽量エフェクト ON/OFF
         this.bgaEnabled       = true;  // BGA ムービー ON/OFF
+        this.lnHeadPin        = false; // LN モードB: ヘッドをJLに固定
         this.wavBgm1Enabled   = true;  // BGM1 WAV ON/OFF (position<2)
         this.wavBgm2Enabled   = true;  // BGM2 WAV ON/OFF (position>=2)
         this.wavKeyEnabled    = true;  // KEY WAV ON/OFF
@@ -2632,6 +2651,17 @@ class BMSViewer {
             document.getElementById('sudModeABtn').classList.remove('on');
             if (this.sudEnabled) this._reapplyHS();
             this._updateRealGreen();
+        });
+
+        document.getElementById('lnModeABtn').addEventListener('click', () => {
+            this.lnHeadPin = false;
+            document.getElementById('lnModeABtn').classList.add('on');
+            document.getElementById('lnModeBBtn').classList.remove('on');
+        });
+        document.getElementById('lnModeBBtn').addEventListener('click', () => {
+            this.lnHeadPin = true;
+            document.getElementById('lnModeBBtn').classList.add('on');
+            document.getElementById('lnModeABtn').classList.remove('on');
         });
 
         // ── 判定オフセット ──────────────────────────────────────────────
@@ -3663,6 +3693,7 @@ class BMSViewer {
                 const bec = document.createElement('div');
                 bec.className = 'cn-blue-end-cap';
                 el.appendChild(bec);
+                el._headNote = bns; el._headCap = bsc;
             }
             // 白鍵LN 始点・終点ノーツ + キャップ
             if ([1,3,5,7].includes(swappedLane) && note.type !== 'bss') {
@@ -3678,6 +3709,7 @@ class BMSViewer {
                 const wec = document.createElement('div');
                 wec.className = 'cn-white-end-cap';
                 el.appendChild(wec);
+                el._headNote = wns; el._headCap = wsc;
             }
             // BSS 始点・終点ノーツ + キャップ
             if (note.type === 'bss' || swappedLane === 0) {
@@ -3693,7 +3725,13 @@ class BMSViewer {
                 const ec = document.createElement('div');
                 ec.className = 'bss-end-cap';
                 el.appendChild(ec);
+                el._headNote = ns; el._headCap = sc;
             }
+            // 判定ライン前/後 暗幕
+            const dimMask = document.createElement('div');
+            dimMask.className = 'ln-dim-mask';
+            el.appendChild(dimMask);
+            el._dimMask = dimMask;
             lanes[dl].appendChild(el); this.noteElements.push(el);
         });
 
@@ -3733,6 +3771,11 @@ class BMSViewer {
                 el._pixelPos     = startPx;
                 el._pixelEndPos  = endPx;
                 el.style.bottom  = (startPx - this.currentPixelPos) + 'px';
+                // 判定ライン前/後 暗幕
+                const mDimMask = document.createElement('div');
+                mDimMask.className = 'ln-dim-mask';
+                el.appendChild(mDimMask);
+                el._dimMask = mDimMask;
                 // MSS 始点・終点ノーツ + キャップ
                 const mns = document.createElement('div');
                 mns.className = 'bss-note-start';
@@ -3746,6 +3789,7 @@ class BMSViewer {
                 const mec = document.createElement('div');
                 mec.className = 'bss-end-cap';
                 el.appendChild(mec);
+                el._headNote = mns; el._headCap = msc;
                 lanes[dl].appendChild(el); this.noteElements.push(el);
                 // 中間ノーツの区切りライン（lane 内の絶対位置に配置）
                 for (const px of dividerPxs) {
@@ -4364,6 +4408,20 @@ class BMSViewer {
             }
             el._offscreen = false;
             el.style.bottom = (el._pixelPos - cur) + 'px';
+            // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
+            if (el._dimMask) {
+                el._dimMask.style.display = cur >= el._pixelPos ? 'none' : '';
+            }
+            // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定
+            if (el._headNote) {
+                if (this.lnHeadPin && cur >= el._pixelPos && cur < el._pixelEndPos) {
+                    el._headNote.style.bottom = (cur - el._pixelPos) + 'px';
+                    el._headCap.style.display = 'none';
+                } else {
+                    el._headNote.style.bottom = '';
+                    el._headCap.style.display = '';
+                }
+            }
         });
         this._updateSeekBar();
     }

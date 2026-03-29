@@ -129,11 +129,11 @@
         /* RS が 1.0 以外のときに枠を強調 */
         .rs-control.active { border-color:#aa77ff; background:#211830; }
 
-                .rm-btn { padding:5px 10px; border:none; border-radius:4px; background:#555; color:#fff; font-size:15px; font-weight:bold; cursor:pointer; touch-action:manipulation; min-height:32px; min-width:30px; }
+                .rm-btn { padding:3px 7px; border:none; border-radius:4px; background:#555; color:#fff; font-size:12px; font-weight:bold; cursor:pointer; touch-action:manipulation; min-height:24px; min-width:24px; }
         .rm-btn:active { opacity:.7; }
         .rm-btn.active { background:#e8a020; color:#fff; }
         .side-switch { display:flex; gap:4px; }
-        .side-btn { padding:3px 7px; border:none; background:#333; color:#999; border-radius:4px; font-size:11px; cursor:pointer; min-height:26px; }
+        .side-btn { padding:2px 5px; border:none; background:#333; color:#999; border-radius:4px; font-size:10px; cursor:pointer; min-height:20px; }
         .side-btn.active { border-color:#2196F3; background:#2196F3; color:#fff; }
         .metro-btn { padding:5px 8px; border:none; background:#333; color:#999; border-radius:4px; font-size:12px; cursor:pointer; min-height:32px; }
         .metro-btn.active { background:#4caf50; color:#fff; }
@@ -1193,6 +1193,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- S-RANDOM / H-RANDOM ボタン -->
             <button class="rm-btn" id="sRandomBtn">S</button>
             <button class="rm-btn" id="hRandomBtn">H</button>
+            <!-- クォンタイズ -->
+            <button class="rm-btn" id="quantize16Btn">Q16</button>
+            <button class="rm-btn" id="quantize8Btn">Q8</button>
         </div>
         <div class="error" id="error"></div>
     </div>
@@ -1361,18 +1364,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeHeightPlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
-            </div>
-            <!-- クォンタイズ -->
-            <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:6px;">
-                <span class="detail-label">クォンタイズ</span>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button class="fx-btn" id="quantize16Btn">16分</button>
-                    <button class="fx-btn" id="quantize8Btn">8分</button>
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;" id="quantizeWavSection">
-                    <button class="fx-btn on" id="quantizeVisualBtn">ビジュアルのみ</button>
-                    <button class="fx-btn" id="quantizeWavBtn">WAVも適用</button>
-                </div>
             </div>
 <!-- WAV ON/OFF スイッチ -->
             <div class="detail-section">
@@ -2621,28 +2612,14 @@ class BMSViewer {
         mkPitch('pitchKeyMinus', 'pitchKeyPlus', 'pitchKeyVal', () => this.pitchKey, v => this.pitchKey = v);
 
         // ── クォンタイズ ──
-        document.getElementById('quantizeWavSection').style.display = 'none';
         const _setQuantize = (mode) => {
             this.quantizeMode = (this.quantizeMode === mode) ? null : mode;
             document.getElementById('quantize16Btn').classList.toggle('on', this.quantizeMode === '16');
             document.getElementById('quantize8Btn').classList.toggle('on', this.quantizeMode === '8');
-            document.getElementById('quantizeWavSection').style.display = this.quantizeMode ? '' : 'none';
             if (this.bmsData) { this._computeQuantizeMap(); this.renderNotes(); }
         };
         document.getElementById('quantize16Btn').addEventListener('click', () => _setQuantize('16'));
         document.getElementById('quantize8Btn') .addEventListener('click', () => _setQuantize('8'));
-        document.getElementById('quantizeVisualBtn').addEventListener('click', () => {
-            this.quantizeWav = false;
-            document.getElementById('quantizeVisualBtn').classList.add('on');
-            document.getElementById('quantizeWavBtn')   .classList.remove('on');
-            if (this.bmsData) this.renderNotes();
-        });
-        document.getElementById('quantizeWavBtn').addEventListener('click', () => {
-            this.quantizeWav = true;
-            document.getElementById('quantizeWavBtn')   .classList.add('on');
-            document.getElementById('quantizeVisualBtn').classList.remove('on');
-            if (this.bmsData) this.renderNotes();
-        });
 
 
         // 区間

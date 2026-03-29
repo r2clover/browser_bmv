@@ -7,7 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BMS Viewer</title>
     <style>
-        :root { --scratch-width:64px; --white-lane-width:44px; --black-lane-width:28px; --note-height:10px; }
+        :root { --scratch-width:64px; --white-lane-width:44px; --black-lane-width:28px; --note-height:10px;
+                --pm-white-w:44px; --pm-yellow-w:38px; --pm-green-w:44px; --pm-blue-w:38px; --pm-red-w:44px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:var(--locked-vh,100svh);
@@ -223,6 +224,20 @@
         .play-area.bga-active .lane.white-key  { background:rgba(30,30,30,var(--bga-lane-alpha,0.95)); }
         .lane.black-key { width:var(--black-lane-width); background:#000; }
         .lane.white-key { background:#1e1e1e; }
+        /* ── PM レーン ── */
+        .lane.pm-white  { width:var(--pm-white-w);  background:#383838; }
+        .lane.pm-yellow { width:var(--pm-yellow-w); background:#4a3400; }
+        .lane.pm-green  { width:var(--pm-green-w);  background:#1a3a12; }
+        .lane.pm-blue   { width:var(--pm-blue-w);   background:#1e3040; }
+        .lane.pm-red    { width:var(--pm-red-w);    background:#3c0a12; }
+        .play-area.bga-active .lane.pm-white  { background:rgba(56,56,56,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.pm-yellow { background:rgba(74,52,0,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.pm-green  { background:rgba(26,58,18,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.pm-blue   { background:rgba(30,48,64,var(--bga-lane-alpha,0.95)); }
+        .play-area.bga-active .lane.pm-red    { background:rgba(60,10,18,var(--bga-lane-alpha,0.95)); }
+        /* PM レーン境界線・外枠: 黒 */
+        .pm-mode .lane { border-right-color: #000; }
+        .lanes-container.pm-mode { border-color: #000; }
 
 
         /* LN 判定ライン前（未消化）暗幕 */
@@ -863,6 +878,53 @@
         .charge-b .cn-white-start-cap, .charge-b .cn-white-end-cap,
         .charge-b .cn-blue-start-cap,  .charge-b .cn-blue-end-cap,
         .charge-b .bss-start-cap,      .charge-b .bss-end-cap { display: none !important; }
+
+        /* ── PM ノーツ ── */
+        .note.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
+        .note.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
+        .note.pm-green  { box-shadow:inset 0 0 0 1px rgba(0,200,80,0.9),   inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#006000 0%,#60ff60 50%,#006000 100%); }
+        .note.pm-blue   { box-shadow:inset 0 0 0 1px rgba(80,140,255,0.9), inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#002090 0%,#60a0ff 50%,#002090 100%); }
+        .note.pm-red    { box-shadow:inset 0 0 0 1px rgba(220,50,50,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#900000 0%,#ff6060 50%,#900000 100%); }
+        /* ── PM ノーツ（軽量版）── */
+        .notes-pm .note.pm-white  { box-shadow:none; background:linear-gradient(to right,#808080 0%,#e0e0e0 50%,#808080 100%); }
+        .notes-pm .note.pm-yellow { box-shadow:none; background:linear-gradient(to right,#806000 0%,#c8a830 50%,#806000 100%); }
+        .notes-pm .note.pm-green  { box-shadow:none; background:linear-gradient(to right,#005000 0%,#40c040 50%,#005000 100%); }
+        .notes-pm .note.pm-blue   { box-shadow:none; background:linear-gradient(to right,#001870 0%,#4080d0 50%,#001870 100%); }
+        .notes-pm .note.pm-red    { box-shadow:none; background:linear-gradient(to right,#700000 0%,#d04040 50%,#700000 100%); }
+        /* ── PM LN 始点・終点ノーツ ── */
+        .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
+        .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
+        .ln-note-start.pm-green,  .ln-note-end.pm-green  { box-shadow:inset 0 0 0 1px rgba(0,200,80,0.9),   inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#006000 0%,#60ff60 50%,#006000 100%); }
+        .ln-note-start.pm-blue,   .ln-note-end.pm-blue   { box-shadow:inset 0 0 0 1px rgba(80,140,255,0.9), inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#002090 0%,#60a0ff 50%,#002090 100%); }
+        .ln-note-start.pm-red,    .ln-note-end.pm-red    { box-shadow:inset 0 0 0 1px rgba(220,50,50,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#900000 0%,#ff6060 50%,#900000 100%); }
+        /* ── PM LN チューブ ── */
+        .note-ln.ln-pm-white  { background:linear-gradient(to right,rgba(60,60,60,1.0) 0%,rgba(140,140,140,1.0) 35%,rgba(240,240,240,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(240,240,240,1.0) 53%,rgba(140,140,140,1.0) 65%,rgba(60,60,60,1.0) 100%); }
+        .note-ln.ln-pm-yellow { background:linear-gradient(to right,rgba(80,55,0,1.0) 0%,rgba(150,110,0,1.0) 35%,rgba(230,180,40,1.0) 47%,rgba(255,220,80,1.0) 50%,rgba(230,180,40,1.0) 53%,rgba(150,110,0,1.0) 65%,rgba(80,55,0,1.0) 100%); }
+        .note-ln.ln-pm-green  { background:linear-gradient(to right,rgba(0,50,0,1.0) 0%,rgba(20,120,20,1.0) 35%,rgba(60,220,60,1.0) 47%,rgba(80,255,80,1.0) 50%,rgba(60,220,60,1.0) 53%,rgba(20,120,20,1.0) 65%,rgba(0,50,0,1.0) 100%); }
+        .note-ln.ln-pm-blue   { background:linear-gradient(to right,rgba(0,15,60,1.0) 0%,rgba(20,60,150,1.0) 35%,rgba(60,130,230,1.0) 47%,rgba(80,160,255,1.0) 50%,rgba(60,130,230,1.0) 53%,rgba(20,60,150,1.0) 65%,rgba(0,15,60,1.0) 100%); }
+        .note-ln.ln-pm-red    { background:linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(150,20,20,1.0) 35%,rgba(230,60,60,1.0) 47%,rgba(255,80,80,1.0) 50%,rgba(230,60,60,1.0) 53%,rgba(150,20,20,1.0) 65%,rgba(60,0,0,1.0) 100%); }
+        /* ── PM キャップ（白）── */
+        .cn-pm-white-start-cap { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(15,15,15,1.0) 0%,rgba(80,80,80,1.0) 10%,rgba(160,160,160,1.0) 30%,rgba(230,230,230,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(230,230,230,1.0) 53%,rgba(160,160,160,1.0) 70%,rgba(80,80,80,1.0) 90%,rgba(15,15,15,1.0) 100%); }
+        .cn-pm-white-end-cap   { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(15,15,15,1.0) 0%,rgba(80,80,80,1.0) 10%,rgba(160,160,160,1.0) 30%,rgba(230,230,230,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(230,230,230,1.0) 53%,rgba(160,160,160,1.0) 70%,rgba(80,80,80,1.0) 90%,rgba(15,15,15,1.0) 100%); }
+        /* ── PM キャップ（黄）── */
+        .cn-pm-yellow-start-cap { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,40,0,1.0) 0%,rgba(120,85,0,1.0) 10%,rgba(175,130,10,1.0) 30%,rgba(225,180,40,1.0) 47%,rgba(255,220,80,1.0) 50%,rgba(225,180,40,1.0) 53%,rgba(175,130,10,1.0) 70%,rgba(120,85,0,1.0) 90%,rgba(60,40,0,1.0) 100%); }
+        .cn-pm-yellow-end-cap   { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,40,0,1.0) 0%,rgba(120,85,0,1.0) 10%,rgba(175,130,10,1.0) 30%,rgba(225,180,40,1.0) 47%,rgba(255,220,80,1.0) 50%,rgba(225,180,40,1.0) 53%,rgba(175,130,10,1.0) 70%,rgba(120,85,0,1.0) 90%,rgba(60,40,0,1.0) 100%); }
+        /* ── PM キャップ（緑）── */
+        .cn-pm-green-start-cap  { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(0,40,0,1.0) 0%,rgba(10,90,10,1.0) 10%,rgba(30,150,30,1.0) 30%,rgba(60,210,60,1.0) 47%,rgba(80,255,80,1.0) 50%,rgba(60,210,60,1.0) 53%,rgba(30,150,30,1.0) 70%,rgba(10,90,10,1.0) 90%,rgba(0,40,0,1.0) 100%); }
+        .cn-pm-green-end-cap    { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(0,40,0,1.0) 0%,rgba(10,90,10,1.0) 10%,rgba(30,150,30,1.0) 30%,rgba(60,210,60,1.0) 47%,rgba(80,255,80,1.0) 50%,rgba(60,210,60,1.0) 53%,rgba(30,150,30,1.0) 70%,rgba(10,90,10,1.0) 90%,rgba(0,40,0,1.0) 100%); }
+        /* ── PM キャップ（青）── */
+        .cn-pm-blue-start-cap   { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(0,10,50,1.0) 0%,rgba(15,40,120,1.0) 10%,rgba(40,90,190,1.0) 30%,rgba(70,140,240,1.0) 47%,rgba(90,170,255,1.0) 50%,rgba(70,140,240,1.0) 53%,rgba(40,90,190,1.0) 70%,rgba(15,40,120,1.0) 90%,rgba(0,10,50,1.0) 100%); }
+        .cn-pm-blue-end-cap     { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(0,10,50,1.0) 0%,rgba(15,40,120,1.0) 10%,rgba(40,90,190,1.0) 30%,rgba(70,140,240,1.0) 47%,rgba(90,170,255,1.0) 50%,rgba(70,140,240,1.0) 53%,rgba(40,90,190,1.0) 70%,rgba(15,40,120,1.0) 90%,rgba(0,10,50,1.0) 100%); }
+        /* ── PM キャップ（赤）── */
+        .cn-pm-red-start-cap    { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(130,15,15,1.0) 10%,rgba(190,40,40,1.0) 30%,rgba(235,70,70,1.0) 47%,rgba(255,90,90,1.0) 50%,rgba(235,70,70,1.0) 53%,rgba(190,40,40,1.0) 70%,rgba(130,15,15,1.0) 90%,rgba(60,0,0,1.0) 100%); }
+        .cn-pm-red-end-cap      { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(130,15,15,1.0) 10%,rgba(190,40,40,1.0) 30%,rgba(235,70,70,1.0) 47%,rgba(255,90,90,1.0) 50%,rgba(235,70,70,1.0) 53%,rgba(190,40,40,1.0) 70%,rgba(130,15,15,1.0) 90%,rgba(60,0,0,1.0) 100%); }
+        /* ── PM チャージノーツ（軽量: キャップ非表示）── */
+        .charge-pm .cn-pm-white-start-cap,  .charge-pm .cn-pm-white-end-cap,
+        .charge-pm .cn-pm-yellow-start-cap, .charge-pm .cn-pm-yellow-end-cap,
+        .charge-pm .cn-pm-green-start-cap,  .charge-pm .cn-pm-green-end-cap,
+        .charge-pm .cn-pm-blue-start-cap,   .charge-pm .cn-pm-blue-end-cap,
+        .charge-pm .cn-pm-red-start-cap,    .charge-pm .cn-pm-red-end-cap { display:none !important; }
+
         /* ── JUDGE SIMPLE（グラデ・発光・点滅なし） ── */
         #greatDisplay.judge-simple .great-label,
         #greatDisplay.judge-simple .great-combo {
@@ -888,6 +950,13 @@
             z-index: 12;
             pointer-events: none;
             border-radius: 2px;
+        }
+        /* PM モード判定ライン: 太い赤帯 */
+        .pm-mode #mainJudgmentLine {
+            height: 10px;
+            background: #cc2020;
+            box-shadow: none;
+            border-radius: 0;
         }
         .lane-label    { position:absolute; bottom:-22px; width:100%; text-align:center; font-size:10px; color:#999; }
 
@@ -1140,7 +1209,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="file-input-wrapper">
                 <button class="btn" id="openFileBtn">開く</button>
 
-                <input type="file" id="fileInput" accept=".bms,.bme,.zip">
+                <input type="file" id="fileInput" accept=".bms,.bme,.pms,.zip">
             </div>
             <button class="btn btn-secondary" id="playBtn" disabled style="opacity:0.45; cursor:not-allowed;">再生</button>
 
@@ -1150,6 +1219,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="side-switch">
                 <button class="side-btn active" data-side="1P">1P</button>
                 <button class="side-btn"        data-side="2P">2P</button>
+                <button class="side-btn"        data-side="PM">pm</button>
             </div>
             <button class="sud-btn" id="sudBtn">SUD+</button>
             <button class="sud-btn" id="sudUpBtn" title="カバーを上へ">↑</button>
@@ -1276,17 +1346,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="sudModeABtn">モードA</button>
                 <button class="fx-btn" id="sudModeBBtn">モードB</button>
             </div>
-            <!-- ノーツ描画 A/B -->
+            <!-- ノーツ描画 A/B/PM -->
             <div class="detail-section nowrap">
                 <span class="detail-label">ノーツ</span>
                 <button class="fx-btn on" id="notesStyleABtn">通常</button>
                 <button class="fx-btn"    id="notesStyleBBtn">軽量</button>
+                <button class="fx-btn"    id="notesStylePMBtn">pm</button>
             </div>
-            <!-- チャージノーツ描画 A/B -->
+            <!-- チャージノーツ描画 A/B/PM -->
             <div class="detail-section nowrap">
                 <span class="detail-label">チャージノーツ</span>
                 <button class="fx-btn on" id="chargeStyleABtn">通常</button>
                 <button class="fx-btn"    id="chargeStyleBBtn">軽量</button>
+                <button class="fx-btn"    id="chargeStylePMBtn">pm</button>
             </div>
             <!-- チャージノーツ処理モード -->
             <div class="detail-section nowrap">
@@ -1529,6 +1601,7 @@ class BMSParser {
         this.bgmEvents   = [];   // { position, wavId }
         this.bgaEvents   = [];   // { position, bmpId }
         this.lnRawEvents = [];
+        this.isPMS       = false; // PMS / 9-line BMS モード
     }
 
     parse(text) {
@@ -1583,6 +1656,7 @@ class BMSParser {
             case 'BPM':       this.headers.bpm       = parseFloat(val); break;
             case 'PLAYLEVEL': this.headers.playLevel = val; break;
             case 'LNOBJ':     this.headers.lnobj     = val.trim(); break;
+            case 'PLAYER':    if (parseInt(val) === 3) this.isPMS = true; break;
         }
     }
 
@@ -1636,9 +1710,9 @@ class BMSParser {
             });
             return;
         }
-        // ch51-59: LN/BSS/MSS (beatoraja拡張)
+        // ch51-59: LN/BSS/MSS (beatoraja拡張); ch62-65: PMS LN右側
         const chN = parseInt(ch);
-        if (chN >= 51 && chN <= 59) {
+        if ((chN >= 51 && chN <= 59) || (this.isPMS && chN >= 62 && chN <= 65)) {
             const vals = this._split2(data);
             vals.forEach((v, i) => {
                 if (v !== '00') this.lnRawEvents.push({ ch: chN, position: bar + i / vals.length, wavId: v });
@@ -1725,8 +1799,15 @@ class BMSParser {
         }
     }
 
-    _isNoteCh(ch) { const n=parseInt(ch); return (n>=11&&n<=19)||(n>=21&&n<=29); }
-    _chToLane(ch) { return ({16:0,11:1,12:2,13:3,14:4,15:5,18:6,19:7,21:1,22:2,23:3,24:4,25:5,28:6,29:7,26:0})[ch]||0; }
+    _isNoteCh(ch) {
+        const n=parseInt(ch);
+        if (this.isPMS) return (n>=11&&n<=15)||(n>=22&&n<=25);
+        return (n>=11&&n<=19)||(n>=21&&n<=29);
+    }
+    _chToLane(ch) {
+        if (this.isPMS) return ({11:0,12:1,13:2,14:3,15:4,22:5,23:6,24:7,25:8})[ch]??-1;
+        return ({16:0,11:1,12:2,13:3,14:4,15:5,18:6,19:7,21:1,22:2,23:3,24:4,25:5,28:6,29:7,26:0})[ch]||0;
+    }
     _split2(s)    { const r=[]; for(let i=0;i<s.length;i+=2) r.push(s.substr(i,2)); return r; }
 }
 
@@ -1736,6 +1817,7 @@ class BMSParser {
 class BMSViewer {
     constructor() {
         this.bmsData         = null;
+        this.bmsText         = null;   // 再パース用に保存
         this.currentSide     = '1P';
         this.guideSoundLanes  = [false,false,false,false,false,false,false,false];
         this.metronomeEnabled = false;
@@ -1747,7 +1829,7 @@ class BMSViewer {
         this.pitchSC          = 0;
         this.pitchKey         = 0;
         this._audioCtx = null;
-        this.laneCount       = 8;
+        this.laneCount       = 8;   // PM mode: 9
         this.noteElements    = [];
         this.isPlaying       = false;
         this._needAudioRestart = false; // バックグラウンド復帰時の音声再スケジュールフラグ
@@ -2142,11 +2224,11 @@ class BMSViewer {
             if (!window.JSZip) throw new Error('JSZipが読み込まれていません（オフライン？）');
             const zip     = await JSZip.loadAsync(zipFile, { decodeFileName: _decodeZipFilename });
             const entries = Object.values(zip.files).filter(f=>!f.dir);
-            const bmsEntries = entries.filter(f=>/\.(bms|bme)$/i.test(f.name));
+            const bmsEntries = entries.filter(f=>/\.(bms|bme|pms)$/i.test(f.name));
             const wavEntries = entries.filter(f=>/\.(wav|ogg|mp3)$/i.test(f.name));
             const mp4Entries = entries.filter(f=>/\.mp4$/i.test(f.name));
             const imgEntries = entries.filter(f=>/\.(bmp|png|jpg|jpeg|gif)$/i.test(f.name));
-            if (!bmsEntries.length) throw new Error('ZIP内にBMS/BMEファイルが見つかりません');
+            if (!bmsEntries.length) throw new Error('ZIP内にBMS/BME/PMSファイルが見つかりません');
 
             setStatus(`音源 ${wavEntries.length}件展開中...`,'#FFD700');
             const wavFileMap={};
@@ -2220,8 +2302,16 @@ class BMSViewer {
         this._stopAudio();
         this.wavBuffers={};
 
+        this.bmsText = text; // 再パース用に保存
         const parser=new BMSParser();
+        parser.isPMS = (this.currentSide === 'PM');
         this.bmsData=parser.parse(text);
+        // #PLAYER 3 を検出したら自動でPMモードへ
+        if (parser.isPMS && this.currentSide !== 'PM') {
+            this.currentSide = 'PM';
+            this.laneCount   = 9;
+            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
+        }
         if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
 
         const nb=this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
@@ -2694,37 +2784,38 @@ class BMSViewer {
         document.getElementById('judgeSimpleBtn').addEventListener('click', _updateJustFrameVis);
         document.getElementById('judgeOffBtn').addEventListener('click',    _updateJustFrameVis);
 
-        // ノーツ A/B
-        document.getElementById('notesStyleABtn').addEventListener('click', () => {
-            this.notesStyle = 'A';
-            document.getElementById('notesStyleABtn').classList.add('on');
-            document.getElementById('notesStyleBBtn').classList.remove('on');
-            document.querySelector('.play-area').classList.remove('notes-b');
-        });
-        document.getElementById('notesStyleBBtn').addEventListener('click', () => {
-            this.notesStyle = 'B';
-            document.getElementById('notesStyleBBtn').classList.add('on');
-            document.getElementById('notesStyleABtn').classList.remove('on');
-            document.querySelector('.play-area').classList.add('notes-b');
-        });
+        // ノーツ A/B/PM
+        const _setNotesStyle = (style) => {
+            this.notesStyle = style;
+            const pa = document.querySelector('.play-area');
+            ['notesStyleABtn','notesStyleBBtn','notesStylePMBtn'].forEach(id =>
+                document.getElementById(id).classList.remove('on'));
+            document.getElementById(`notesStyle${style === 'A' ? 'A' : style === 'B' ? 'B' : 'PM'}Btn`).classList.add('on');
+            pa.classList.remove('notes-b', 'notes-pm');
+            if (style === 'B')  pa.classList.add('notes-b');
+            if (style === 'PM') pa.classList.add('notes-pm');
+        };
+        document.getElementById('notesStyleABtn').addEventListener('click',  () => _setNotesStyle('A'));
+        document.getElementById('notesStyleBBtn').addEventListener('click',  () => _setNotesStyle('B'));
+        document.getElementById('notesStylePMBtn').addEventListener('click', () => _setNotesStyle('PM'));
 
-        // チャージノーツ A/B
-        document.getElementById('chargeStyleABtn').addEventListener('click', () => {
-            this.chargeStyle = 'A';
-            document.getElementById('chargeStyleABtn').classList.add('on');
-            document.getElementById('chargeStyleBBtn').classList.remove('on');
-            document.querySelector('.play-area').classList.remove('charge-b');
-        });
-        document.getElementById('chargeStyleBBtn').addEventListener('click', () => {
-            this.chargeStyle = 'B';
-            document.getElementById('chargeStyleBBtn').classList.add('on');
-            document.getElementById('chargeStyleABtn').classList.remove('on');
-            document.querySelector('.play-area').classList.add('charge-b');
-            // Bモード切替時は既存 ln-anim-f2 を除去
-            for (const el of this.noteElements) {
-                el.classList.remove('ln-anim-f2');
+        // チャージノーツ A/B/PM
+        const _setChargeStyle = (style) => {
+            this.chargeStyle = style;
+            const pa = document.querySelector('.play-area');
+            ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMBtn'].forEach(id =>
+                document.getElementById(id).classList.remove('on'));
+            document.getElementById(`chargeStyle${style === 'A' ? 'A' : style === 'B' ? 'B' : 'PM'}Btn`).classList.add('on');
+            pa.classList.remove('charge-b', 'charge-pm');
+            if (style === 'B')  pa.classList.add('charge-b');
+            if (style === 'PM') pa.classList.add('charge-pm');
+            if (style !== 'A') {
+                for (const el of this.noteElements) el.classList.remove('ln-anim-f2');
             }
-        });
+        };
+        document.getElementById('chargeStyleABtn').addEventListener('click',  () => _setChargeStyle('A'));
+        document.getElementById('chargeStyleBBtn').addEventListener('click',  () => _setChargeStyle('B'));
+        document.getElementById('chargeStylePMBtn').addEventListener('click', () => _setChargeStyle('PM'));
 
         // キービーム長（OFF含む）
         const _setBeamLength = (len) => {
@@ -3393,7 +3484,14 @@ class BMSViewer {
     async _loadFile(e) {
         const file=e.target.files[0]; if(!file) return;
         e.target.value=''; // 同じファイルを再度選択できるようリセット
-        if (file.name.toLowerCase().endsWith('.zip')) {
+        const fname = file.name.toLowerCase();
+        if (fname.endsWith('.pms')) {
+            // PMS ファイル: PM モードへ自動切替
+            this.currentSide = 'PM';
+            this.laneCount = 9;
+            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
+        }
+        if (fname.endsWith('.zip')) {
             await this._loadZip(file);
         } else {
             document.getElementById('loading').style.display='block';
@@ -3482,21 +3580,32 @@ class BMSViewer {
     /* ============================================================ レーン描画 */
     _renderLanes() {
         const c=document.getElementById('lanesContainer'); c.innerHTML='';
+        c.classList.toggle('pm-mode', this.currentSide === 'PM');
+        const PM_COLORS = ['pm-white','pm-yellow','pm-green','pm-blue','pm-red','pm-blue','pm-green','pm-yellow','pm-white'];
+        const PM_LABELS = ['白','黄','緑','青','赤','青','緑','黄','白'];
         const labels=this.currentSide==='1P'?['SC','1','2','3','4','5','6','7']:['1','2','3','4','5','6','7','SC'];
         for (let i=0;i<this.laneCount;i++) {
             const lane=document.createElement('div'); lane.className='lane';
-            const isScratch = (this.currentSide==='1P'&&i===0)||(this.currentSide==='2P'&&i===7);
-            const whiteIdx  = this.currentSide==='1P' ? [1,3,5,7] : [0,2,4,6];
-            if (isScratch) lane.classList.add('scratch');
-            else if (whiteIdx.includes(i)) lane.classList.add('white-key');
-            else lane.classList.add('black-key');
-            
-            lane.appendChild(Object.assign(document.createElement('div'),{className:'lane-label',textContent:labels[i]}));
+            if (this.currentSide === 'PM') {
+                lane.classList.add(PM_COLORS[i]);
+            } else {
+                const isScratch = (this.currentSide==='1P'&&i===0)||(this.currentSide==='2P'&&i===7);
+                const whiteIdx  = this.currentSide==='1P' ? [1,3,5,7] : [0,2,4,6];
+                if (isScratch) lane.classList.add('scratch');
+                else if (whiteIdx.includes(i)) lane.classList.add('white-key');
+                else lane.classList.add('black-key');
+            }
+            const lbl = this.currentSide === 'PM' ? PM_LABELS[i] : labels[i];
+            lane.appendChild(Object.assign(document.createElement('div'),{className:'lane-label',textContent:lbl}));
             // ボムエフェクト要素
             const bomb = document.createElement('div'); bomb.className='lane-bomb';
-            if((this.currentSide==='1P'&&i===0)||(this.currentSide==='2P'&&i===7)) bomb.classList.add('scratch');
-            else if(this.currentSide==='2P' ? [0,2,4,6].includes(i) : [1,3,5,7].includes(i)) bomb.classList.add('white-key');
-            else bomb.classList.add('black-key');
+            if (this.currentSide === 'PM') {
+                bomb.classList.add(PM_COLORS[i]);
+            } else {
+                if((this.currentSide==='1P'&&i===0)||(this.currentSide==='2P'&&i===7)) bomb.classList.add('scratch');
+                else if(this.currentSide==='2P' ? [0,2,4,6].includes(i) : [1,3,5,7].includes(i)) bomb.classList.add('white-key');
+                else bomb.classList.add('black-key');
+            }
             lane.appendChild(bomb); this.bombElements[i] = bomb;
             c.appendChild(lane);
         }
@@ -3612,7 +3721,14 @@ class BMSViewer {
 
         // ノート
         // ── ノート描画ヘルパー ──
+        const PM_COLORS     = ['pm-white','pm-yellow','pm-green','pm-blue','pm-red','pm-blue','pm-green','pm-yellow','pm-white'];
+        const PM_LN_CLASSES = ['ln-pm-white','ln-pm-yellow','ln-pm-green','ln-pm-blue','ln-pm-red','ln-pm-blue','ln-pm-green','ln-pm-yellow','ln-pm-white'];
+        const PM_CAP_PFX    = ['cn-pm-white','cn-pm-yellow','cn-pm-green','cn-pm-blue','cn-pm-red','cn-pm-blue','cn-pm-green','cn-pm-yellow','cn-pm-white'];
         const applyLane = (note) => {
+            if (this.currentSide === 'PM') {
+                const dl = note.lane; // isPMS=true でパース済みなのでlaneは0-8
+                return { dl, swappedLane: dl };
+            }
             let swappedLane = note.lane;
             // M/S/H はスクラッチ以外に適用（優先順: S/H > M > LANE入力）
             if ((this.sRandomActive || this.hRandomActive) &&
@@ -3629,15 +3745,22 @@ class BMSViewer {
         };
 
         // ── 通常ノート ──
-        this.bmsData.notes.filter(n => n.channel>=11&&n.channel<=19 && n.type==='normal').forEach(note => {
+        this.bmsData.notes.filter(n => {
+            if (this.currentSide==='PM') return n.type==='normal';
+            return n.channel>=11&&n.channel<=19 && n.type==='normal';
+        }).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if(dl<0||dl>=this.laneCount) return;
             const _qp=(n)=> this._quantizeMap ? (this._quantizeMap.get(n)??n.position) : n.position;
             const px=this._pos2px(_qp(note));
             const el=document.createElement('div'); el.className='note';
-            if(swappedLane===0) el.classList.add('scratch');
-            else if([1,3,5,7].includes(swappedLane)) el.classList.add('white-key');
-            else el.classList.add('black-key');
+            if (this.currentSide === 'PM') {
+                el.classList.add(PM_COLORS[swappedLane] || 'pm-red');
+            } else {
+                if(swappedLane===0) el.classList.add('scratch');
+                else if([1,3,5,7].includes(swappedLane)) el.classList.add('white-key');
+                else el.classList.add('black-key');
+            }
             el._pixelPos=px; el.style.bottom=(px-this.currentPixelPos)+'px';
             lanes[dl].appendChild(el); this.noteElements.push(el);
         });
@@ -3652,20 +3775,28 @@ class BMSViewer {
             const endPx   = this._pos2px(note.endPosition);
             const height  = Math.max(endPx - startPx, 4);
             const el = document.createElement('div'); el.className='note-ln';
-            if (note.type === 'bss') el.classList.add('ln-bss');
-            else if (swappedLane===0) el.classList.add('ln-bss'); // LNOBJ scratch
-            else if ([1,3,5,7].includes(swappedLane)) el.classList.add('ln-white');
-            else el.classList.add('ln-blue');
+            if (this.currentSide === 'PM') {
+                el.classList.add(PM_LN_CLASSES[swappedLane] || 'ln-pm-red');
+            } else {
+                if (note.type === 'bss') el.classList.add('ln-bss');
+                else if (swappedLane===0) el.classList.add('ln-bss'); // LNOBJ scratch
+                else if ([1,3,5,7].includes(swappedLane)) el.classList.add('ln-white');
+                else el.classList.add('ln-blue');
+            }
             el.style.height = height + 'px';
             el._pixelPos    = startPx;
             el._pixelEndPos = endPx;
             el.style.bottom = (startPx - this.currentPixelPos) + 'px';
             // LN/BSS 始点・終点ノーツ + キャップ（統合）
             {
-                const isBss = note.type === 'bss' || swappedLane === 0;
-                const noteColor = isBss ? 'scratch bss'
+                const isBss = this.currentSide !== 'PM' && (note.type === 'bss' || swappedLane === 0);
+                const noteColor = this.currentSide === 'PM'
+                                ? (PM_COLORS[swappedLane] || 'pm-red')
+                                : isBss ? 'scratch bss'
                                 : [1,3,5,7].includes(swappedLane) ? 'white-key' : 'black-key';
-                const capPrefix = isBss ? 'bss'
+                const capPrefix = this.currentSide === 'PM'
+                                ? (PM_CAP_PFX[swappedLane] || 'cn-pm-red')
+                                : isBss ? 'bss'
                                 : [1,3,5,7].includes(swappedLane) ? 'cn-white' : 'cn-blue';
                 const ns = document.createElement('div');
                 ns.className = `ln-note-start ${noteColor}`;
@@ -4435,13 +4566,26 @@ class BMSViewer {
         });
         document.getElementById('bpmDisplay').textContent=Math.round((h.bpm||130)*this.realSpeed);
         document.getElementById('totalNotes').textContent=
-            this.bmsData.notes.filter(n=>n.channel>=11&&n.channel<=19 && (n.type==='normal'||n.type==='ln'||n.type==='bss'||n.type==='mss')).length;
+            this.bmsData.notes.filter(n=>(n.type==='normal'||n.type==='ln'||n.type==='bss'||n.type==='mss') &&
+                (this.currentSide==='PM' ? (n.lane>=0&&n.lane<=8) : (n.channel>=11&&n.channel<=19))).length;
         document.getElementById('totalBarsDisplay').textContent = this.maxBars;
     }
 
     _switchSide(side) {
-        this.currentSide=side;
+        this.currentSide = side;
+        this.laneCount   = side === 'PM' ? 9 : 8;
         document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side===side));
+        // PM ↔ BMS 切り替え時は再パース（レーンマッピングが異なる）
+        if (this.bmsText) {
+            const parser = new BMSParser();
+            parser.isPMS = (side === 'PM');
+            this.bmsData = parser.parse(this.bmsText);
+            if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm = 130;
+            const nb = this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
+            const cb = this.bmsData.bpmChanges.map(c=>Math.floor(c.position));
+            this.maxBars = Math.max(0,...nb,...cb)+2;
+            this._precompute();
+        }
         this._renderLanes();
         if(this.bmsData){this.renderNotes();this._updateUI();}
     }

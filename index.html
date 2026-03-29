@@ -2233,7 +2233,7 @@ class BMSViewer {
             const gnEl=document.getElementById('greenInput');
             const gn=(gnEl?parseFloat(gnEl.value):0)||250;
             const bpm=(this.bmsData.headers.bpm||130)*this.realSpeed;
-            this.hiSpeed=Math.max(0.01,219125/(bpm*gn));
+            this.hiSpeed=Math.max(0.01,175300/(bpm*gn));
             const lbl='×'+this.hiSpeed.toFixed(2);
             document.getElementById('hsValue').textContent  =lbl;
         }
@@ -3016,7 +3016,7 @@ class BMSViewer {
             if (isNaN(gn) || gn <= 0) return;
             const currentBpm = this._bpmAt(this.currentPixelPos);
             if (currentBpm <= 0) return;
-            // HS = 219125 / (現在BPM × 頭緑)、SUD+モードAを考慮
+            // HS = 175300 / (現在BPM × 頭緑)、SUD+モードAを考慮
             this.targetGreenNum = gn;
             this.hiSpeed = this._calcAdjustedHS(currentBpm, gn);
             const label = '×' + this.hiSpeed.toFixed(2);
@@ -3132,12 +3132,12 @@ class BMSViewer {
         if (gv) this._applyGreenNum(gv.value);
     }
 
-    /* 現緑 = 219125 / (currentBPM × HS)  ← リアルタイム更新 */
+    /* 現緑 = 175300 / (currentBPM × HS)  ← リアルタイム更新 */
     _updateRealGreen() {
         const el = document.getElementById('statusGreenNum');
         if (!this.bmsData || this.hiSpeed <= 0) { if(el) el.textContent='—'; return; }
         const bpm   = this._bpmAt(this.currentPixelPos);
-        const green = Math.round(219125 / (bpm * this.hiSpeed));
+        const green = Math.round(175300 / (bpm * this.hiSpeed));
         if (this.sudEnabled) {
             const effH   = 400; // SUD+有効ゾーン（0px基準）
             const visEff = Math.max(0, Math.min(effH, 400 - this.sudCoverPx));
@@ -3155,7 +3155,7 @@ class BMSViewer {
         if(el) el.textContent = green;
     }
 
-    /* HS = 219125 / (headerBPM × RS × 緑数字)  ← 緑数字固定・HS自動決定 */
+    /* HS = 175300 / (headerBPM × RS × 緑数字)  ← 緑数字固定・HS自動決定 */
     _applyGreenNum(value) {
         const gn = parseFloat(value);
         if (isNaN(gn) || gn <= 0) return;
@@ -3873,7 +3873,7 @@ class BMSViewer {
         this._updateJLGlow();
         const _posT   = this._px2bar(this.currentPixelPos);
         const _bpmT   = Math.round(bpm);
-        const _greenRaw = Math.round(219125 / (bpm * this.hiSpeed));
+        const _greenRaw = Math.round(175300 / (bpm * this.hiSpeed));
         let _greenT = _greenRaw;
         if (this.sudEnabled) {
             const _effH   = 400; // SUD+有効ゾーン高さ（0px基準）
@@ -4034,7 +4034,7 @@ class BMSViewer {
 
     // SUD+のHS計算（モードA: 有効ゾーンへの食い込みに応じて調整）
     _calcAdjustedHS(bpm, gn) {
-        const baseHS = 219125 / (bpm * gn);
+        const baseHS = 175300 / (bpm * gn);
         if (this.sudEnabled && this.sudMode === 'A') {
             const effH     = 400; // SUD+有効ゾーン（0px基準）
             const laneH    = 400;

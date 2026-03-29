@@ -895,7 +895,7 @@
         .bar-line.loop-start-line{ background:#00ff88 !important; height:3px !important; box-shadow:0 0 8px #00ff88; z-index:6; }
         .bar-line.loop-end-line  { background:#ff4466 !important; height:3px !important; box-shadow:0 0 8px #ff4466; z-index:6; }
 
-        .bpm-marker { position:absolute; left:0; right:0; height:2px; background:rgba(255,200,0,0.6); z-index:4; pointer-events:none; }
+        .bpm-marker { position:absolute; left:0; right:0; height:2px; background:rgba(255,200,0,0.6); z-index:11; pointer-events:none; }
         .bpm-label  {
             position:absolute; right:2px; font-size:8px; color:#FFD700;
             background:rgba(0,0,0,0.6); padding:0 2px; border-radius:2px;
@@ -1273,14 +1273,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- ノーツ描画 A/B -->
             <div class="detail-section nowrap">
                 <span class="detail-label">ノーツ</span>
-                <button class="fx-btn on" id="notesStyleABtn">A</button>
-                <button class="fx-btn"    id="notesStyleBBtn">B</button>
+                <button class="fx-btn on" id="notesStyleABtn">通常</button>
+                <button class="fx-btn"    id="notesStyleBBtn">軽量</button>
             </div>
             <!-- チャージノーツ描画 A/B -->
             <div class="detail-section nowrap">
                 <span class="detail-label">チャージノーツ</span>
-                <button class="fx-btn on" id="chargeStyleABtn">A</button>
-                <button class="fx-btn"    id="chargeStyleBBtn">B</button>
+                <button class="fx-btn on" id="chargeStyleABtn">通常</button>
+                <button class="fx-btn"    id="chargeStyleBBtn">軽量</button>
             </div>
             <!-- チャージノーツ処理モード -->
             <div class="detail-section nowrap">
@@ -1288,22 +1288,33 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="lnModeABtn">通常</button>
                 <button class="fx-btn"    id="lnModeBBtn">判定ラインに残す</button>
             </div>
-            <!-- 表示 ON/OFF -->
-            <div class="detail-section nowrap">
-                <span class="detail-label">表示</span>
-                <button class="fx-btn on" id="judgementBtn">判定</button>
-                <button class="fx-btn on" id="beamBtn">ビーム</button>
-                <button class="fx-btn" id="bombABtn">ボムA</button>
-                <button class="fx-btn on" id="bombBBtn">ボムB</button>
-                <button class="fx-btn on" id="bpmGuideBtn">BPM</button>
-                <button class="fx-btn" id="bgaBtn">BGA</button>
-            </div>
-            <!-- キービーム長 -->
+            <!-- キービーム -->
             <div class="detail-section nowrap">
                 <span class="detail-label">キービーム</span>
                 <button class="fx-btn on" id="beamShortBtn">SHORT</button>
                 <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="beamLongBtn">LONG</button>
+                <button class="fx-btn"    id="beamOffBtn">OFF</button>
+            </div>
+            <!-- ボム -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">ボム</span>
+                <button class="fx-btn"    id="bombABtn">通常</button>
+                <button class="fx-btn on" id="bombBBtn">軽量</button>
+                <button class="fx-btn"    id="bombOffBtn">OFF</button>
+            </div>
+            <!-- BPM -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">BPM</span>
+                <button class="fx-btn on" id="bpmLineBtn">ライン表示</button>
+                <button class="fx-btn"    id="bpmNumBtn">数字のみ</button>
+                <button class="fx-btn"    id="bpmOffBtn">OFF</button>
+            </div>
+            <!-- BGA -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">BGA</span>
+                <button class="fx-btn"    id="bgaOnBtn">表示</button>
+                <button class="fx-btn on" id="bgaOffBtn">非表示</button>
             </div>
             <!-- 背景透過率 -->
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
@@ -1313,12 +1324,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span class="vol-val" id="bgaOpacityVal">0</span>
                 </div>
             </div>
-            <!-- JUDGE 演出切り替え -->
-            <div class="detail-section">
-                <span class="detail-label">JUDGE</span>
+            <!-- 判定文字 演出切り替え -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">判定文字</span>
                 <button class="fx-btn on" id="judgeJustBtn">JUST</button>
                 <button class="fx-btn"    id="judgeNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="judgeSimpleBtn">SIMPLE</button>
+                <button class="fx-btn"    id="judgeOffBtn">OFF</button>
             </div>
             <!-- JUST カラーサイクル フレーム数 -->
             <div class="detail-section" id="justFrameSection">
@@ -1786,12 +1798,11 @@ class BMSViewer {
         this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅
         this._justAnimFrame   = null;   // JUST モード rAF ID
         this.beamEnabled      = true;
-        this.bpmGuideEnabled  = true;  // キービーム ON/OFF
+        this.bpmMode          = 'LINE';  // BPM: LINE/NUM/OFF
         this.notesStyle       = 'A';     // ノーツ A/B
         this.chargeStyle      = 'A';     // チャージノーツ A/B
-        this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG
-        this.bombAEnabled     = false; // ボムA: フルエフェクト ON/OFF
-        this.bombBEnabled     = true;  // ボムB: 軽量エフェクト ON/OFF
+        this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
+        this.bombMode         = 'B';     // ボム: A/B/OFF
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
         this.lnHeadPin        = false; // LN モードB: ヘッドをJLに固定
         this.wavBgm1Enabled   = true;  // BGM1 WAV ON/OFF (position<2)
@@ -2659,11 +2670,14 @@ class BMSViewer {
             this._validateAndApplySwap(e.target.value);
         });
 
-        // 判定表示 ON/OFF
-        document.getElementById('judgementBtn').addEventListener('click', () => {
-            this.judgementEnabled = !this.judgementEnabled;
-            const btn = document.getElementById('judgementBtn');
-            btn.classList.toggle('on', this.judgementEnabled);
+        // 判定文字モード切り替え（JUST / NORMAL / SIMPLE / OFF）
+        const _setJudgeMode = (mode) => {
+            this.judgeMode = mode;
+            this.judgementEnabled = (mode !== 'OFF');
+            ['Just','Normal','Simple','Off'].forEach(m =>
+                document.getElementById(`judge${m}Btn`).classList.toggle('on', mode === m.toUpperCase())
+            );
+            document.getElementById('greatDisplay').classList.toggle('judge-simple', mode === 'SIMPLE');
             if (!this.judgementEnabled) {
                 const _gd = document.getElementById('greatDisplay');
                 if (this._greatColorTimer) clearInterval(this._greatColorTimer);
@@ -2671,19 +2685,11 @@ class BMSViewer {
                 if (this._greatFadeTimer)  clearTimeout(this._greatFadeTimer);
                 _gd.style.transition = 'none'; _gd.style.opacity = '0';
             }
-        });
-
-        // JUDGE モード切り替え（JUST / NORMAL / SIMPLE）
-        const _setJudgeMode = (mode) => {
-            this.judgeMode = mode;
-            document.getElementById('judgeJustBtn').classList.toggle('on',   mode === 'JUST');
-            document.getElementById('judgeNormalBtn').classList.toggle('on', mode === 'NORMAL');
-            document.getElementById('judgeSimpleBtn').classList.toggle('on', mode === 'SIMPLE');
-            document.getElementById('greatDisplay').classList.toggle('judge-simple', mode === 'SIMPLE');
         };
         document.getElementById('judgeJustBtn').addEventListener('click',   () => _setJudgeMode('JUST'));
         document.getElementById('judgeNormalBtn').addEventListener('click', () => _setJudgeMode('NORMAL'));
         document.getElementById('judgeSimpleBtn').addEventListener('click', () => _setJudgeMode('SIMPLE'));
+        document.getElementById('judgeOffBtn').addEventListener('click',    () => _setJudgeMode('OFF'));
 
         // JUSTフレーム数入力・－＋ボタン
         const _jfInput = document.getElementById('justFrameInput');
@@ -2705,6 +2711,7 @@ class BMSViewer {
         document.getElementById('judgeJustBtn').addEventListener('click',   _updateJustFrameVis);
         document.getElementById('judgeNormalBtn').addEventListener('click', _updateJustFrameVis);
         document.getElementById('judgeSimpleBtn').addEventListener('click', _updateJustFrameVis);
+        document.getElementById('judgeOffBtn').addEventListener('click',    _updateJustFrameVis);
 
         // ノーツ A/B
         document.getElementById('notesStyleABtn').addEventListener('click', () => {
@@ -2738,12 +2745,13 @@ class BMSViewer {
             }
         });
 
-        // キービーム長
+        // キービーム長（OFF含む）
         const _setBeamLength = (len) => {
             this.keyBeamLength = len;
-            document.getElementById('beamShortBtn').classList.toggle('on',  len === 'SHORT');
-            document.getElementById('beamNormalBtn').classList.toggle('on', len === 'NORMAL');
-            document.getElementById('beamLongBtn').classList.toggle('on',   len === 'LONG');
+            this.beamEnabled   = (len !== 'OFF');
+            ['Short','Normal','Long','Off'].forEach(l =>
+                document.getElementById(`beam${l}Btn`).classList.toggle('on', len === l.toUpperCase())
+            );
             const pa = document.querySelector('.play-area');
             pa.classList.remove('beam-normal', 'beam-long');
             if (len === 'NORMAL') pa.classList.add('beam-normal');
@@ -2752,6 +2760,52 @@ class BMSViewer {
         document.getElementById('beamShortBtn').addEventListener('click',  () => _setBeamLength('SHORT'));
         document.getElementById('beamNormalBtn').addEventListener('click', () => _setBeamLength('NORMAL'));
         document.getElementById('beamLongBtn').addEventListener('click',   () => _setBeamLength('LONG'));
+        document.getElementById('beamOffBtn').addEventListener('click',    () => _setBeamLength('OFF'));
+
+        // ボム（A / B（軽量） / OFF）
+        const _setBombMode = (mode) => {
+            this.bombMode = mode;
+            document.getElementById('bombABtn').classList.toggle('on',   mode === 'A');
+            document.getElementById('bombBBtn').classList.toggle('on',   mode === 'B');
+            document.getElementById('bombOffBtn').classList.toggle('on', mode === 'OFF');
+        };
+        document.getElementById('bombABtn').addEventListener('click',   () => _setBombMode('A'));
+        document.getElementById('bombBBtn').addEventListener('click',   () => _setBombMode('B'));
+        document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
+
+        // BPM 表示モード（ライン表示 / 数字のみ / OFF）
+        const _setBpmMode = (mode) => {
+            this.bpmMode = mode;
+            document.getElementById('bpmLineBtn').classList.toggle('on', mode === 'LINE');
+            document.getElementById('bpmNumBtn').classList.toggle('on',  mode === 'NUM');
+            document.getElementById('bpmOffBtn').classList.toggle('on',  mode === 'OFF');
+            document.querySelectorAll('.bpm-marker').forEach(el => {
+                el.style.display = (mode === 'LINE') ? '' : 'none';
+            });
+            document.querySelectorAll('.bpm-label').forEach(el => {
+                el.style.display = (mode === 'OFF') ? 'none' : '';
+            });
+        };
+        document.getElementById('bpmLineBtn').addEventListener('click', () => _setBpmMode('LINE'));
+        document.getElementById('bpmNumBtn').addEventListener('click',  () => _setBpmMode('NUM'));
+        document.getElementById('bpmOffBtn').addEventListener('click',  () => _setBpmMode('OFF'));
+
+        // BGA 表示 / 非表示
+        const _setBgaVisible = (show) => {
+            this.bgaEnabled = show;
+            document.getElementById('bgaOnBtn').classList.toggle('on',  show);
+            document.getElementById('bgaOffBtn').classList.toggle('on', !show);
+            const vid = document.getElementById('bgaVideo');
+            if (vid) vid.style.display = show ? 'block' : 'none';
+            if (show && this.isPlaying && vid && vid.src) vid.play().catch(() => {});
+            else if (!show && vid) vid.pause();
+            const img = document.getElementById('bgaImage');
+            if (img && this._bgaImageBlobUrls && Object.keys(this._bgaImageBlobUrls).length) {
+                img.style.display = show ? 'block' : 'none';
+            }
+        };
+        document.getElementById('bgaOnBtn').addEventListener('click',  () => _setBgaVisible(true));
+        document.getElementById('bgaOffBtn').addEventListener('click', () => _setBgaVisible(false));
 
         // 判定文字サイズ
         const _applyJudgeSize = () => {
@@ -2787,50 +2841,6 @@ class BMSViewer {
             _applyJudgeHeight();
         });
 
-        // キービーム ON/OFF
-        document.getElementById('beamBtn').addEventListener('click', () => {
-            this.beamEnabled = !this.beamEnabled;
-            document.getElementById('beamBtn').classList.toggle('on', this.beamEnabled);
-        });
-
-        // ボムA: フルエフェクト ON/OFF（排他制御）
-        document.getElementById('bombABtn').addEventListener('click', () => {
-            this.bombAEnabled = !this.bombAEnabled;
-            if (this.bombAEnabled) this.bombBEnabled = false;
-            document.getElementById('bombABtn').classList.toggle('on', this.bombAEnabled);
-            document.getElementById('bombBBtn').classList.toggle('on', this.bombBEnabled);
-        });
-        // ボムB: 軽量エフェクト ON/OFF（排他制御）
-        document.getElementById('bombBBtn').addEventListener('click', () => {
-            this.bombBEnabled = !this.bombBEnabled;
-            if (this.bombBEnabled) this.bombAEnabled = false;
-            document.getElementById('bombABtn').classList.toggle('on', this.bombAEnabled);
-            document.getElementById('bombBBtn').classList.toggle('on', this.bombBEnabled);
-        });
-        document.getElementById('bpmGuideBtn').addEventListener('click', () => {
-            this.bpmGuideEnabled = !this.bpmGuideEnabled;
-            document.getElementById('bpmGuideBtn').classList.toggle('on', this.bpmGuideEnabled);
-            // BPMマーカー・ラベルの表示切り替え
-            document.querySelectorAll('.bpm-marker, .bpm-label').forEach(el => {
-                el.style.display = this.bpmGuideEnabled ? '' : 'none';
-            });
-        });
-        // BGA ON/OFF
-        document.getElementById('bgaBtn').addEventListener('click', () => {
-            this.bgaEnabled = !this.bgaEnabled;
-            document.getElementById('bgaBtn').classList.toggle('on', this.bgaEnabled);
-            const vid = document.getElementById('bgaVideo');
-            if (vid) vid.style.display = this.bgaEnabled ? 'block' : 'none';
-            if (this.bgaEnabled && this.isPlaying && vid && vid.src) {
-                vid.play().catch(() => {});
-            } else if (!this.bgaEnabled && vid) {
-                vid.pause();
-            }
-            const img = document.getElementById('bgaImage');
-            if (img && this._bgaImageBlobUrls && Object.keys(this._bgaImageBlobUrls).length) {
-                img.style.display = this.bgaEnabled ? 'block' : 'none';
-            }
-        });
         // 背景透過率スライダー
         {
             const slider = document.getElementById('bgaOpacitySlider');
@@ -3607,7 +3617,7 @@ class BMSViewer {
             const mk=document.createElement('div'); mk.className='bpm-marker';
             mk._pixelPos=ev.pixelPos;
             mk.style.bottom=(ev.pixelPos-this.currentPixelPos)+'px';
-            if (!this.bpmGuideEnabled) mk.style.display='none';
+            if (this.bpmMode === 'OFF' || this.bpmMode === 'NUM') mk.style.display='none';
             container.appendChild(mk); this.noteElements.push(mk);
 
             const lbl=document.createElement('div'); lbl.className='bpm-label';
@@ -3615,7 +3625,7 @@ class BMSViewer {
             lbl.textContent = Math.round(ev.baseBpm * this.realSpeed);
             lbl._pixelPos=ev.pixelPos;
             lbl.style.bottom=(ev.pixelPos-this.currentPixelPos)+'px';
-            if (!this.bpmGuideEnabled) lbl.style.display='none';
+            if (this.bpmMode === 'OFF') lbl.style.display='none';
             container.appendChild(lbl); this.noteElements.push(lbl);
         });
 
@@ -4203,33 +4213,26 @@ class BMSViewer {
     }
 
     _triggerBomb(dl) {
-        if (!this.beamEnabled) return;
-        const template = this.bombElements[dl];
-        if (!template) return;
-        if (this.bombBEnabled) {
-            // ボムB: DOM生成なし・テンプレートを直接再利用
-            template.classList.remove('boom');
-            void template.offsetWidth; // アニメーション再スタート
-            template.classList.add('boom');
-            return;
+        // キービーム（レーングロー）
+        if (this.beamEnabled) {
+            const template = this.bombElements[dl];
+            if (template) {
+                template.classList.remove('boom');
+                void template.offsetWidth;
+                template.classList.add('boom');
+            }
         }
-        const lane = template.parentElement;
-        if (!lane) return;
-        const clone = template.cloneNode(false);
-        clone.classList.add('boom');
-        lane.appendChild(clone);
-        clone.addEventListener('animationend', () => clone.remove(), { once: true });
     }
 
     /* ── エフェクト: 爆発リング ── */
     _triggerExplosion(dl) {
-        if (!this.bombAEnabled && !this.bombBEnabled) return;
-        if (this.bombBEnabled) {
-            // ボムB: DOM生成なし・テンプレートを直接再利用
+        if (this.bombMode === 'OFF') return;
+        if (this.bombMode === 'B') {
+            // ボムB（軽量）: DOM生成なし・テンプレートを直接再利用
             const el = this.explosionElements[dl];
             if (!el) return;
             el.classList.remove('explode-lite');
-            void el.offsetWidth; // アニメーション再スタート
+            void el.offsetWidth;
             el.classList.add('explode-lite');
             return;
         }

@@ -37,7 +37,7 @@
             90%,100% { transform: translateX(0); }
         }
         .controls   { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:5px; }
-        .btn { padding:5px 10px; border:none; border-radius:4px; background:#2196F3; color:#fff; font-size:12px; cursor:pointer; touch-action:manipulation; min-height:30px; }
+        .btn { padding:3px 8px; border:none; border-radius:4px; background:#2196F3; color:#fff; font-size:11px; cursor:pointer; touch-action:manipulation; min-height:26px; }
         .btn:active { opacity:.7; }
         .btn-success  { background:#4CAF50; }
         .btn-secondary{ background:#555; }
@@ -134,7 +134,7 @@
         .rm-btn.active { background:#e8a020; color:#fff; }
         .rm-btn.on     { background:#d04080; color:#fff; }
         .side-switch { display:flex; gap:4px; }
-        .side-btn { padding:5px 10px; border:none; background:#333; color:#999; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer; min-height:30px; }
+        .side-btn { padding:3px 8px; border:none; background:#333; color:#999; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; min-height:26px; }
         .side-btn.active { border-color:#2196F3; background:#2196F3; color:#fff; }
         .metro-btn { padding:5px 8px; border:none; background:#333; color:#999; border-radius:4px; font-size:12px; cursor:pointer; min-height:32px; }
         .metro-btn.active { background:#4caf50; color:#fff; }
@@ -1054,11 +1054,11 @@
             background:linear-gradient(to right,#888,#ddd 20%,#fff 50%,#ddd 80%,#888);
         }
         .sud-btn {
-            padding:0 8px; border-radius:4px;
+            padding:0 6px; border-radius:4px;
             border:1px solid #335566; background:#0a1a22;
-            color:#5599bb; font-size:11px; font-weight:bold;
+            color:#5599bb; font-size:10px; font-weight:bold;
             cursor:pointer; touch-action:manipulation;
-            min-height:30px; box-sizing:border-box; white-space:nowrap;
+            min-height:26px; box-sizing:border-box; white-space:nowrap;
         }
         .sud-btn.on { border-color:#00aaff; background:#001a2a; color:#00ccff; }
         .sud-btn:active { background:#002233; }
@@ -1486,7 +1486,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
         <div id="sudCover" class="sud-cover"></div>
-        <div class="status-bar" id="statusBar" style="display:none;">
+        <div class="status-bar" id="statusBar">
             Total:<span id="totalNotes">0</span> |
             BPM:<span id="bpmDisplay">0</span> |
             <span style="color:#00ff88;">緑数字:<span id="statusGreenNum">—</span></span> |
@@ -1824,6 +1824,7 @@ class BMSViewer {
         this._lastOffsetText = null;
 
         this._bindEvents();
+        this._renderLanes();
     }
 
     get pixelsPerBar() { return this.basePixelsPerBar * this.hiSpeed; }

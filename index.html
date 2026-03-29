@@ -873,8 +873,9 @@
             text-shadow: none !important;
         }
         /* ── キービーム長 ── */
-        .beam-normal .lane-bomb { height: 50%; }
-        .beam-long   .lane-bomb { height: 100%; }
+        .beam-normal .lane-bomb { height: 100%; }
+        .beam-long   .lane      { overflow: visible; }
+        .beam-long   .lane-bomb { height: 160%; }
 
         #mainJudgmentLine {
             position: absolute;

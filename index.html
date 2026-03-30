@@ -983,6 +983,43 @@
             filter: none !important;
             text-shadow: none !important;
         }
+        /* ── PM モード判定文字 (COOL!!) ── */
+        .pm-judge-positioner {
+            position: absolute;
+            bottom: 110px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transform: translateX(-50%);
+        }
+        .pm-judge-L { left: calc(50% - 123px); }
+        .pm-judge-C { left: 50%; }
+        .pm-judge-R { left: calc(50% + 123px); }
+        .pm-judge-label {
+            font-size: 56px; font-weight: 800;
+            background: linear-gradient(to bottom, #ffffff 0%, #ff88bb 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000)
+                    drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000)
+                    drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000);
+            white-space: nowrap; line-height: 1;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+        }
+        .pm-judge-combo {
+            font-size: 56px; font-weight: 800;
+            color: #ffffff;
+            text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+                         1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+            white-space: nowrap; line-height: 1; text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+            font-variant-numeric: tabular-nums;
+            visibility: hidden;
+        }
         /* ── キービーム長 ── */
         .beam-normal .lane-bomb { height: 100%; }
         .beam-long   .lane      { overflow: visible; }
@@ -1459,6 +1496,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="judgeNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="judgeSimpleBtn">SIMPLE</button>
                 <button class="fx-btn"    id="judgeOffBtn">OFF</button>
+                <button class="fx-btn"    id="pmJudgeCoolBtn" style="display:none;">pm_COOL!!</button>
             </div>
             <!-- JUST カラーサイクル フレーム数 -->
             <div class="detail-section" id="justFrameSection">
@@ -1605,6 +1643,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="great-label" id="greatLabel">GREAT</span>
                 <span class="great-combo" id="greatCombo">0</span>
             </div>
+        </div>
+        <!-- PM 判定文字 (左/中/右 3ポジション) -->
+        <div class="pm-judge-positioner pm-judge-L" id="pmJudge_L">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_L">0</span>
+        </div>
+        <div class="pm-judge-positioner pm-judge-C" id="pmJudge_C">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_C">0</span>
+        </div>
+        <div class="pm-judge-positioner pm-judge-R" id="pmJudge_R">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_R">0</span>
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
         <div id="sudCover" class="sud-cover"></div>
@@ -1921,8 +1972,10 @@ class BMSViewer {
         this.judgeOffset      = 0;     // 判定オフセット(ms) -100〜+100
         this._justColorIdx    = 0;         // JUSTカラーサイクル持続インデックス
         this._justFrameInterval = 1;         // 何フレームごとに色を変えるか
-        this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅
+        this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅 / PM_COOL: PMモード
         this._justAnimFrame   = null;   // JUST モード rAF ID
+        this._pmJudgeFadeTimer = { L: null, C: null, R: null }; // PM判定文字フェードタイマー
+        this._pmComboPos       = null;  // PM コンボ表示中のポジション
         this.beamEnabled      = true;
         this.bpmMode          = 'LINE';  // BPM: LINE/NUM/OFF
         this.notesStyle       = 'A';     // ノーツ A/B
@@ -2793,13 +2846,14 @@ class BMSViewer {
             this._validateAndApplySwap(e.target.value);
         });
 
-        // 判定文字モード切り替え（JUST / NORMAL / SIMPLE / OFF）
+        // 判定文字モード切り替え（JUST / NORMAL / SIMPLE / OFF / PM_COOL）
         const _setJudgeMode = (mode) => {
             this.judgeMode = mode;
             this.judgementEnabled = (mode !== 'OFF');
             ['Just','Normal','Simple','Off'].forEach(m =>
                 document.getElementById(`judge${m}Btn`).classList.toggle('on', mode === m.toUpperCase())
             );
+            document.getElementById('pmJudgeCoolBtn').classList.toggle('on', mode === 'PM_COOL');
             document.getElementById('greatDisplay').classList.toggle('judge-simple', mode === 'SIMPLE');
             if (!this.judgementEnabled) {
                 const _gd = document.getElementById('greatDisplay');
@@ -2813,6 +2867,7 @@ class BMSViewer {
         document.getElementById('judgeNormalBtn').addEventListener('click', () => _setJudgeMode('NORMAL'));
         document.getElementById('judgeSimpleBtn').addEventListener('click', () => _setJudgeMode('SIMPLE'));
         document.getElementById('judgeOffBtn').addEventListener('click',    () => _setJudgeMode('OFF'));
+        document.getElementById('pmJudgeCoolBtn').addEventListener('click', () => _setJudgeMode('PM_COOL'));
 
         // JUSTフレーム数入力・－＋ボタン
         const _jfInput = document.getElementById('justFrameInput');
@@ -2913,6 +2968,26 @@ class BMSViewer {
             document.getElementById('hRandomBtn').classList.remove('active');
             swapEl.classList.remove('error', 'active');
             document.getElementById('error').textContent = '';
+            // 判定文字ボタン切り替え（IIDX: JUST/NORMAL/SIMPLE/OFF, PM: pm_COOL!!）
+            const _judgeIidxIds = ['judgeJustBtn','judgeNormalBtn','judgeSimpleBtn','judgeOffBtn'];
+            _judgeIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
+            document.getElementById('pmJudgeCoolBtn').style.display = isPM ? '' : 'none';
+            if (isPM) {
+                _setJudgeMode('PM_COOL');
+                document.getElementById('justFrameSection').style.display = 'none';
+                // IIDXの判定表示をリセット
+                const _gd = document.getElementById('greatDisplay');
+                if (_gd) { _gd.style.transition = 'none'; _gd.style.opacity = '0'; }
+            } else {
+                if (this.judgeMode === 'PM_COOL') _setJudgeMode('JUST');
+                document.getElementById('justFrameSection').style.display = this.judgeMode === 'JUST' ? '' : 'none';
+                // PM判定表示をリセット
+                for (const _p of ['L','C','R']) {
+                    if (this._pmJudgeFadeTimer[_p]) { clearTimeout(this._pmJudgeFadeTimer[_p]); this._pmJudgeFadeTimer[_p] = null; }
+                    const _pe = document.getElementById(`pmJudge_${_p}`);
+                    if (_pe) { _pe.style.transition = 'none'; _pe.style.opacity = '0'; }
+                }
+            }
         };
         this._updateStylesForMode = _updateStylesForMode;
         // 初期状態（1P）でPMボタンを非表示にする
@@ -2983,7 +3058,7 @@ class BMSViewer {
         // 判定文字サイズ
         const _applyJudgeSize = () => {
             const size = Math.max(10, Math.min(200, parseInt(document.getElementById('judgeSizeInput').value) || 56));
-            document.querySelectorAll('.great-label, .great-combo').forEach(el => { el.style.fontSize = size + 'px'; });
+            document.querySelectorAll('.great-label, .great-combo, .pm-judge-label, .pm-judge-combo').forEach(el => { el.style.fontSize = size + 'px'; });
         };
         document.getElementById('judgeSizeInput').addEventListener('input', _applyJudgeSize);
         document.getElementById('judgeSizeMinus').addEventListener('click', () => {
@@ -3001,6 +3076,7 @@ class BMSViewer {
         const _applyJudgeHeight = () => {
             const h = Math.max(0, parseInt(document.getElementById('judgeHeightInput').value) || 110);
             document.querySelector('.great-positioner').style.bottom = h + 'px';
+            document.querySelectorAll('.pm-judge-positioner').forEach(el => { el.style.bottom = h + 'px'; });
         };
         document.getElementById('judgeHeightInput').addEventListener('input', _applyJudgeHeight);
         document.getElementById('judgeHeightMinus').addEventListener('click', () => {
@@ -4396,6 +4472,7 @@ class BMSViewer {
         //   コンボ加算・ボム・爆発エフェクト・GREAT表示 はオフセットでシフト
         let triggered = false;
         const bombed = new Set();
+        const pmPositions = new Set();
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
             const _ePx = (e.adjPx !== undefined) ? e.adjPx : e.px;
@@ -4405,6 +4482,10 @@ class BMSViewer {
             triggered = true;
             // isEnd（LN/BSS終点）のボムは_updatePositions側で発火するためここでは除外
             if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl); this._triggerExplosion(e.dl); bombed.add(e.dl); }
+            // PMモード: 判定ポジション収集（dl 0-2→L, 3-5→C, 6-8→R）
+            if (this.currentSide === 'PM' && !e.isEnd) {
+                pmPositions.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
+            }
         }
 
         // ── Pass 2: 音声再生（e.px基準 = オフセット0・常にジャストタイミング）──
@@ -4429,7 +4510,10 @@ class BMSViewer {
             else this._playClap(_clapSC);
         }
 
-        if (triggered) this._showGreat();  // _showGreat内で judgementEnabled チェック済み
+        if (triggered) {
+            if (this.currentSide === 'PM') this._showPMCool(pmPositions);
+            else this._showGreat();
+        }
     }
 
     /* ── エフェクト: ボム ── */
@@ -4453,6 +4537,12 @@ class BMSViewer {
             gd.style.opacity    = '0';
             document.getElementById('greatLabel').style.filter = 'none';
             document.getElementById('greatCombo').style.filter = 'none';
+        }
+        // PM 判定文字リセット
+        for (const pos of ['L', 'C', 'R']) {
+            if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
+            const pe = document.getElementById(`pmJudge_${pos}`);
+            if (pe) { pe.style.transition = 'none'; pe.style.opacity = '0'; }
         }
     }
 
@@ -4585,6 +4675,46 @@ class BMSViewer {
                 document.getElementById('greatLabel').style.filter = 'none';
                 document.getElementById('greatCombo').style.filter = 'none';
             }, 500);
+        }
+    }
+
+    /* ── エフェクト: PM COOL!! 表示 ── */
+    _showPMCool(positions) {
+        if (!this.judgementEnabled) return;
+
+        // コンボ表示ポジション優先度: C > L > R
+        let comboPos = null;
+        if (positions.has('C'))      comboPos = 'C';
+        else if (positions.has('L')) comboPos = 'L';
+        else if (positions.has('R')) comboPos = 'R';
+
+        // 各ポジションで COOL!! を表示（独立フェード）
+        for (const pos of ['L', 'C', 'R']) {
+            if (!positions.has(pos)) continue;
+            const el = document.getElementById(`pmJudge_${pos}`);
+            if (!el) continue;
+            if (this._pmJudgeFadeTimer[pos]) {
+                clearTimeout(this._pmJudgeFadeTimer[pos]);
+                this._pmJudgeFadeTimer[pos] = null;
+            }
+            el.style.transition = 'none';
+            el.style.opacity = '1';
+            this._pmJudgeFadeTimer[pos] = setTimeout(() => {
+                el.style.transition = 'opacity 0.7s ease';
+                el.style.opacity = '0';
+                this._pmJudgeFadeTimer[pos] = null;
+            }, 300);
+        }
+
+        // コンボ: 最新ポジションにのみ表示（他は即座に非表示）
+        if (comboPos) {
+            for (const pos of ['L', 'C', 'R']) {
+                const ce = document.getElementById(`pmJudgeCombo_${pos}`);
+                if (ce) ce.style.visibility = pos === comboPos ? 'visible' : 'hidden';
+            }
+            const activeCombo = document.getElementById(`pmJudgeCombo_${comboPos}`);
+            if (activeCombo) activeCombo.textContent = this.combo;
+            this._pmComboPos = comboPos;
         }
     }
 

@@ -214,7 +214,7 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:446px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); }
+        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:446px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:400px; }
         .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
         .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
@@ -774,6 +774,27 @@
                 rgba(30,180,185, 0.28) 55%,
                 transparent 100%);
         }
+        /* ── PM キービーム (pm_PINK): 白/緑/赤レーン用 (44px幅) ── */
+        .lane-bomb.pm-white,
+        .lane-bomb.pm-green,
+        .lane-bomb.pm-red {
+            height: var(--pm-beam-h, 400px);
+            background: linear-gradient(to top,
+                rgba(255, 80, 170, 0.90) 0%,
+                rgba(255, 80, 170, 0.60) 20%,
+                rgba(210, 55, 145, 0.28) 55%,
+                transparent 100%);
+        }
+        /* ── PM キービーム (pm_PINK): 黄/青レーン用 (38px幅) ── */
+        .lane-bomb.pm-yellow,
+        .lane-bomb.pm-blue {
+            height: var(--pm-beam-h, 400px);
+            background: linear-gradient(to top,
+                rgba(255, 80, 170, 0.90) 0%,
+                rgba(255, 80, 170, 0.60) 20%,
+                rgba(210, 55, 145, 0.28) 55%,
+                transparent 100%);
+        }
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
@@ -933,6 +954,39 @@
             background-size:100% 200% !important; background-position:0% 0% !important;
             transform:none !important;
         }
+        /* ── PM ポップ君風ノーツ - 目（通常ノーツ） ── */
+        /* 左目 (::before) - 黒目を右寄りにして寄り目 */
+        .notes-pm-pop-face .note.pm-white::before,
+        .notes-pm-pop-face .note.pm-yellow::before,
+        .notes-pm-pop-face .note.pm-green::before,
+        .notes-pm-pop-face .note.pm-blue::before,
+        .notes-pm-pop-face .note.pm-red::before,
+        .charge-pm-pop-face .ln-note-end.pm-white::before,
+        .charge-pm-pop-face .ln-note-end.pm-yellow::before,
+        .charge-pm-pop-face .ln-note-end.pm-green::before,
+        .charge-pm-pop-face .ln-note-end.pm-blue::before,
+        .charge-pm-pop-face .ln-note-end.pm-red::before {
+            content:''; position:absolute;
+            width:4px; height:4px; border-radius:50%;
+            background:radial-gradient(circle at 68% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
+            top:1px; left:calc(35% - 2px); z-index:1; pointer-events:none;
+        }
+        /* 右目 (::after) - 黒目を左寄りにして寄り目 */
+        .notes-pm-pop-face .note.pm-white::after,
+        .notes-pm-pop-face .note.pm-yellow::after,
+        .notes-pm-pop-face .note.pm-green::after,
+        .notes-pm-pop-face .note.pm-blue::after,
+        .notes-pm-pop-face .note.pm-red::after,
+        .charge-pm-pop-face .ln-note-end.pm-white::after,
+        .charge-pm-pop-face .ln-note-end.pm-yellow::after,
+        .charge-pm-pop-face .ln-note-end.pm-green::after,
+        .charge-pm-pop-face .ln-note-end.pm-blue::after,
+        .charge-pm-pop-face .ln-note-end.pm-red::after {
+            content:''; position:absolute;
+            width:4px; height:4px; border-radius:50%;
+            background:radial-gradient(circle at 32% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
+            top:1px; right:calc(35% - 2px); z-index:1; pointer-events:none;
+        }
         /* ── PM LN 始点・終点ノーツ ── */
         .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
         .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
@@ -1000,7 +1054,7 @@
         .pm-judge-C { left: 50%; }
         .pm-judge-R { left: calc(50% + 123px); }
         .pm-judge-label {
-            font-size: 56px; font-weight: 800;
+            font-size: 26px; font-weight: 800;
             background: linear-gradient(to bottom, #ffffff 0%, #ff88bb 100%);
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -1011,7 +1065,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
         }
         .pm-judge-combo {
-            font-size: 56px; font-weight: 800;
+            font-size: 26px; font-weight: 800;
             color: #ffffff;
             text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
                          1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
@@ -1036,10 +1090,10 @@
             pointer-events: none;
             border-radius: 2px;
         }
-        /* PM モード判定ライン: 太い赤帯 */
+        /* PM モード判定ライン: 縦グラデーション赤帯 */
         .pm-mode #mainJudgmentLine {
             height: 10px;
-            background: #cc2020;
+            background: linear-gradient(to bottom, #660000 0%, #bb1111 25%, #ff4444 50%, #bb1111 75%, #660000 100%);
             box-shadow: none;
             border-radius: 0;
         }
@@ -1436,7 +1490,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">ノーツ</span>
                 <button class="fx-btn on" id="notesStyleABtn">通常</button>
                 <button class="fx-btn"    id="notesStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="notesStylePMPopBtn">pm_pop</button>
+                <button class="fx-btn"    id="notesStylePMPopBtn">pm_シンプル</button>
+                <button class="fx-btn"    id="notesStylePMPopFaceBtn">pm_ポップ君風</button>
                 <button class="fx-btn"    id="notesStylePMBeatCBtn">pm_beatC</button>
             </div>
             <!-- チャージノーツ描画 A/B/PM_POP/PM_BEAT_C -->
@@ -1444,7 +1499,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">チャージノーツ</span>
                 <button class="fx-btn on" id="chargeStyleABtn">通常</button>
                 <button class="fx-btn"    id="chargeStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="chargeStylePMPopBtn">pm_pop</button>
+                <button class="fx-btn"    id="chargeStylePMPopBtn">pm_シンプル</button>
+                <button class="fx-btn"    id="chargeStylePMPopFaceBtn">pm_ポップ君風</button>
                 <button class="fx-btn"    id="chargeStylePMBeatCBtn">pm_beatC</button>
             </div>
             <!-- チャージノーツ処理モード -->
@@ -1460,6 +1516,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="beamLongBtn">LONG</button>
                 <button class="fx-btn"    id="beamOffBtn">OFF</button>
+                <button class="fx-btn"    id="pmBeamPinkBtn" style="display:none;">pm_PINK</button>
+            </div>
+            <!-- PM キービームの長さ -->
+            <div class="detail-section" id="pmBeamLengthSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
+                <span class="detail-label">キービームの長さ</span>
+                <div class="vol-row">
+                    <input class="vol-slider" type="range" id="pmBeamLengthSlider" min="0" max="1000" value="400">
+                    <span class="vol-val" id="pmBeamLengthVal">400</span>
+                    <span style="font-size:11px; color:#888;">px</span>
+                </div>
             </div>
             <!-- ボム -->
             <div class="detail-section nowrap">
@@ -2891,66 +2957,72 @@ class BMSViewer {
         document.getElementById('judgeSimpleBtn').addEventListener('click', _updateJustFrameVis);
         document.getElementById('judgeOffBtn').addEventListener('click',    _updateJustFrameVis);
 
-        // ノーツ A/B/PM_POP/PM_BEAT_C
+        // ノーツ A/B/PM_POP/PM_POP_FACE/PM_BEAT_C
         const _setNotesStyle = (style) => {
             this.notesStyle = style;
             const pa = document.querySelector('.play-area');
-            ['notesStyleABtn','notesStyleBBtn','notesStylePMPopBtn','notesStylePMBeatCBtn'].forEach(id =>
+            ['notesStyleABtn','notesStyleBBtn','notesStylePMPopBtn','notesStylePMPopFaceBtn','notesStylePMBeatCBtn'].forEach(id =>
                 document.getElementById(id).classList.remove('on'));
-            const btnMap = { A:'notesStyleABtn', B:'notesStyleBBtn', PM_POP:'notesStylePMPopBtn', PM_BEAT_C:'notesStylePMBeatCBtn' };
+            const btnMap = { A:'notesStyleABtn', B:'notesStyleBBtn', PM_POP:'notesStylePMPopBtn', PM_POP_FACE:'notesStylePMPopFaceBtn', PM_BEAT_C:'notesStylePMBeatCBtn' };
             document.getElementById(btnMap[style] || 'notesStyleABtn').classList.add('on');
-            pa.classList.remove('notes-b', 'notes-pm-pop', 'notes-pm-beatc');
-            if (style === 'B')         pa.classList.add('notes-b');
-            if (style === 'PM_POP')    pa.classList.add('notes-pm-pop');
-            if (style === 'PM_BEAT_C') pa.classList.add('notes-pm-beatc');
+            pa.classList.remove('notes-b', 'notes-pm-pop', 'notes-pm-pop-face', 'notes-pm-beatc');
+            if (style === 'B')            pa.classList.add('notes-b');
+            if (style === 'PM_POP')       pa.classList.add('notes-pm-pop');
+            if (style === 'PM_POP_FACE')  pa.classList.add('notes-pm-pop', 'notes-pm-pop-face');
+            if (style === 'PM_BEAT_C')    pa.classList.add('notes-pm-beatc');
         };
-        document.getElementById('notesStyleABtn').addEventListener('click',      () => _setNotesStyle('A'));
-        document.getElementById('notesStyleBBtn').addEventListener('click',      () => _setNotesStyle('B'));
-        document.getElementById('notesStylePMPopBtn').addEventListener('click',  () => _setNotesStyle('PM_POP'));
-        document.getElementById('notesStylePMBeatCBtn').addEventListener('click',() => _setNotesStyle('PM_BEAT_C'));
+        document.getElementById('notesStyleABtn').addEventListener('click',         () => _setNotesStyle('A'));
+        document.getElementById('notesStyleBBtn').addEventListener('click',         () => _setNotesStyle('B'));
+        document.getElementById('notesStylePMPopBtn').addEventListener('click',     () => _setNotesStyle('PM_POP'));
+        document.getElementById('notesStylePMPopFaceBtn').addEventListener('click', () => _setNotesStyle('PM_POP_FACE'));
+        document.getElementById('notesStylePMBeatCBtn').addEventListener('click',   () => _setNotesStyle('PM_BEAT_C'));
 
-        // チャージノーツ A/B/PM_POP/PM_BEAT_C
+        // チャージノーツ A/B/PM_POP/PM_POP_FACE/PM_BEAT_C
         const _setChargeStyle = (style) => {
             this.chargeStyle = style;
             const pa = document.querySelector('.play-area');
-            ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMPopBtn','chargeStylePMBeatCBtn'].forEach(id =>
+            ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMPopBtn','chargeStylePMPopFaceBtn','chargeStylePMBeatCBtn'].forEach(id =>
                 document.getElementById(id).classList.remove('on'));
-            const btnMap = { A:'chargeStyleABtn', B:'chargeStyleBBtn', PM_POP:'chargeStylePMPopBtn', PM_BEAT_C:'chargeStylePMBeatCBtn' };
+            const btnMap = { A:'chargeStyleABtn', B:'chargeStyleBBtn', PM_POP:'chargeStylePMPopBtn', PM_POP_FACE:'chargeStylePMPopFaceBtn', PM_BEAT_C:'chargeStylePMBeatCBtn' };
             document.getElementById(btnMap[style] || 'chargeStyleABtn').classList.add('on');
-            pa.classList.remove('charge-b', 'charge-pm-pop', 'charge-pm-beatc');
-            if (style === 'B')         pa.classList.add('charge-b');
-            if (style === 'PM_POP')    pa.classList.add('charge-pm-pop');
-            if (style === 'PM_BEAT_C') pa.classList.add('charge-pm-beatc');
+            pa.classList.remove('charge-b', 'charge-pm-pop', 'charge-pm-pop-face', 'charge-pm-beatc');
+            if (style === 'B')            pa.classList.add('charge-b');
+            if (style === 'PM_POP')       pa.classList.add('charge-pm-pop');
+            if (style === 'PM_POP_FACE')  pa.classList.add('charge-pm-pop', 'charge-pm-pop-face');
+            if (style === 'PM_BEAT_C')    pa.classList.add('charge-pm-beatc');
             if (style !== 'A') {
                 for (const el of this.noteElements) el.classList.remove('ln-anim-f2');
             }
         };
-        document.getElementById('chargeStyleABtn').addEventListener('click',      () => _setChargeStyle('A'));
-        document.getElementById('chargeStyleBBtn').addEventListener('click',      () => _setChargeStyle('B'));
-        document.getElementById('chargeStylePMPopBtn').addEventListener('click',  () => _setChargeStyle('PM_POP'));
-        document.getElementById('chargeStylePMBeatCBtn').addEventListener('click',() => _setChargeStyle('PM_BEAT_C'));
+        document.getElementById('chargeStyleABtn').addEventListener('click',          () => _setChargeStyle('A'));
+        document.getElementById('chargeStyleBBtn').addEventListener('click',          () => _setChargeStyle('B'));
+        document.getElementById('chargeStylePMPopBtn').addEventListener('click',      () => _setChargeStyle('PM_POP'));
+        document.getElementById('chargeStylePMPopFaceBtn').addEventListener('click',  () => _setChargeStyle('PM_POP_FACE'));
+        document.getElementById('chargeStylePMBeatCBtn').addEventListener('click',    () => _setChargeStyle('PM_BEAT_C'));
 
         // モード切替時のスタイルボタン表示/非表示・デフォルト設定
         const _updateStylesForMode = (side) => {
             const isPM = side === 'PM';
             // IIDXモード: pm_pop/pm_beatCボタン非表示
-            document.getElementById('notesStylePMPopBtn').style.display   = isPM ? '' : 'none';
-            document.getElementById('notesStylePMBeatCBtn').style.display  = isPM ? '' : 'none';
-            document.getElementById('chargeStylePMPopBtn').style.display  = isPM ? '' : 'none';
-            document.getElementById('chargeStylePMBeatCBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('notesStylePMPopBtn').style.display      = isPM ? '' : 'none';
+            document.getElementById('notesStylePMPopFaceBtn').style.display  = isPM ? '' : 'none';
+            document.getElementById('notesStylePMBeatCBtn').style.display    = isPM ? '' : 'none';
+            document.getElementById('chargeStylePMPopBtn').style.display     = isPM ? '' : 'none';
+            document.getElementById('chargeStylePMPopFaceBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('chargeStylePMBeatCBtn').style.display   = isPM ? '' : 'none';
             // PMモード: 通常/軽量ボタン非表示
             document.getElementById('notesStyleABtn').style.display  = isPM ? 'none' : '';
             document.getElementById('notesStyleBBtn').style.display  = isPM ? 'none' : '';
             document.getElementById('chargeStyleABtn').style.display = isPM ? 'none' : '';
             document.getElementById('chargeStyleBBtn').style.display = isPM ? 'none' : '';
-            // PMモード切替時はデフォルトをpm_popに
+            // PMモード切替時はデフォルトをpm_ポップ君風に
             if (isPM) {
-                _setNotesStyle('PM_POP');
-                _setChargeStyle('PM_POP');
+                _setNotesStyle('PM_POP_FACE');
+                _setChargeStyle('PM_POP_FACE');
             } else {
                 // IIDXに戻ったとき、PM系が選択中なら通常に戻す
-                if (this.notesStyle === 'PM_POP' || this.notesStyle === 'PM_BEAT_C') _setNotesStyle('A');
-                if (this.chargeStyle === 'PM_POP' || this.chargeStyle === 'PM_BEAT_C') _setChargeStyle('A');
+                if (['PM_POP','PM_POP_FACE','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
+                if (['PM_POP','PM_POP_FACE','PM_BEAT_C'].includes(this.chargeStyle)) _setChargeStyle('A');
             }
             // モード切替時にLANEオプションをリセット
             const laneDefault = isPM ? '123456789' : '1234567';
@@ -2972,15 +3044,22 @@ class BMSViewer {
             const _judgeIidxIds = ['judgeJustBtn','judgeNormalBtn','judgeSimpleBtn','judgeOffBtn'];
             _judgeIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
             document.getElementById('pmJudgeCoolBtn').style.display = isPM ? '' : 'none';
+            // キービームボタン切り替え（IIDX: SHORT/NORMAL/LONG/OFF, PM: pm_PINK）
+            const _beamIidxIds = ['beamShortBtn','beamNormalBtn','beamLongBtn','beamOffBtn'];
+            _beamIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
+            document.getElementById('pmBeamPinkBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 document.getElementById('justFrameSection').style.display = 'none';
+                _setBeamLength('PM_PINK');
                 // IIDXの判定表示をリセット
                 const _gd = document.getElementById('greatDisplay');
                 if (_gd) { _gd.style.transition = 'none'; _gd.style.opacity = '0'; }
             } else {
                 if (this.judgeMode === 'PM_COOL') _setJudgeMode('JUST');
                 document.getElementById('justFrameSection').style.display = this.judgeMode === 'JUST' ? '' : 'none';
+                if (this.keyBeamLength === 'PM_PINK') _setBeamLength('SHORT');
                 // PM判定表示をリセット
                 for (const _p of ['L','C','R']) {
                     if (this._pmJudgeFadeTimer[_p]) { clearTimeout(this._pmJudgeFadeTimer[_p]); this._pmJudgeFadeTimer[_p] = null; }
@@ -3000,6 +3079,7 @@ class BMSViewer {
             ['Short','Normal','Long','Off'].forEach(l =>
                 document.getElementById(`beam${l}Btn`).classList.toggle('on', len === l.toUpperCase())
             );
+            document.getElementById('pmBeamPinkBtn').classList.toggle('on', len === 'PM_PINK');
             const pa = document.querySelector('.play-area');
             pa.classList.remove('beam-normal', 'beam-long');
             if (len === 'NORMAL') pa.classList.add('beam-normal');
@@ -3009,6 +3089,17 @@ class BMSViewer {
         document.getElementById('beamNormalBtn').addEventListener('click', () => _setBeamLength('NORMAL'));
         document.getElementById('beamLongBtn').addEventListener('click',   () => _setBeamLength('LONG'));
         document.getElementById('beamOffBtn').addEventListener('click',    () => _setBeamLength('OFF'));
+        document.getElementById('pmBeamPinkBtn').addEventListener('click', () => _setBeamLength('PM_PINK'));
+
+        // PM キービームの長さスライダー
+        const _pmBeamSlider = document.getElementById('pmBeamLengthSlider');
+        const _pmBeamVal    = document.getElementById('pmBeamLengthVal');
+        const _applyPMBeamLength = () => {
+            const h = parseInt(_pmBeamSlider.value) || 400;
+            _pmBeamVal.textContent = h;
+            document.querySelector('.play-area').style.setProperty('--pm-beam-h', h + 'px');
+        };
+        _pmBeamSlider.addEventListener('input', _applyPMBeamLength);
 
         // ボム（A / B（軽量） / OFF）
         const _setBombMode = (mode) => {
@@ -4275,6 +4366,11 @@ class BMSViewer {
     _updateJLGlow() {
         const jl = document.getElementById('mainJudgmentLine');
         if (!jl) return;
+        // PMモードはグロー非表示
+        if (this.currentSide === 'PM') {
+            jl.style.boxShadow = 'none';
+            return;
+        }
         const ppb = this._beatPpb;
         if (!ppb || ppb <= 0) {
             jl.style.boxShadow = '0 -6px 12px rgba(0,220,200,0.85), 0 -2px 6px rgba(0,255,220,0.6)';
@@ -4688,22 +4784,17 @@ class BMSViewer {
         else if (positions.has('L')) comboPos = 'L';
         else if (positions.has('R')) comboPos = 'R';
 
-        // 各ポジションで COOL!! を表示（独立フェード）
+        // 各ポジションで COOL!! を表示（opacity 0.8 で即出現 → 0.5s でフェードアウト）
         for (const pos of ['L', 'C', 'R']) {
             if (!positions.has(pos)) continue;
             const el = document.getElementById(`pmJudge_${pos}`);
             if (!el) continue;
-            if (this._pmJudgeFadeTimer[pos]) {
-                clearTimeout(this._pmJudgeFadeTimer[pos]);
-                this._pmJudgeFadeTimer[pos] = null;
-            }
+            if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
             el.style.transition = 'none';
-            el.style.opacity = '1';
-            this._pmJudgeFadeTimer[pos] = setTimeout(() => {
-                el.style.transition = 'opacity 0.7s ease';
-                el.style.opacity = '0';
-                this._pmJudgeFadeTimer[pos] = null;
-            }, 300);
+            el.style.opacity = '0.8';
+            el.getBoundingClientRect(); // reflow: transition 適用前に opacity を確定
+            el.style.transition = 'opacity 0.5s ease';
+            el.style.opacity = '0';
         }
 
         // コンボ: 最新ポジションにのみ表示（他は即座に非表示）

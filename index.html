@@ -2096,6 +2096,7 @@ class BMSViewer {
         this.bmsData         = null;
         this.bmsText         = null;   // 再パース用に保存
         this.currentSide     = '1P';
+        this._crossModeType  = null; // 'iidx-in-pm' | 'pm-in-iidx' | null
         this.guideSoundLanes  = [false,false,false,false,false,false,false,false];
         this.metronomeEnabled = false;
         this._beatPpb         = 0;
@@ -2582,8 +2583,10 @@ class BMSViewer {
         this.wavBuffers={};
 
         this.bmsText = text; // 再パース用に保存
+        this._crossModeType = null; // 新規ロード時はクロスモードリセット
         const parser=new BMSParser();
-        parser.isPMS = (this.currentSide === 'PM');
+        // BMS固有のisPMSでパース（ファイルのPLAYER宣言を先読みして正しいチャンネルを取得）
+        { const _pm = text.match(/^#PLAYER\s+(\d+)/im); parser.isPMS = _pm ? parseInt(_pm[1])===3 : false; }
         this.bmsData=parser.parse(text);
         // #PLAYER 3 を検出したら自動でPMモードへ
         if (parser.isPMS && this.currentSide !== 'PM') {
@@ -4175,8 +4178,9 @@ class BMSViewer {
 
         // ── 通常ノート ──
         this.bmsData.notes.filter(n => {
-            if (this.currentSide==='PM') return n.type==='normal';
-            return n.channel>=11&&n.channel<=19 && n.type==='normal';
+            if (n.type !== 'normal') return false;
+            if (this.currentSide==='PM' || this._crossModeType==='iidx-in-pm') return true;
+            return (n.channel>=11&&n.channel<=19) || (this._crossModeType==='pm-in-iidx' && n.channel>=22&&n.channel<=25);
         }).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if(dl<0||dl>=this.laneCount) return;
@@ -4321,7 +4325,7 @@ class BMSViewer {
         this.noteEvents = [];
         this.bmsData.notes.filter(n =>
             // 通常ノート: BMS ch11-19 / PMS ch11-15,22-25 / LN系(ln・bss・mss): 5x方式はchannel=1-7になるため channel 不問
-            (n.type==='normal' && ((n.channel>=11 && n.channel<=19) || (this.currentSide==='PM' && n.channel>=22 && n.channel<=25))) ||
+            (n.type==='normal' && ((n.channel>=11 && n.channel<=19) || (this.currentSide==='PM' && n.channel>=22 && n.channel<=25) || (this._crossModeType==='pm-in-iidx' && n.channel>=22 && n.channel<=25))) ||
             (n.type==='ln' || n.type==='bss' || n.type==='mss')).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if (dl < 0 || dl >= this.laneCount) return;
@@ -5052,19 +5056,81 @@ class BMSViewer {
         document.getElementById('bpmDisplay').textContent=Math.round((h.bpm||130)*this.realSpeed);
         document.getElementById('totalNotes').textContent=
             this.bmsData.notes.filter(n=>(n.type==='normal'||n.type==='ln'||n.type==='bss'||n.type==='mss') &&
-                (this.currentSide==='PM' ? (n.lane>=0&&n.lane<=8) : (n.channel>=11&&n.channel<=19))).length;
+                (this._crossModeType ? (n.lane>=0&&n.lane<this.laneCount) :
+                this.currentSide==='PM' ? (n.lane>=0&&n.lane<=8) : (n.channel>=11&&n.channel<=19))).length;
         document.getElementById('totalBarsDisplay').textContent = this.maxBars;
+    }
+
+    _applyCrossModeRemap(bmsData) {
+        if (this._crossModeType === 'iidx-in-pm') {
+            // IIDX鍵盤 → PMレーン
+            // 1鍵→0(左白), 2鍵→1(左黄), 3鍵→2(左緑), 4鍵→3(左青), 5鍵→4(赤)
+            // 6鍵→5(右青), 7鍵→6(右緑), スクラッチ奇数→8(右白), 偶数→7(右黄)
+            const keyMap = { 1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6 };
+            const scratchNotes = bmsData.notes
+                .filter(n => n.lane === 0)
+                .sort((a, b) => a.position - b.position);
+            const scratchLane = new Map();
+            scratchNotes.forEach((n, i) => scratchLane.set(n, i % 2 === 0 ? 8 : 7));
+            for (const n of bmsData.notes) {
+                if (n.lane === 0) n.lane = scratchLane.get(n) ?? 8;
+                else if (keyMap[n.lane] !== undefined) n.lane = keyMap[n.lane];
+            }
+        } else if (this._crossModeType === 'pm-in-iidx') {
+            // PMレーン → IIDX鍵盤
+            // 左白(0)→1鍵, 左黄(1)→2鍵, 左緑(2)→3鍵, 左青(3)→4鍵, 赤(4)→5鍵
+            // 右青(5)→6鍵, 右緑(6)→7鍵, 右白(8)→スクラッチ(0)
+            // 右黄(7)→空き鍵盤に配置（優先 7→6→5→4→3→2→1→0）、全埋まりはautoplay
+            const directMap = { 0:1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:7, 8:0 };
+            const rightYellow = [];
+            for (const n of bmsData.notes) {
+                if (n.lane === 7) { rightYellow.push(n); continue; }
+                if (directMap[n.lane] !== undefined) n.lane = directMap[n.lane];
+            }
+            // 各タイミングで使用中のレーンを収集
+            const occupied = new Map();
+            for (const n of bmsData.notes) {
+                if (rightYellow.includes(n)) continue;
+                const key = n.position.toFixed(8);
+                if (!occupied.has(key)) occupied.set(key, new Set());
+                occupied.get(key).add(n.lane);
+            }
+            const priority = [7, 6, 5, 4, 3, 2, 1, 0];
+            for (const n of rightYellow) {
+                const key = n.position.toFixed(8);
+                const occ = occupied.get(key) || new Set();
+                let assigned = -1;
+                for (const l of priority) { if (!occ.has(l)) { assigned = l; break; } }
+                if (assigned >= 0) {
+                    n.lane = assigned;
+                    if (!occupied.has(key)) occupied.set(key, new Set());
+                    occupied.get(key).add(assigned);
+                } else {
+                    // 全鍵埋まり → autoplay（BGMイベントに移動）
+                    n.lane = -1;
+                    if (n._rawVal) bmsData.bgmEvents.push({ position: n.position, wavId: n._rawVal });
+                }
+            }
+            bmsData.bgmEvents.sort((a, b) => a.position - b.position);
+        }
     }
 
     _switchSide(side) {
         this.currentSide = side;
         this.laneCount   = side === 'PM' ? 9 : 8;
         document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side===side));
-        // PM ↔ BMS 切り替え時は再パース（レーンマッピングが異なる）
         if (this.bmsText) {
+            // BMS固有のisPMSでパース
+            const _pm = this.bmsText.match(/^#PLAYER\s+(\d+)/im);
+            const bmsIsPMS = _pm ? parseInt(_pm[1]) === 3 : false;
+            // クロスモード判定
+            if (bmsIsPMS && side !== 'PM')       this._crossModeType = 'pm-in-iidx';
+            else if (!bmsIsPMS && side === 'PM')  this._crossModeType = 'iidx-in-pm';
+            else                                   this._crossModeType = null;
             const parser = new BMSParser();
-            parser.isPMS = (side === 'PM');
+            parser.isPMS = bmsIsPMS;
             this.bmsData = parser.parse(this.bmsText);
+            if (this._crossModeType) this._applyCrossModeRemap(this.bmsData);
             if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm = 130;
             const nb = this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
             const cb = this.bmsData.bpmChanges.map(c=>Math.floor(c.position));

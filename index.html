@@ -3053,6 +3053,9 @@ class BMSViewer {
                 _setJudgeMode('PM_COOL');
                 document.getElementById('justFrameSection').style.display = 'none';
                 _setBeamLength('PM_PINK');
+                // 判定文字サイズをPMデフォルト(26)に設定
+                document.getElementById('judgeSizeInput').value = 26;
+                _applyJudgeSize();
                 // IIDXの判定表示をリセット
                 const _gd = document.getElementById('greatDisplay');
                 if (_gd) { _gd.style.transition = 'none'; _gd.style.opacity = '0'; }
@@ -3060,6 +3063,9 @@ class BMSViewer {
                 if (this.judgeMode === 'PM_COOL') _setJudgeMode('JUST');
                 document.getElementById('justFrameSection').style.display = this.judgeMode === 'JUST' ? '' : 'none';
                 if (this.keyBeamLength === 'PM_PINK') _setBeamLength('SHORT');
+                // 判定文字サイズをIIDXデフォルト(56)に戻す
+                document.getElementById('judgeSizeInput').value = 56;
+                _applyJudgeSize();
                 // PM判定表示をリセット
                 for (const _p of ['L','C','R']) {
                     if (this._pmJudgeFadeTimer[_p]) { clearTimeout(this._pmJudgeFadeTimer[_p]); this._pmJudgeFadeTimer[_p] = null; }

@@ -885,12 +885,35 @@
         .note.pm-green  { box-shadow:inset 0 0 0 1px rgba(0,200,80,0.9),   inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#006000 0%,#60ff60 50%,#006000 100%); }
         .note.pm-blue   { box-shadow:inset 0 0 0 1px rgba(80,140,255,0.9), inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#002090 0%,#60a0ff 50%,#002090 100%); }
         .note.pm-red    { box-shadow:inset 0 0 0 1px rgba(220,50,50,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#900000 0%,#ff6060 50%,#900000 100%); }
-        /* ── PM ノーツ（軽量版）── */
-        .notes-pm .note.pm-white  { box-shadow:none; background:linear-gradient(to right,#808080 0%,#e0e0e0 50%,#808080 100%); }
-        .notes-pm .note.pm-yellow { box-shadow:none; background:linear-gradient(to right,#806000 0%,#c8a830 50%,#806000 100%); }
-        .notes-pm .note.pm-green  { box-shadow:none; background:linear-gradient(to right,#005000 0%,#40c040 50%,#005000 100%); }
-        .notes-pm .note.pm-blue   { box-shadow:none; background:linear-gradient(to right,#001870 0%,#4080d0 50%,#001870 100%); }
-        .notes-pm .note.pm-red    { box-shadow:none; background:linear-gradient(to right,#700000 0%,#d04040 50%,#700000 100%); }
+        /* ── PM ノーツ（軽量版 / pm_beatC）── */
+        .notes-pm-beatc .note.pm-white  { box-shadow:none; background:linear-gradient(to right,#808080 0%,#e0e0e0 50%,#808080 100%); }
+        .notes-pm-beatc .note.pm-yellow { box-shadow:none; background:linear-gradient(to right,#806000 0%,#c8a830 50%,#806000 100%); }
+        .notes-pm-beatc .note.pm-green  { box-shadow:none; background:linear-gradient(to right,#005000 0%,#40c040 50%,#005000 100%); }
+        .notes-pm-beatc .note.pm-blue   { box-shadow:none; background:linear-gradient(to right,#001870 0%,#4080d0 50%,#001870 100%); }
+        .notes-pm-beatc .note.pm-red    { box-shadow:none; background:linear-gradient(to right,#700000 0%,#d04040 50%,#700000 100%); }
+        /* ── PM ノーツ（pm_pop / ポップ君）── */
+        .notes-pm-pop .note.pm-white, .notes-pm-pop .ln-note-start.pm-white, .notes-pm-pop .ln-note-end.pm-white {
+            height:18px !important; border-radius:8px;
+            box-shadow:inset 0 0 0 1px rgba(200,200,200,0.8);
+            background:linear-gradient(to bottom,#333 0%,#666 10%,#aaa 25%,#ddd 32%,#fff 35%,#fff 65%,#ddd 68%,#aaa 75%,#666 90%,#333 100%); }
+        .notes-pm-pop .note.pm-yellow, .notes-pm-pop .ln-note-start.pm-yellow, .notes-pm-pop .ln-note-end.pm-yellow {
+            height:18px !important; border-radius:8px;
+            box-shadow:inset 0 0 0 1px rgba(220,180,0,0.8);
+            background:linear-gradient(to bottom,#443300 0%,#886600 10%,#ccaa00 25%,#ffee44 32%,#fff 35%,#fff 65%,#ffee44 68%,#ccaa00 75%,#886600 90%,#443300 100%); }
+        .notes-pm-pop .note.pm-green, .notes-pm-pop .ln-note-start.pm-green, .notes-pm-pop .ln-note-end.pm-green {
+            height:18px !important; border-radius:8px;
+            box-shadow:inset 0 0 0 1px rgba(0,200,80,0.8);
+            background:linear-gradient(to bottom,#003300 0%,#006600 10%,#22aa22 25%,#55ee55 32%,#fff 35%,#fff 65%,#55ee55 68%,#22aa22 75%,#006600 90%,#003300 100%); }
+        .notes-pm-pop .note.pm-blue, .notes-pm-pop .ln-note-start.pm-blue, .notes-pm-pop .ln-note-end.pm-blue {
+            height:18px !important; border-radius:8px;
+            box-shadow:inset 0 0 0 1px rgba(80,140,255,0.8);
+            background:linear-gradient(to bottom,#001166 0%,#002299 10%,#1155cc 25%,#4499ff 32%,#fff 35%,#fff 65%,#4499ff 68%,#1155cc 75%,#002299 90%,#001166 100%); }
+        .notes-pm-pop .note.pm-red, .notes-pm-pop .ln-note-start.pm-red, .notes-pm-pop .ln-note-end.pm-red {
+            height:18px !important; border-radius:8px;
+            box-shadow:inset 0 0 0 1px rgba(220,50,50,0.8);
+            background:linear-gradient(to bottom,#660000 0%,#aa0000 10%,#dd2222 25%,#ff7777 32%,#fff 35%,#fff 65%,#ff7777 68%,#dd2222 75%,#aa0000 90%,#660000 100%); }
+        .notes-pm-pop .ln-note-start { transform:translateY(50%) !important; }
+        .notes-pm-pop .ln-note-end   { transform:translateY(-50%) !important; }
         /* ── PM LN 始点・終点ノーツ ── */
         .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
         .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
@@ -918,12 +941,18 @@
         /* ── PM キャップ（赤）── */
         .cn-pm-red-start-cap    { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(130,15,15,1.0) 10%,rgba(190,40,40,1.0) 30%,rgba(235,70,70,1.0) 47%,rgba(255,90,90,1.0) 50%,rgba(235,70,70,1.0) 53%,rgba(190,40,40,1.0) 70%,rgba(130,15,15,1.0) 90%,rgba(60,0,0,1.0) 100%); }
         .cn-pm-red-end-cap      { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(130,15,15,1.0) 10%,rgba(190,40,40,1.0) 30%,rgba(235,70,70,1.0) 47%,rgba(255,90,90,1.0) 50%,rgba(235,70,70,1.0) 53%,rgba(190,40,40,1.0) 70%,rgba(130,15,15,1.0) 90%,rgba(60,0,0,1.0) 100%); }
-        /* ── PM チャージノーツ（軽量: キャップ非表示）── */
-        .charge-pm .cn-pm-white-start-cap,  .charge-pm .cn-pm-white-end-cap,
-        .charge-pm .cn-pm-yellow-start-cap, .charge-pm .cn-pm-yellow-end-cap,
-        .charge-pm .cn-pm-green-start-cap,  .charge-pm .cn-pm-green-end-cap,
-        .charge-pm .cn-pm-blue-start-cap,   .charge-pm .cn-pm-blue-end-cap,
-        .charge-pm .cn-pm-red-start-cap,    .charge-pm .cn-pm-red-end-cap { display:none !important; }
+        /* ── PM チャージノーツ（pm_beatC軽量: キャップ非表示）── */
+        .charge-pm-beatc .cn-pm-white-start-cap,  .charge-pm-beatc .cn-pm-white-end-cap,
+        .charge-pm-beatc .cn-pm-yellow-start-cap, .charge-pm-beatc .cn-pm-yellow-end-cap,
+        .charge-pm-beatc .cn-pm-green-start-cap,  .charge-pm-beatc .cn-pm-green-end-cap,
+        .charge-pm-beatc .cn-pm-blue-start-cap,   .charge-pm-beatc .cn-pm-blue-end-cap,
+        .charge-pm-beatc .cn-pm-red-start-cap,    .charge-pm-beatc .cn-pm-red-end-cap { display:none !important; }
+        /* ── PM チャージノーツ（pm_pop: キャップ非表示）── */
+        .charge-pm-pop .cn-pm-white-start-cap,  .charge-pm-pop .cn-pm-white-end-cap,
+        .charge-pm-pop .cn-pm-yellow-start-cap, .charge-pm-pop .cn-pm-yellow-end-cap,
+        .charge-pm-pop .cn-pm-green-start-cap,  .charge-pm-pop .cn-pm-green-end-cap,
+        .charge-pm-pop .cn-pm-blue-start-cap,   .charge-pm-pop .cn-pm-blue-end-cap,
+        .charge-pm-pop .cn-pm-red-start-cap,    .charge-pm-pop .cn-pm-red-end-cap { display:none !important; }
 
         /* ── JUDGE SIMPLE（グラデ・発光・点滅なし） ── */
         #greatDisplay.judge-simple .great-label,
@@ -1346,19 +1375,21 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="sudModeABtn">モードA</button>
                 <button class="fx-btn" id="sudModeBBtn">モードB</button>
             </div>
-            <!-- ノーツ描画 A/B/PM -->
+            <!-- ノーツ描画 A/B/PM_POP/PM_BEAT_C -->
             <div class="detail-section nowrap">
                 <span class="detail-label">ノーツ</span>
                 <button class="fx-btn on" id="notesStyleABtn">通常</button>
                 <button class="fx-btn"    id="notesStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="notesStylePMBtn">pm</button>
+                <button class="fx-btn"    id="notesStylePMPopBtn">pm_pop</button>
+                <button class="fx-btn"    id="notesStylePMBeatCBtn">pm_beatC</button>
             </div>
-            <!-- チャージノーツ描画 A/B/PM -->
+            <!-- チャージノーツ描画 A/B/PM_POP/PM_BEAT_C -->
             <div class="detail-section nowrap">
                 <span class="detail-label">チャージノーツ</span>
                 <button class="fx-btn on" id="chargeStyleABtn">通常</button>
                 <button class="fx-btn"    id="chargeStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="chargeStylePMBtn">pm</button>
+                <button class="fx-btn"    id="chargeStylePMPopBtn">pm_pop</button>
+                <button class="fx-btn"    id="chargeStylePMBeatCBtn">pm_beatC</button>
             </div>
             <!-- チャージノーツ処理モード -->
             <div class="detail-section nowrap">
@@ -2311,6 +2342,7 @@ class BMSViewer {
             this.currentSide = 'PM';
             this.laneCount   = 9;
             document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
+            if (this._updateStylesForMode) this._updateStylesForMode('PM');
         }
         if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
 
@@ -2784,38 +2816,71 @@ class BMSViewer {
         document.getElementById('judgeSimpleBtn').addEventListener('click', _updateJustFrameVis);
         document.getElementById('judgeOffBtn').addEventListener('click',    _updateJustFrameVis);
 
-        // ノーツ A/B/PM
+        // ノーツ A/B/PM_POP/PM_BEAT_C
         const _setNotesStyle = (style) => {
             this.notesStyle = style;
             const pa = document.querySelector('.play-area');
-            ['notesStyleABtn','notesStyleBBtn','notesStylePMBtn'].forEach(id =>
+            ['notesStyleABtn','notesStyleBBtn','notesStylePMPopBtn','notesStylePMBeatCBtn'].forEach(id =>
                 document.getElementById(id).classList.remove('on'));
-            document.getElementById(`notesStyle${style === 'A' ? 'A' : style === 'B' ? 'B' : 'PM'}Btn`).classList.add('on');
-            pa.classList.remove('notes-b', 'notes-pm');
-            if (style === 'B')  pa.classList.add('notes-b');
-            if (style === 'PM') pa.classList.add('notes-pm');
+            const btnMap = { A:'notesStyleABtn', B:'notesStyleBBtn', PM_POP:'notesStylePMPopBtn', PM_BEAT_C:'notesStylePMBeatCBtn' };
+            document.getElementById(btnMap[style] || 'notesStyleABtn').classList.add('on');
+            pa.classList.remove('notes-b', 'notes-pm-pop', 'notes-pm-beatc');
+            if (style === 'B')         pa.classList.add('notes-b');
+            if (style === 'PM_POP')    pa.classList.add('notes-pm-pop');
+            if (style === 'PM_BEAT_C') pa.classList.add('notes-pm-beatc');
         };
-        document.getElementById('notesStyleABtn').addEventListener('click',  () => _setNotesStyle('A'));
-        document.getElementById('notesStyleBBtn').addEventListener('click',  () => _setNotesStyle('B'));
-        document.getElementById('notesStylePMBtn').addEventListener('click', () => _setNotesStyle('PM'));
+        document.getElementById('notesStyleABtn').addEventListener('click',      () => _setNotesStyle('A'));
+        document.getElementById('notesStyleBBtn').addEventListener('click',      () => _setNotesStyle('B'));
+        document.getElementById('notesStylePMPopBtn').addEventListener('click',  () => _setNotesStyle('PM_POP'));
+        document.getElementById('notesStylePMBeatCBtn').addEventListener('click',() => _setNotesStyle('PM_BEAT_C'));
 
-        // チャージノーツ A/B/PM
+        // チャージノーツ A/B/PM_POP/PM_BEAT_C
         const _setChargeStyle = (style) => {
             this.chargeStyle = style;
             const pa = document.querySelector('.play-area');
-            ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMBtn'].forEach(id =>
+            ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMPopBtn','chargeStylePMBeatCBtn'].forEach(id =>
                 document.getElementById(id).classList.remove('on'));
-            document.getElementById(`chargeStyle${style === 'A' ? 'A' : style === 'B' ? 'B' : 'PM'}Btn`).classList.add('on');
-            pa.classList.remove('charge-b', 'charge-pm');
-            if (style === 'B')  pa.classList.add('charge-b');
-            if (style === 'PM') pa.classList.add('charge-pm');
+            const btnMap = { A:'chargeStyleABtn', B:'chargeStyleBBtn', PM_POP:'chargeStylePMPopBtn', PM_BEAT_C:'chargeStylePMBeatCBtn' };
+            document.getElementById(btnMap[style] || 'chargeStyleABtn').classList.add('on');
+            pa.classList.remove('charge-b', 'charge-pm-pop', 'charge-pm-beatc');
+            if (style === 'B')         pa.classList.add('charge-b');
+            if (style === 'PM_POP')    pa.classList.add('charge-pm-pop');
+            if (style === 'PM_BEAT_C') pa.classList.add('charge-pm-beatc');
             if (style !== 'A') {
                 for (const el of this.noteElements) el.classList.remove('ln-anim-f2');
             }
         };
-        document.getElementById('chargeStyleABtn').addEventListener('click',  () => _setChargeStyle('A'));
-        document.getElementById('chargeStyleBBtn').addEventListener('click',  () => _setChargeStyle('B'));
-        document.getElementById('chargeStylePMBtn').addEventListener('click', () => _setChargeStyle('PM'));
+        document.getElementById('chargeStyleABtn').addEventListener('click',      () => _setChargeStyle('A'));
+        document.getElementById('chargeStyleBBtn').addEventListener('click',      () => _setChargeStyle('B'));
+        document.getElementById('chargeStylePMPopBtn').addEventListener('click',  () => _setChargeStyle('PM_POP'));
+        document.getElementById('chargeStylePMBeatCBtn').addEventListener('click',() => _setChargeStyle('PM_BEAT_C'));
+
+        // モード切替時のスタイルボタン表示/非表示・デフォルト設定
+        const _updateStylesForMode = (side) => {
+            const isPM = side === 'PM';
+            // IIDXモード: pm_pop/pm_beatCボタン非表示
+            document.getElementById('notesStylePMPopBtn').style.display   = isPM ? '' : 'none';
+            document.getElementById('notesStylePMBeatCBtn').style.display  = isPM ? '' : 'none';
+            document.getElementById('chargeStylePMPopBtn').style.display  = isPM ? '' : 'none';
+            document.getElementById('chargeStylePMBeatCBtn').style.display = isPM ? '' : 'none';
+            // PMモード: 通常/軽量ボタン非表示
+            document.getElementById('notesStyleABtn').style.display  = isPM ? 'none' : '';
+            document.getElementById('notesStyleBBtn').style.display  = isPM ? 'none' : '';
+            document.getElementById('chargeStyleABtn').style.display = isPM ? 'none' : '';
+            document.getElementById('chargeStyleBBtn').style.display = isPM ? 'none' : '';
+            // PMモード切替時はデフォルトをpm_popに
+            if (isPM) {
+                _setNotesStyle('PM_POP');
+                _setChargeStyle('PM_POP');
+            } else {
+                // IIDXに戻ったとき、PM系が選択中なら通常に戻す
+                if (this.notesStyle === 'PM_POP' || this.notesStyle === 'PM_BEAT_C') _setNotesStyle('A');
+                if (this.chargeStyle === 'PM_POP' || this.chargeStyle === 'PM_BEAT_C') _setChargeStyle('A');
+            }
+        };
+        this._updateStylesForMode = _updateStylesForMode;
+        // 初期状態（1P）でPMボタンを非表示にする
+        _updateStylesForMode(this.currentSide);
 
         // キービーム長（OFF含む）
         const _setBeamLength = (len) => {
@@ -3490,6 +3555,7 @@ class BMSViewer {
             this.currentSide = 'PM';
             this.laneCount = 9;
             document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
+            if (this._updateStylesForMode) this._updateStylesForMode('PM');
         }
         if (fname.endsWith('.zip')) {
             await this._loadZip(file);
@@ -4586,6 +4652,7 @@ class BMSViewer {
             this.maxBars = Math.max(0,...nb,...cb)+2;
             this._precompute();
         }
+        if (this._updateStylesForMode) this._updateStylesForMode(side);
         this._renderLanes();
         if(this.bmsData){this.renderNotes();this._updateUI();}
     }

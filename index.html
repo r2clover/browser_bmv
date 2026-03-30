@@ -171,11 +171,11 @@
         .swap-control { display:flex; align-items:center; gap:5px; }
         .swap-label { font-size:11px; color:#aaa; white-space:nowrap; }
         .swap-input {
-            width:106px; padding:3px 6px;
+            width:116px; padding:3px 2px;
             background:#2a2a2a; border:1px solid #555;
             border-radius:4px; color:#fff;
-            font-size:15px; font-weight:bold; text-align:center;
-            letter-spacing:4px; touch-action:manipulation;
+            font-size:14px; font-weight:bold; text-align:center;
+            letter-spacing:2px; touch-action:manipulation;
         }
         .swap-input:focus { outline:none; border-color:#2196F3; background:#1a2a3a; }
         .swap-input.error  { border-color:#ff4444 !important; color:#ff4444; }
@@ -893,27 +893,46 @@
         .notes-pm-beatc .note.pm-red    { box-shadow:none; background:linear-gradient(to right,#700000 0%,#d04040 50%,#700000 100%); }
         /* ── PM ノーツ（pm_pop / ポップ君）── */
         .notes-pm-pop .note.pm-white, .notes-pm-pop .ln-note-start.pm-white, .notes-pm-pop .ln-note-end.pm-white {
-            height:18px !important; border-radius:8px;
-            box-shadow:inset 0 0 0 1px rgba(200,200,200,0.8);
-            background:linear-gradient(to bottom,#333 0%,#666 10%,#aaa 25%,#ddd 32%,#fff 35%,#fff 65%,#ddd 68%,#aaa 75%,#666 90%,#333 100%); }
+            height:18px !important; border-radius:12px;
+            box-shadow:inset 0 0 0 1px rgba(140,140,140,0.9);
+            background:linear-gradient(to bottom,#666 0%,#999 10%,#aaa 25%,#ccc 32%,#fff 35%,#fff 65%,#ccc 68%,#aaa 75%,#999 90%,#666 100%); }
         .notes-pm-pop .note.pm-yellow, .notes-pm-pop .ln-note-start.pm-yellow, .notes-pm-pop .ln-note-end.pm-yellow {
-            height:18px !important; border-radius:8px;
-            box-shadow:inset 0 0 0 1px rgba(220,180,0,0.8);
-            background:linear-gradient(to bottom,#443300 0%,#886600 10%,#ccaa00 25%,#ffee44 32%,#fff 35%,#fff 65%,#ffee44 68%,#ccaa00 75%,#886600 90%,#443300 100%); }
+            height:18px !important; border-radius:12px;
+            box-shadow:inset 0 0 0 1px rgba(150,150,0,0.9);
+            background:linear-gradient(to bottom,#989800 0%,#c0c000 10%,#e0e000 25%,#fafa02 32%,#fff 35%,#fff 65%,#fafa02 68%,#e0e000 75%,#c0c000 90%,#989800 100%); }
         .notes-pm-pop .note.pm-green, .notes-pm-pop .ln-note-start.pm-green, .notes-pm-pop .ln-note-end.pm-green {
-            height:18px !important; border-radius:8px;
-            box-shadow:inset 0 0 0 1px rgba(0,200,80,0.8);
-            background:linear-gradient(to bottom,#003300 0%,#006600 10%,#22aa22 25%,#55ee55 32%,#fff 35%,#fff 65%,#55ee55 68%,#22aa22 75%,#006600 90%,#003300 100%); }
+            height:18px !important; border-radius:12px;
+            box-shadow:inset 0 0 0 1px rgba(0,140,45,0.9);
+            background:linear-gradient(to bottom,#025c00 0%,#038500 10%,#04a800 25%,#04c000 32%,#fff 35%,#fff 65%,#04c000 68%,#04a800 75%,#038500 90%,#025c00 100%); }
         .notes-pm-pop .note.pm-blue, .notes-pm-pop .ln-note-start.pm-blue, .notes-pm-pop .ln-note-end.pm-blue {
-            height:18px !important; border-radius:8px;
-            box-shadow:inset 0 0 0 1px rgba(80,140,255,0.8);
-            background:linear-gradient(to bottom,#001166 0%,#002299 10%,#1155cc 25%,#4499ff 32%,#fff 35%,#fff 65%,#4499ff 68%,#1155cc 75%,#002299 90%,#001166 100%); }
+            height:18px !important; border-radius:12px;
+            box-shadow:inset 0 0 0 1px rgba(40,90,180,0.9);
+            background:linear-gradient(to bottom,#003db0 0%,#0052cc 10%,#005de8 25%,#0065f7 32%,#fff 35%,#fff 65%,#0065f7 68%,#005de8 75%,#0052cc 90%,#003db0 100%); }
         .notes-pm-pop .note.pm-red, .notes-pm-pop .ln-note-start.pm-red, .notes-pm-pop .ln-note-end.pm-red {
-            height:18px !important; border-radius:8px;
-            box-shadow:inset 0 0 0 1px rgba(220,50,50,0.8);
-            background:linear-gradient(to bottom,#660000 0%,#aa0000 10%,#dd2222 25%,#ff7777 32%,#fff 35%,#fff 65%,#ff7777 68%,#dd2222 75%,#aa0000 90%,#660000 100%); }
-        .notes-pm-pop .ln-note-start { transform:translateY(50%) !important; }
-        .notes-pm-pop .ln-note-end   { transform:translateY(-50%) !important; }
+            height:18px !important; border-radius:12px;
+            box-shadow:inset 0 0 0 1px rgba(160,20,20,0.9);
+            background:linear-gradient(to bottom,#cc0000 0%,#dd2222 10%,#ee3333 25%,#ff5555 32%,#fff 35%,#fff 65%,#ff5555 68%,#ee3333 75%,#dd2222 90%,#cc0000 100%); }
+        .notes-pm-pop .note          { transform:translateY(50%) !important; }
+        /* pm_pop LN 始点: 下半分（ストライプ→暗色）通常ノーツの下半分に重なる */
+        .notes-pm-pop .ln-note-start.pm-white,
+        .notes-pm-pop .ln-note-start.pm-yellow,
+        .notes-pm-pop .ln-note-start.pm-green,
+        .notes-pm-pop .ln-note-start.pm-blue,
+        .notes-pm-pop .ln-note-start.pm-red {
+            height:9px !important; border-radius:0 0 12px 12px !important;
+            background-size:100% 200% !important; background-position:0% 100% !important;
+            transform:translateY(100%) !important;
+        }
+        /* pm_pop LN 終点: 上半分（暗色→ストライプ）*/
+        .notes-pm-pop .ln-note-end.pm-white,
+        .notes-pm-pop .ln-note-end.pm-yellow,
+        .notes-pm-pop .ln-note-end.pm-green,
+        .notes-pm-pop .ln-note-end.pm-blue,
+        .notes-pm-pop .ln-note-end.pm-red {
+            height:9px !important; border-radius:12px 12px 0 0 !important;
+            background-size:100% 200% !important; background-position:0% 0% !important;
+            transform:none !important;
+        }
         /* ── PM LN 始点・終点ノーツ ── */
         .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
         .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
@@ -1284,7 +1303,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="swap-label">LANE</span>
                 <input class="swap-input" id="swapInput"
                        type="text" inputmode="numeric"
-                       maxlength="7" value="1234567"
+                       maxlength="9" value="1234567"
                        placeholder="1234567">
             </div>
             <!-- Random / Mirror ボタン -->
@@ -2766,7 +2785,8 @@ class BMSViewer {
 
         // レーン入れ替え
         document.getElementById('swapInput').addEventListener('input', e => {
-            if (e.target.value.length === 7) this._validateAndApplySwap(e.target.value);
+            const expectedLen = this.currentSide === 'PM' ? 9 : 7;
+            if (e.target.value.length === expectedLen) this._validateAndApplySwap(e.target.value);
             else { document.getElementById('swapInput').classList.remove('error','active'); document.getElementById('error').textContent=''; }
         });
         document.getElementById('swapInput').addEventListener('blur', e => {
@@ -2877,6 +2897,22 @@ class BMSViewer {
                 if (this.notesStyle === 'PM_POP' || this.notesStyle === 'PM_BEAT_C') _setNotesStyle('A');
                 if (this.chargeStyle === 'PM_POP' || this.chargeStyle === 'PM_BEAT_C') _setChargeStyle('A');
             }
+            // モード切替時にLANEオプションをリセット
+            const laneDefault = isPM ? '123456789' : '1234567';
+            const swapEl = document.getElementById('swapInput');
+            swapEl.value = laneDefault;
+            swapEl.setAttribute('placeholder', laneDefault);
+            this.laneSwapReverse = null;
+            this.mirrorActive  = false;
+            this.sRandomActive = false;
+            this.hRandomActive = false;
+            this._noteRandomMap = null;
+            document.getElementById('randomBtn').classList.remove('active');
+            document.getElementById('mirrorBtn').classList.remove('active');
+            document.getElementById('sRandomBtn').classList.remove('active');
+            document.getElementById('hRandomBtn').classList.remove('active');
+            swapEl.classList.remove('error', 'active');
+            document.getElementById('error').textContent = '';
         };
         this._updateStylesForMode = _updateStylesForMode;
         // 初期状態（1P）でPMボタンを非表示にする
@@ -3101,14 +3137,15 @@ class BMSViewer {
         document.getElementById('sRandomBtn').addEventListener('click', () => this._toggleSRandom('s'));
         document.getElementById('hRandomBtn').addEventListener('click', () => this._toggleSRandom('h'));
 
-        // Random ボタン：ON/OFF トグル（ON→シャッフル、OFF→1234567 に戻す）
+        // Random ボタン：ON/OFF トグル（ON→シャッフル、OFF→デフォルトに戻す）
         document.getElementById('randomBtn').addEventListener('click', () => {
+            const defaultVal = this.currentSide === 'PM' ? '123456789' : '1234567';
             const cur = document.getElementById('swapInput').value.trim();
-            const isOn = cur !== '1234567'; // 現在 ON かどうか
+            const isOn = cur !== defaultVal;
             if (isOn) {
                 // OFF に戻す
-                document.getElementById('swapInput').value = '1234567';
-                this._validateAndApplySwap('1234567');
+                document.getElementById('swapInput').value = defaultVal;
+                this._validateAndApplySwap(defaultVal);
             } else {
                 // M/S/H をリセットしてからシャッフル
                 this.mirrorActive  = false;
@@ -3118,7 +3155,7 @@ class BMSViewer {
                 document.getElementById('mirrorBtn').classList.remove('active');
                 document.getElementById('sRandomBtn').classList.remove('active');
                 document.getElementById('hRandomBtn').classList.remove('active');
-                const arr = [1,2,3,4,5,6,7];
+                const arr = this.currentSide === 'PM' ? [1,2,3,4,5,6,7,8,9] : [1,2,3,4,5,6,7];
                 for (let i = arr.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -3147,15 +3184,16 @@ class BMSViewer {
         // Mirror ボタン：ON/OFF トグル（S/H と排他）
         document.getElementById('mirrorBtn').addEventListener('click', () => {
             const newVal = !this.mirrorActive;
+            const defaultVal = this.currentSide === 'PM' ? '123456789' : '1234567';
             // R/M/S/H を全リセットしてから M を設定
             this.mirrorActive  = false;
             this.sRandomActive = false;
             this.hRandomActive = false;
             this._noteRandomMap = null;
             if (newVal) this.mirrorActive = true;
-            // R は LANE を 1234567 にリセット
-            document.getElementById('swapInput').value = '1234567';
-            this._applySwapSilent('1234567');
+            // LANE をデフォルトにリセット（mirror は applyLane 内で適用）
+            document.getElementById('swapInput').value = defaultVal;
+            this._applySwapSilent(defaultVal);
             // ボタン表示更新
             document.getElementById('randomBtn').classList.remove('active');
             document.getElementById('mirrorBtn').classList.toggle('active', this.mirrorActive);
@@ -3351,11 +3389,12 @@ class BMSViewer {
             return arr;
         };
 
-        // スクラッチ(lane=0)を除くノーツを対象に、position 順でソート
+        // PMモード: 全9レーン対象 / IIDXモード: スクラッチ除く1-7
+        const isPM = this.currentSide === 'PM';
         const targets = this.bmsData.notes.filter(n =>
             (n.type === 'normal' || n.type === 'ln' ||
              n.type === 'bss'    || n.type === 'mss') &&
-            n.lane >= 1 && n.lane <= 7
+            (isPM ? (n.lane >= 0 && n.lane <= 8) : (n.lane >= 1 && n.lane <= 7))
         ).sort((a, b) => a.position - b.position || a.lane - b.lane);
 
         const map = new Map();
@@ -3371,13 +3410,14 @@ class BMSViewer {
                 group.push(targets[i++]);
             }
 
-            const allLanes = [1, 2, 3, 4, 5, 6, 7];
+            const allLanes = isPM ? [0,1,2,3,4,5,6,7,8] : [1,2,3,4,5,6,7];
+            const laneCount = allLanes.length;
 
             if (!hMode) {
                 // ── S-RANDOM ──────────────────────────────────────
                 // 同一グループ内でレーンが被らないよう shuffle して割り当て
                 const pool = shuffle(allLanes.slice());
-                group.forEach((note, idx) => map.set(note, pool[idx % 7]));
+                group.forEach((note, idx) => map.set(note, pool[idx % laneCount]));
             } else {
                 // ── H-RANDOM ──────────────────────────────────────
                 // 直前グループのレーンを避けて配置
@@ -3413,9 +3453,10 @@ class BMSViewer {
         this.hRandomActive = false;
         if (newVal) this[turning] = true;
 
-        // R は LANE を 1234567 にリセット
-        document.getElementById('swapInput').value = '1234567';
-        this._applySwapSilent('1234567');
+        // LANE をデフォルトにリセット
+        const _srDefaultVal = this.currentSide === 'PM' ? '123456789' : '1234567';
+        document.getElementById('swapInput').value = _srDefaultVal;
+        this._applySwapSilent(_srDefaultVal);
         // ボタン表示更新（R・M も含む）
         document.getElementById('randomBtn').classList.remove('active');
         document.getElementById('mirrorBtn').classList.remove('active');
@@ -3436,9 +3477,16 @@ class BMSViewer {
 
     /* laneSwapReverse だけ更新し、Rボタン表示を変えない内部用 */
     _applySwapSilent(val) {
+        const isPM = this.currentSide === 'PM';
+        const defaultVal = isPM ? '123456789' : '1234567';
         const digits = val.trim().split('').map(Number);
-        if (val.trim() === '1234567') {
+        if (val.trim() === defaultVal) {
             this.laneSwapReverse = null;
+        } else if (isPM) {
+            // digit 1-9 → lane 0-8: rev[lane] = 表示スロット(0-8)
+            const rev = new Array(9);
+            digits.forEach((key, i) => { rev[key - 1] = i; });
+            this.laneSwapReverse = rev;
         } else {
             const rev = new Array(8);
             digits.forEach((key, i) => { rev[key] = i + 1; });
@@ -3449,38 +3497,49 @@ class BMSViewer {
     }
 
     _validateAndApplySwap(value) {
+        const isPM = this.currentSide === 'PM';
+        const expectedLen = isPM ? 9 : 7;
+        const maxDigit    = isPM ? 9 : 7;
+        const defaultVal  = isPM ? '123456789' : '1234567';
         const s     = value.trim();
         const input = document.getElementById('swapInput');
         const errEl = document.getElementById('error');
         const digits = s.split('').map(Number);
 
-        const valid = s.length === 7
-            && digits.every(d => d >= 1 && d <= 7)
-            && new Set(digits).size === 7;
+        const valid = s.length === expectedLen
+            && digits.every(d => d >= 1 && d <= maxDigit)
+            && new Set(digits).size === expectedLen;
 
         if (!valid) {
             input.classList.add('error');
             input.classList.remove('active');
             errEl.textContent = 'ノーツレーン配置にエラーがあります。';
-            if (this.isPlaying) this._togglePlay();   // エラー時は再生停止
+            this.laneSwapReverse = null;  // エラー時は正規配置で再生
+            if (this.isPlaying) this._togglePlay();
+            if (this.bmsData) { this.renderNotes(); this._updatePositions(); }
             return;
         }
 
         input.classList.remove('error');
         errEl.textContent = '';
 
-        if (s === '1234567') {
+        if (s === defaultVal) {
             this.laneSwapReverse = null;
             input.classList.remove('active');
-            // LANE が 1234567 に戻ったら R ボタンを OFF
             document.getElementById('randomBtn').classList.remove('active');
+        } else if (isPM) {
+            // digit 1-9 → lane 0-8: rev[lane] = 表示スロット(0-8)
+            const rev = new Array(9);
+            digits.forEach((key, i) => { rev[key - 1] = i; });
+            this.laneSwapReverse = rev;
+            input.classList.add('active');
+            document.getElementById('randomBtn').classList.add('active');
         } else {
             // reverseSwap[元のkey番号] = 表示スロット番号(1-7)
             const rev = new Array(8);
             digits.forEach((key, i) => { rev[key] = i + 1; });
             this.laneSwapReverse = rev;
             input.classList.add('active');
-            // LANE が 1234567 以外なら R ボタンを ON（オレンジ）
             document.getElementById('randomBtn').classList.add('active');
         }
 
@@ -3792,7 +3851,14 @@ class BMSViewer {
         const PM_CAP_PFX    = ['cn-pm-white','cn-pm-yellow','cn-pm-green','cn-pm-blue','cn-pm-red','cn-pm-blue','cn-pm-green','cn-pm-yellow','cn-pm-white'];
         const applyLane = (note) => {
             if (this.currentSide === 'PM') {
-                const dl = note.lane; // isPMS=true でパース済みなのでlaneは0-8
+                let dl = note.lane; // 0-8
+                if ((this.sRandomActive || this.hRandomActive) && this._noteRandomMap) {
+                    dl = this._noteRandomMap.get(note) ?? note.lane;
+                } else if (this.mirrorActive) {
+                    dl = 8 - note.lane; // 0↔8, 1↔7, 2↔6, 3↔5, 4→4
+                } else if (this.laneSwapReverse) {
+                    dl = this.laneSwapReverse[note.lane] ?? note.lane;
+                }
                 return { dl, swappedLane: dl };
             }
             let swappedLane = note.lane;
@@ -3957,8 +4023,8 @@ class BMSViewer {
         // ── noteEvents リスト構築（判定ライン通過検出用） ──
         this.noteEvents = [];
         this.bmsData.notes.filter(n =>
-            // 通常ノート: ch11-19のみ / LN系(ln・bss・mss): 5x方式はchannel=1-7になるため channel 不問
-            (n.type==='normal' && n.channel>=11 && n.channel<=19) ||
+            // 通常ノート: BMS ch11-19 / PMS ch11-15,22-25 / LN系(ln・bss・mss): 5x方式はchannel=1-7になるため channel 不問
+            (n.type==='normal' && ((n.channel>=11 && n.channel<=19) || (this.currentSide==='PM' && n.channel>=22 && n.channel<=25))) ||
             (n.type==='ln' || n.type==='bss' || n.type==='mss')).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if (dl < 0 || dl >= this.laneCount) return;

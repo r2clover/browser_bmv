@@ -1592,24 +1592,26 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn" id="sudModeBBtn">モードB</button>
             </div>
             <!-- ノーツ描画 A/B/PM_POP/PM_BEAT_C -->
-            <div class="detail-section nowrap">
+            <div class="detail-section">
                 <span class="detail-label">ノーツ</span>
                 <button class="fx-btn on" id="notesStyleABtn">通常</button>
                 <button class="fx-btn"    id="notesStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="notesStylePMPopFaceBtn">pm_ポップ君風</button>
-                <button class="fx-btn"    id="notesStylePMPopLiteBtn">pm_ポップ君風ライト</button>
-                <button class="fx-btn"    id="notesStylePMBeatPopBtn">pm_BEAT POP</button>
-                <button class="fx-btn"    id="notesStylePMBeatCBtn">pm_BEAT POPカラー</button>
+                <button class="fx-btn"    id="notesStylePMPopFaceBtn">ポップ君風</button>
+                <button class="fx-btn"    id="notesStylePMPopLiteBtn">ポップ君風ライト</button>
+                <br>
+                <button class="fx-btn"    id="notesStylePMBeatPopBtn">BEAT POP</button>
+                <button class="fx-btn"    id="notesStylePMBeatCBtn">BEAT POPカラー</button>
             </div>
             <!-- チャージノーツ描画 A/B/PM_POP/PM_BEAT_C -->
-            <div class="detail-section nowrap">
+            <div class="detail-section">
                 <span class="detail-label">チャージノーツ</span>
                 <button class="fx-btn on" id="chargeStyleABtn">通常</button>
                 <button class="fx-btn"    id="chargeStyleBBtn">軽量</button>
-                <button class="fx-btn"    id="chargeStylePMPopFaceBtn">pm_ポップ君風</button>
-                <button class="fx-btn"    id="chargeStylePMPopLiteBtn">pm_ポップ君風ライト</button>
-                <button class="fx-btn"    id="chargeStylePMBeatPopBtn">pm_BEAT POP</button>
-                <button class="fx-btn"    id="chargeStylePMBeatCBtn">pm_BEAT POPカラー</button>
+                <button class="fx-btn"    id="chargeStylePMPopFaceBtn">ポップ君風</button>
+                <button class="fx-btn"    id="chargeStylePMPopLiteBtn">ポップ君風ライト</button>
+                <br>
+                <button class="fx-btn"    id="chargeStylePMBeatPopBtn">BEAT POP</button>
+                <button class="fx-btn"    id="chargeStylePMBeatCBtn">BEAT POPカラー</button>
             </div>
             <!-- チャージノーツ処理モード -->
             <div class="detail-section nowrap">
@@ -1623,8 +1625,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="beamShortBtn">SHORT</button>
                 <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="beamLongBtn">LONG</button>
+                <button class="fx-btn"    id="pmBeamPinkBtn" style="display:none;">PINK</button>
                 <button class="fx-btn"    id="beamOffBtn">OFF</button>
-                <button class="fx-btn"    id="pmBeamPinkBtn" style="display:none;">pm_PINK</button>
             </div>
             <!-- PM キービームの長さ -->
             <div class="detail-section" id="pmBeamLengthSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
@@ -1669,8 +1671,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="judgeJustBtn">JUST</button>
                 <button class="fx-btn"    id="judgeNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="judgeSimpleBtn">SIMPLE</button>
+                <button class="fx-btn"    id="pmJudgeCoolBtn" style="display:none;">COOL!!</button>
                 <button class="fx-btn"    id="judgeOffBtn">OFF</button>
-                <button class="fx-btn"    id="pmJudgeCoolBtn" style="display:none;">pm_COOL!!</button>
             </div>
             <!-- JUST カラーサイクル フレーム数 -->
             <div class="detail-section" id="justFrameSection">
@@ -1931,7 +1933,7 @@ class BMSParser {
             case 'BPM':       this.headers.bpm       = parseFloat(val); break;
             case 'PLAYLEVEL': this.headers.playLevel = val; break;
             case 'LNOBJ':     this.headers.lnobj     = val.trim(); break;
-            case 'PLAYER':    if (parseInt(val) === 3) this.isPMS = true; break;
+            case 'PLAYER':    this.playerNum = parseInt(val); if (this.playerNum === 3) this.isPMS = true; break;
         }
     }
 
@@ -2590,6 +2592,13 @@ class BMSViewer {
             document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
             if (this._updateStylesForMode) this._updateStylesForMode('PM');
         }
+        // #PLAYER 1 を検出したら自動でIIDX(1P)モードへ
+        if (parser.playerNum === 1 && this.currentSide !== '1P') {
+            this.currentSide = '1P';
+            this.laneCount   = 8;
+            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='1P'));
+            if (this._updateStylesForMode) this._updateStylesForMode('1P');
+        }
         if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
 
         const nb=this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
@@ -3131,8 +3140,8 @@ class BMSViewer {
             document.getElementById('chargeStyleBBtn').style.display = isPM ? 'none' : '';
             // PMモード切替時はデフォルトをpm_ポップ君風に
             if (isPM) {
-                _setNotesStyle('PM_POP_LITE');
-                _setChargeStyle('PM_POP_LITE');
+                _setNotesStyle('PM_POP_FACE');
+                _setChargeStyle('PM_POP_FACE');
                 document.getElementById('judgeSizeInput').value = 26;
                 _applyJudgeSize();
             } else {
@@ -4766,11 +4775,13 @@ class BMSViewer {
     _triggerBomb(dl) {
         // キービーム（レーングロー）
         if (this.beamEnabled) {
-            const template = this.bombElements[dl];
-            if (template) {
-                template.classList.remove('boom');
-                void template.offsetWidth;
-                template.classList.add('boom');
+            const el = this.bombElements[dl];
+            if (el) {
+                el.getAnimations().forEach(a => a.cancel());
+                el.animate(
+                    [{ opacity: 1.0 }, { opacity: 0.9, offset: 0.15 }, { opacity: 0 }],
+                    { duration: 200, easing: 'ease-out', fill: 'forwards' }
+                );
             }
         }
     }

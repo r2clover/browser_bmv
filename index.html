@@ -1779,7 +1779,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
                     <input class="vol-slider" type="range" id="judgeOffsetSoundSlider"
-                        min="-200" max="200" value="0" step="1"
+                        min="-300" max="300" value="0" step="1"
                         style="flex:1;">
                     <span class="vol-val" id="judgeOffsetSoundVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
@@ -1787,7 +1787,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="loop-btn" id="judgeOffsetSoundMinus" style="font-size:14px;min-width:28px;">－</button>
                     <button class="loop-btn" id="judgeOffsetSoundPlus"  style="font-size:14px;min-width:28px;">＋</button>
                     <button class="fx-btn"  id="judgeOffsetSoundReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
+                    <span style="font-size:10px;color:#888;">(-300〜+300ms)</span>
                 </div>
             </div>
             <!-- 判定タイミング（描画） -->
@@ -1796,7 +1796,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
                     <input class="vol-slider" type="range" id="judgeOffsetVisualSlider"
-                        min="-200" max="200" value="0" step="1"
+                        min="-300" max="300" value="0" step="1"
                         style="flex:1;">
                     <span class="vol-val" id="judgeOffsetVisualVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
@@ -1804,7 +1804,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="loop-btn" id="judgeOffsetVisualMinus" style="font-size:14px;min-width:28px;">－</button>
                     <button class="loop-btn" id="judgeOffsetVisualPlus"  style="font-size:14px;min-width:28px;">＋</button>
                     <button class="fx-btn"  id="judgeOffsetVisualReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
+                    <span style="font-size:10px;color:#888;">(-300〜+300ms)</span>
                 </div>
             </div>
             </div><!-- /detail-body -->
@@ -2163,8 +2163,8 @@ class BMSViewer {
         this.combo           = 0;
         this.effectsEnabled  = true;   // 後方互換用（現在は未使用）
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
-        this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -200〜+200
-        this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -200〜+200
+        this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -300〜+300
+        this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -300〜+300
         this._justColorIdx    = 0;         // JUSTカラーサイクル持続インデックス
         this._justFrameInterval = 1;         // 何フレームごとに色を変えるか
         this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅 / PM_COOL: PMモード
@@ -2979,7 +2979,7 @@ class BMSViewer {
 
         // ── 判定タイミング（音） ────────────────────────────────────────
         const _updateOffsetSound = (val) => {
-            val = Math.max(-200, Math.min(200, Math.round(val)));
+            val = Math.max(-300, Math.min(300, Math.round(val)));
             this.judgeOffsetSound = val;
             const sign = val > 0 ? '+' : '';
             document.getElementById('judgeOffsetSoundVal').textContent       = sign + val + 'ms';
@@ -3004,7 +3004,7 @@ class BMSViewer {
 
         // ── 判定タイミング（描画） ──────────────────────────────────────
         const _updateOffsetVisual = (val) => {
-            val = Math.max(-200, Math.min(200, Math.round(val)));
+            val = Math.max(-300, Math.min(300, Math.round(val)));
             this.judgeOffsetVisual = val;
             const sign = val > 0 ? '+' : '';
             document.getElementById('judgeOffsetVisualVal').textContent       = sign + val + 'ms';
@@ -3515,7 +3515,7 @@ class BMSViewer {
         });
 
         // 説明ボタン
-        const _helpLines = '<span class=\"help-h1\">【仕様】</span>\n・ブラウザで動作するBMSビューワーです\n・BMS/BME/ZIP形式に対応しています\n・ZIPの中に複数のBMSファイルが格納されている場合、選択画面が表示されます\n・シングルプレイ譜面のみ対応しています\n・再生可能な音源はWAVのみです\n・BGAは表示されません\n・譜面下部のシークバーで好きな地点から再生できます\n・デフォルトはWAV ON、ガイド音 OFF、メトロノーム OFFです\n\n<span class=\"help-sep\">---通常オプション---</span>\n<span class=\"help-h1\">【速度系オプション】</span>\n・PS：PLAY SPEED 曲そのものの速度を変更します\n・緑数字：曲開始時の緑数字を指定します\nこの数字をベースにハイスピードの倍率が決まります\nハイスピードの倍率を直接指定することはできません\n・リアルタイム緑数字（青緑）：BPMに連動して変化する曲現時点の緑数字です\n・GC：GEAR CHANGE いわゆる皿チョンです\n現在の緑数字を冒頭の緑数字に戻します\n・RS：REGUL-SPEED BPM変化しても冒頭の緑数字のスクロール速度を維持します\n\n<span class=\"help-h1\">【SUD+】</span>\n・SUD+ボタン：ONにすると上部にカバーが表示され、降ってくるノーツを隠します\n・数字：カバーの高さをピクセルで表示します。カバーをドラッグすると高さを調整できます\n・モードA（詳細オプション内）：SUD+のカバー高さをそのままに、ハイスピードを変更します（緑数字が変化します）\n・モードB（詳細オプション内）：緑数字を固定したまま、SUD+のカバー高さのみを変更します\n\n<span class=\"help-h1\">【配置系オプション】</span>\n・LANE：1〜7の数字を直接入力し、数字に対応したレーンのノーツを入れ替えます\n・R：RANDOM ONにするとLANE内の数字をランダムに入れ替えます\nOFFにすると1234567（正規）に戻ります\n・M：MIRROR ONにするとLANE内の数字を左右反転した譜面になります\n・S：S-RANDOM ONにするとノーツ単位で配置がランダムになります\n・H：H-RANDOM ONにするとノーツ単位で配置がランダムになりますが、連打にならないよう配置が調整されます\n\n<span class=\"help-sep\">---詳細オプション---</span>\n<span class=\"help-h1\">【表示系オプション】</span>\n・表示：各種エフェクトのON/OFFを切り替えます\n　- 判定：判定文字（GREAT/コンボ数）の表示をON/OFFします\n　- ビーム：ノーツ通過時のレーンビームエフェクトをON/OFFします\n　- ボムA：ノーツ通過時にフルエフェクトのボム（爆発円＋拡散リング）を表示します\n　- ボムB：ボムAより軽量化されたシンプルなボムを表示します（ボムAと同時ONにはなりません）\n　- BPM：BPM変化のタイミングを示すガイドラインを表示します\n・JUDGE：判定文字の見た目をJUST GREAT風か通常GREAT風に切り替えます\n・色/フレーム：JUSTモード時、判定文字の色が何フレームごとに切り替わるかを指定します\n　端末のリフレッシュレートに依存します（60Hzで1フレーム≒16.7ms）\n\n<span class=\"help-h1\">【クォンタイズ】</span>\n・一定のリズムより細かいノーツを指定したグリッドに吸い付かせる機能です\n・16分：16分音符グリッドにスナップします（32分・64分など16分より細かいリズムが対象）\n・8分：8分音符グリッドにスナップします（16分・32分など8分より細かいリズムが対象）\n・ボタンを再クリックするとクォンタイズがOFFになり元の譜面に戻ります\n・ビジュアルのみ：表示位置のみクォンタイズします。WAVは元のタイミングで再生されます\n・WAVも適用：表示位置とWAV再生タイミングの両方をクォンタイズします\n・BGMはビジュアル・WAVともにクォンタイズの対象外です\n・クォンタイズ後に同レーンでノーツが重なる場合はそのノーツの位置を変更しません\n\n<span class=\"help-h1\">【音系オプション】</span>\n<span class=\"help-h2\">《WAV》</span>\n・BGM1：0〜1小節目にアサインされたBGMのWAV再生をON/OFFします\n・BGM2：2小節目以降にアサインされたBGMのWAV再生をON/OFFします\n・KEY：キー音にアサインされたWAV再生をON/OFFします\n・WAV音量：BGM1、BGM2、KEYの音量をそれぞれ変更します\n\n<span class=\"help-h2\">《ガイド音》</span>\n・SC/KEYボタン：ONにするとノーツが判定ラインに重なったタイミングで音を鳴らします\nスクラッチとキーを個別にON/OFF設定します\n・SC/KEYバー：ガイド音の音量を変更します\n・SC/KEY音程：ガイド音の音程を変更します（±12）\n\n<span class=\"help-h2\">《メトロノーム》</span>\n・メトロノーム：ONにするとメトロノームサウンドが再生されます\n・音量：メトロノームの音量を変更します\n\n<span class=\"help-h2\">《判定オフセット》</span>\n・OFS：判定ラインのタイミングをms単位でずらします（-200〜+200ms）\nプラス方向で判定ラインが手前側（早め）、マイナス方向で奥側（遅め）になります\n・RESET：オフセットを0msに戻します\n\n<span class=\"help-h2\">《リピートオプション》</span>\n・REPEAT：ONにすると範囲指定した小節間でリピート再生します\n範囲指定：緑が開始点、赤が終了点です\n終了点には曲の最終小節が初期値として入力されます';
+        const _helpLines = '<span class=\"help-h1\">【仕様】</span>\n・ブラウザで動作するBMSビューワーです\n・BMS/BME/ZIP形式に対応しています\n・ZIPの中に複数のBMSファイルが格納されている場合、選択画面が表示されます\n・シングルプレイ譜面のみ対応しています\n・再生可能な音源はWAVのみです\n・BGAは表示されません\n・譜面下部のシークバーで好きな地点から再生できます\n・デフォルトはWAV ON、ガイド音 OFF、メトロノーム OFFです\n\n<span class=\"help-sep\">---通常オプション---</span>\n<span class=\"help-h1\">【速度系オプション】</span>\n・PS：PLAY SPEED 曲そのものの速度を変更します\n・緑数字：曲開始時の緑数字を指定します\nこの数字をベースにハイスピードの倍率が決まります\nハイスピードの倍率を直接指定することはできません\n・リアルタイム緑数字（青緑）：BPMに連動して変化する曲現時点の緑数字です\n・GC：GEAR CHANGE いわゆる皿チョンです\n現在の緑数字を冒頭の緑数字に戻します\n・RS：REGUL-SPEED BPM変化しても冒頭の緑数字のスクロール速度を維持します\n\n<span class=\"help-h1\">【SUD+】</span>\n・SUD+ボタン：ONにすると上部にカバーが表示され、降ってくるノーツを隠します\n・数字：カバーの高さをピクセルで表示します。カバーをドラッグすると高さを調整できます\n・モードA（詳細オプション内）：SUD+のカバー高さをそのままに、ハイスピードを変更します（緑数字が変化します）\n・モードB（詳細オプション内）：緑数字を固定したまま、SUD+のカバー高さのみを変更します\n\n<span class=\"help-h1\">【配置系オプション】</span>\n・LANE：1〜7の数字を直接入力し、数字に対応したレーンのノーツを入れ替えます\n・R：RANDOM ONにするとLANE内の数字をランダムに入れ替えます\nOFFにすると1234567（正規）に戻ります\n・M：MIRROR ONにするとLANE内の数字を左右反転した譜面になります\n・S：S-RANDOM ONにするとノーツ単位で配置がランダムになります\n・H：H-RANDOM ONにするとノーツ単位で配置がランダムになりますが、連打にならないよう配置が調整されます\n\n<span class=\"help-sep\">---詳細オプション---</span>\n<span class=\"help-h1\">【表示系オプション】</span>\n・表示：各種エフェクトのON/OFFを切り替えます\n　- 判定：判定文字（GREAT/コンボ数）の表示をON/OFFします\n　- ビーム：ノーツ通過時のレーンビームエフェクトをON/OFFします\n　- ボムA：ノーツ通過時にフルエフェクトのボム（爆発円＋拡散リング）を表示します\n　- ボムB：ボムAより軽量化されたシンプルなボムを表示します（ボムAと同時ONにはなりません）\n　- BPM：BPM変化のタイミングを示すガイドラインを表示します\n・JUDGE：判定文字の見た目をJUST GREAT風か通常GREAT風に切り替えます\n・色/フレーム：JUSTモード時、判定文字の色が何フレームごとに切り替わるかを指定します\n　端末のリフレッシュレートに依存します（60Hzで1フレーム≒16.7ms）\n\n<span class=\"help-h1\">【クォンタイズ】</span>\n・一定のリズムより細かいノーツを指定したグリッドに吸い付かせる機能です\n・16分：16分音符グリッドにスナップします（32分・64分など16分より細かいリズムが対象）\n・8分：8分音符グリッドにスナップします（16分・32分など8分より細かいリズムが対象）\n・ボタンを再クリックするとクォンタイズがOFFになり元の譜面に戻ります\n・ビジュアルのみ：表示位置のみクォンタイズします。WAVは元のタイミングで再生されます\n・WAVも適用：表示位置とWAV再生タイミングの両方をクォンタイズします\n・BGMはビジュアル・WAVともにクォンタイズの対象外です\n・クォンタイズ後に同レーンでノーツが重なる場合はそのノーツの位置を変更しません\n\n<span class=\"help-h1\">【音系オプション】</span>\n<span class=\"help-h2\">《WAV》</span>\n・BGM1：0〜1小節目にアサインされたBGMのWAV再生をON/OFFします\n・BGM2：2小節目以降にアサインされたBGMのWAV再生をON/OFFします\n・KEY：キー音にアサインされたWAV再生をON/OFFします\n・WAV音量：BGM1、BGM2、KEYの音量をそれぞれ変更します\n\n<span class=\"help-h2\">《ガイド音》</span>\n・SC/KEYボタン：ONにするとノーツが判定ラインに重なったタイミングで音を鳴らします\nスクラッチとキーを個別にON/OFF設定します\n・SC/KEYバー：ガイド音の音量を変更します\n・SC/KEY音程：ガイド音の音程を変更します（±12）\n\n<span class=\"help-h2\">《メトロノーム》</span>\n・メトロノーム：ONにするとメトロノームサウンドが再生されます\n・音量：メトロノームの音量を変更します\n\n<span class=\"help-h2\">《判定オフセット》</span>\n・OFS：判定ラインのタイミングをms単位でずらします（-300〜+300ms）\nプラス方向で判定ラインが手前側（早め）、マイナス方向で奥側（遅め）になります\n・RESET：オフセットを0msに戻します\n\n<span class=\"help-h2\">《リピートオプション》</span>\n・REPEAT：ONにすると範囲指定した小節間でリピート再生します\n範囲指定：緑が開始点、赤が終了点です\n終了点には曲の最終小節が初期値として入力されます';
         document.getElementById('helpBtn').addEventListener('click', () => {
             document.getElementById('helpBody').innerHTML = _helpLines;
             document.getElementById('helpOverlay').classList.add('open');

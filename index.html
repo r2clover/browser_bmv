@@ -5087,31 +5087,29 @@ class BMSViewer {
                 if (n.lane === 7) { rightYellow.push(n); continue; }
                 if (directMap[n.lane] !== undefined) n.lane = directMap[n.lane];
             }
-            // 各タイミングで使用中のレーンを収集
-            const occupied = new Map();
+            // 各レーンのノーツ位置を収集（連打判定用）
+            const lanePositions = new Map();
             for (const n of bmsData.notes) {
-                if (rightYellow.includes(n)) continue;
-                const key = n.position.toFixed(8);
-                if (!occupied.has(key)) occupied.set(key, new Set());
-                occupied.get(key).add(n.lane);
+                if (rightYellow.includes(n) || n.lane < 0) continue;
+                if (!lanePositions.has(n.lane)) lanePositions.set(n.lane, []);
+                lanePositions.get(n.lane).push(n.position);
             }
-            const priority = [7, 6, 5, 4, 3, 2, 1, 0];
+            // 1/8拍以内に同レーンのノーツがあれば連打と判定
+            const RAPID = 1 / 8;
+            const isRapid = (lane, pos) => {
+                const arr = lanePositions.get(lane);
+                return arr ? arr.some(p => Math.abs(p - pos) <= RAPID) : false;
+            };
+            const priority = [4, 2, 6, 5, 3, 1, 7, 0];
             for (const n of rightYellow) {
-                const key = n.position.toFixed(8);
-                const occ = occupied.get(key) || new Set();
-                let assigned = -1;
-                for (const l of priority) { if (!occ.has(l)) { assigned = l; break; } }
-                if (assigned >= 0) {
-                    n.lane = assigned;
-                    if (!occupied.has(key)) occupied.set(key, new Set());
-                    occupied.get(key).add(assigned);
-                } else {
-                    // 全鍵埋まり → autoplay（BGMイベントに移動）
-                    n.lane = -1;
-                    if (n._rawVal) bmsData.bgmEvents.push({ position: n.position, wavId: n._rawVal });
-                }
+                // 連打にならない最優先レーンを選ぶ
+                let assigned = priority.find(l => !isRapid(l, n.position));
+                // 全レーンで連打になる場合は4鍵（lane=4）に配置
+                if (assigned === undefined) assigned = 4;
+                n.lane = assigned;
+                if (!lanePositions.has(assigned)) lanePositions.set(assigned, []);
+                lanePositions.get(assigned).push(n.position);
             }
-            bmsData.bgmEvents.sort((a, b) => a.position - b.position);
         }
     }
 

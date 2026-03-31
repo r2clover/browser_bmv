@@ -4723,15 +4723,15 @@ class BMSViewer {
             }
         }
 
-        // ── Pass 2: 音声再生（e.px基準 = オフセット0・常にジャストタイミング）──
-        //   WAVキー音・ガイド音(クラップ)はオフセットに関わらず元のタイミングで鳴らす
+        // ── Pass 2: 音声再生（adjPx基準 = オフセット適用）──
         let _clapSC = false, _clapKey = false;
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
-            if (e.px <= prevPx) continue;
-            if (e.px > curPx)   break;
+            const _ePx2 = (e.adjPx !== undefined) ? e.adjPx : e.px;
+            if (_ePx2 <= prevPx) continue;
+            if (_ePx2 > curPx)   break;
             if (e.wavId && this.wavBuffers[e.wavId]) {
-                this._playKeyWav(e.wavId);  // 実音WAV（オフセットに依存しない）
+                this._playKeyWav(e.wavId);
             }
             // ガイド音はWAVと独立して発音（LN/BSS終端は除く）
             if (!e.isEnd && this.guideSoundLanes[e.swappedLane]) {

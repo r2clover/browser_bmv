@@ -1773,21 +1773,38 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span class="vol-val" id="volMetroVal">18</span>
                 </div>
             </div>
-            <!-- 判定オフセット -->
+            <!-- 判定タイミング（音） -->
             <div class="detail-section" style="flex-direction:column;align-items:flex-start;gap:4px;">
-                <span class="detail-label">判定オフセット</span>
+                <span class="detail-label">判定タイミング（音）</span>
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
-                    <input class="vol-slider" type="range" id="judgeOffsetSlider"
-                        min="-500" max="500" value="0" step="1"
+                    <input class="vol-slider" type="range" id="judgeOffsetSoundSlider"
+                        min="-100" max="100" value="0" step="1"
                         style="flex:1;">
-                    <span class="vol-val" id="judgeOffsetVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
+                    <span class="vol-val" id="judgeOffsetSoundVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
-                    <button class="loop-btn" id="judgeOffsetMinus" style="font-size:14px;min-width:28px;">－</button>
-                    <button class="loop-btn" id="judgeOffsetPlus"  style="font-size:14px;min-width:28px;">＋</button>
-                    <button class="fx-btn"  id="judgeOffsetReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-500〜+500ms)</span>
+                    <button class="loop-btn" id="judgeOffsetSoundMinus" style="font-size:14px;min-width:28px;">－</button>
+                    <button class="loop-btn" id="judgeOffsetSoundPlus"  style="font-size:14px;min-width:28px;">＋</button>
+                    <button class="fx-btn"  id="judgeOffsetSoundReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
+                    <span style="font-size:10px;color:#888;">(-100〜+100ms)</span>
+                </div>
+            </div>
+            <!-- 判定タイミング（描画） -->
+            <div class="detail-section" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <span class="detail-label">判定タイミング（描画）</span>
+                <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
+                    <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
+                    <input class="vol-slider" type="range" id="judgeOffsetVisualSlider"
+                        min="-100" max="100" value="0" step="1"
+                        style="flex:1;">
+                    <span class="vol-val" id="judgeOffsetVisualVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
+                    <button class="loop-btn" id="judgeOffsetVisualMinus" style="font-size:14px;min-width:28px;">－</button>
+                    <button class="loop-btn" id="judgeOffsetVisualPlus"  style="font-size:14px;min-width:28px;">＋</button>
+                    <button class="fx-btn"  id="judgeOffsetVisualReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
+                    <span style="font-size:10px;color:#888;">(-100〜+100ms)</span>
                 </div>
             </div>
             </div><!-- /detail-body -->
@@ -2146,7 +2163,8 @@ class BMSViewer {
         this.combo           = 0;
         this.effectsEnabled  = true;   // 後方互換用（現在は未使用）
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
-        this.judgeOffset      = 0;     // 判定オフセット(ms) -100〜+100
+        this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -100〜+100
+        this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -100〜+100
         this._justColorIdx    = 0;         // JUSTカラーサイクル持続インデックス
         this._justFrameInterval = 1;         // 何フレームごとに色を変えるか
         this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅 / PM_COOL: PMモード
@@ -2958,32 +2976,56 @@ class BMSViewer {
             document.getElementById('lnModeABtn').classList.remove('on');
         });
 
-        // ── 判定オフセット ──────────────────────────────────────────────
-        const _updateOffset = (val) => {
-            val = Math.max(-500, Math.min(500, Math.round(val)));
-            this.judgeOffset = val;
+        // ── 判定タイミング（音） ────────────────────────────────────────
+        const _updateOffsetSound = (val) => {
+            val = Math.max(-100, Math.min(100, Math.round(val)));
+            this.judgeOffsetSound = val;
             const sign = val > 0 ? '+' : '';
-            document.getElementById('judgeOffsetVal').textContent       = sign + val + 'ms';
-            document.getElementById('judgeOffsetSlider').value          = val;
-            document.getElementById('judgeOffsetSlider').style.accentColor = (val !== 0) ? '#ff9900' : '#4caf50';
+            document.getElementById('judgeOffsetSoundVal').textContent       = sign + val + 'ms';
+            document.getElementById('judgeOffsetSoundSlider').value          = val;
+            document.getElementById('judgeOffsetSoundSlider').style.accentColor = (val !== 0) ? '#ff9900' : '#4caf50';
+            if (this.noteEvents && this.noteEvents.length) {
+                this._recomputeAdjPx();
+            }
+        };
+        document.getElementById('judgeOffsetSoundSlider').addEventListener('input', e => {
+            _updateOffsetSound(parseInt(e.target.value));
+        });
+        document.getElementById('judgeOffsetSoundMinus').addEventListener('click', () => {
+            _updateOffsetSound((this.judgeOffsetSound || 0) - 1);
+        });
+        document.getElementById('judgeOffsetSoundPlus').addEventListener('click', () => {
+            _updateOffsetSound((this.judgeOffsetSound || 0) + 1);
+        });
+        document.getElementById('judgeOffsetSoundReset').addEventListener('click', () => {
+            _updateOffsetSound(0);
+        });
+
+        // ── 判定タイミング（描画） ──────────────────────────────────────
+        const _updateOffsetVisual = (val) => {
+            val = Math.max(-100, Math.min(100, Math.round(val)));
+            this.judgeOffsetVisual = val;
+            const sign = val > 0 ? '+' : '';
+            document.getElementById('judgeOffsetVisualVal').textContent       = sign + val + 'ms';
+            document.getElementById('judgeOffsetVisualSlider').value          = val;
+            document.getElementById('judgeOffsetVisualSlider').style.accentColor = (val !== 0) ? '#ff9900' : '#4caf50';
             this._lastOffsetText = null; // キャッシュ無効化
-            // adjPx 再計算（曲読み込み済みのとき）
             if (this.noteEvents && this.noteEvents.length) {
                 this._recomputeAdjPx();
                 this._syncCombo();
             }
         };
-        document.getElementById('judgeOffsetSlider').addEventListener('input', e => {
-            _updateOffset(parseInt(e.target.value));
+        document.getElementById('judgeOffsetVisualSlider').addEventListener('input', e => {
+            _updateOffsetVisual(parseInt(e.target.value));
         });
-        document.getElementById('judgeOffsetMinus').addEventListener('click', () => {
-            _updateOffset((this.judgeOffset || 0) - 1);
+        document.getElementById('judgeOffsetVisualMinus').addEventListener('click', () => {
+            _updateOffsetVisual((this.judgeOffsetVisual || 0) - 1);
         });
-        document.getElementById('judgeOffsetPlus').addEventListener('click', () => {
-            _updateOffset((this.judgeOffset || 0) + 1);
+        document.getElementById('judgeOffsetVisualPlus').addEventListener('click', () => {
+            _updateOffsetVisual((this.judgeOffsetVisual || 0) + 1);
         });
-        document.getElementById('judgeOffsetReset').addEventListener('click', () => {
-            _updateOffset(0);
+        document.getElementById('judgeOffsetVisualReset').addEventListener('click', () => {
+            _updateOffsetVisual(0);
         });
 
         const mkPitch = (minusId, plusId, valId, getter, setter) => {
@@ -4346,7 +4388,7 @@ class BMSViewer {
             }
         });
         this.noteEvents.sort((a,b) => a.px - b.px);
-        // adjPx（オフセット補正後トリガー位置）を計算
+        // adjPxSound / adjPxVisual（オフセット補正後トリガー位置）を計算
         this._recomputeAdjPx();
         // combo を現在位置に同期
         this._syncCombo();
@@ -4523,27 +4565,25 @@ class BMSViewer {
     }
 
     /* ── エフェクト: コンボ同期 ── */
-    /* ── 判定オフセット補正: noteEvent.adjPx を計算 ── */
+    /* ── 判定オフセット補正: noteEvent.adjPxSound / adjPxVisual を計算 ── */
     _recomputeAdjPx() {
-        const offsetSec = (this.judgeOffset || 0) / 1000;
+        const soundSec  = (this.judgeOffsetSound  || 0) / 1000;
+        const visualSec = (this.judgeOffsetVisual || 0) / 1000;
+        const calcAdjPx = (px, offsetSec) => {
+            if (offsetSec === 0) return px;
+            const noteTimeSec = this._px2sec(px);
+            const adjustedSec = noteTimeSec - offsetSec;
+            if (adjustedSec <= 0) return 0;
+            return this._pos2px(this._secToPosition(adjustedSec));
+        };
         for (const e of this.noteEvents) {
-            if (offsetSec === 0) {
-                e.adjPx = e.px;
-            } else {
-                const noteTimeSec = this._px2sec(e.px);
-                const adjustedSec = noteTimeSec - offsetSec;
-                if (adjustedSec <= 0) {
-                    e.adjPx = 0;
-                } else {
-                    const adjustedPos = this._secToPosition(adjustedSec);
-                    e.adjPx = this._pos2px(adjustedPos);
-                }
-            }
+            e.adjPxSound  = calcAdjPx(e.px, soundSec);
+            e.adjPxVisual = calcAdjPx(e.px, visualSec);
         }
     }
 
     _syncCombo() {
-        this.combo = this.noteEvents.filter(e => (e.adjPx ?? e.px) < this.currentPixelPos).length;
+        this.combo = this.noteEvents.filter(e => (e.adjPxVisual ?? e.px) < this.currentPixelPos).length;
         this.lastProcessedPx = this.currentPixelPos;
     }
 
@@ -4710,7 +4750,7 @@ class BMSViewer {
         const pmPositions = new Set();
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
-            const _ePx = (e.adjPx !== undefined) ? e.adjPx : e.px;
+            const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
             if (_ePx <= prevPx) continue;
             if (_ePx > curPx)   break;
             this.combo++;
@@ -4727,7 +4767,7 @@ class BMSViewer {
         let _clapSC = false, _clapKey = false;
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
-            const _ePx2 = (e.adjPx !== undefined) ? e.adjPx : e.px;
+            const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
             if (_ePx2 <= prevPx) continue;
             if (_ePx2 > curPx)   break;
             if (e.wavId && this.wavBuffers[e.wavId]) {

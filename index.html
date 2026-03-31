@@ -2606,6 +2606,7 @@ class BMSViewer {
         // BMS固有のisPMSでパース（ファイルのPLAYER宣言を先読みして正しいチャンネルを取得）
         { const _pm = text.match(/^#PLAYER\s+(\d+)/im); parser.isPMS = _pm ? parseInt(_pm[1])===3 : false; }
         this.bmsData=parser.parse(text);
+        this._applyDPMerge(this.bmsData);
         // #PLAYER 3 を検出したら自動でPMモードへ
         if (parser.isPMS && this.currentSide !== 'PM') {
             this.currentSide = 'PM';
@@ -3746,6 +3747,7 @@ class BMSViewer {
         const targets = this.bmsData.notes.filter(n =>
             (n.type === 'normal' || n.type === 'ln' ||
              n.type === 'bss'    || n.type === 'mss') &&
+            !n.dpBgm &&
             (isPM ? (n.lane >= 0 && n.lane <= 8) : (n.lane >= 1 && n.lane <= 7))
         ).sort((a, b) => a.position - b.position || a.lane - b.lane);
 
@@ -4231,7 +4233,9 @@ class BMSViewer {
         // ── 通常ノート ──
         this.bmsData.notes.filter(n => {
             if (n.type !== 'normal') return false;
+            if (n.dpBgm) return false; // DP BGMノーツは表示しない
             if (this.currentSide==='PM' || this._crossModeType==='iidx-in-pm') return true;
+            if (this.bmsData.isDPChart && n.channel>=21 && n.channel<=29) return true; // DPの2P非衝突ノーツ
             return (n.channel>=11&&n.channel<=19) || (this._crossModeType==='pm-in-iidx' && n.channel>=22&&n.channel<=25);
         }).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
@@ -4252,7 +4256,7 @@ class BMSViewer {
 
         // ── ロングノーツ / BSS / MSS ──
         // ── LN / BSS 描画（MSS は別処理） ──
-        this.bmsData.notes.filter(n => ['ln','bss'].includes(n.type)).forEach(note => {
+        this.bmsData.notes.filter(n => ['ln','bss'].includes(n.type) && !n.dpBgm).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if(dl<0||dl>=this.laneCount) return;
             const _qp2=(n)=> this._quantizeMap ? (this._quantizeMap.get(n)??n.position) : n.position;
@@ -4376,8 +4380,10 @@ class BMSViewer {
         // ── noteEvents リスト構築（判定ライン通過検出用） ──
         this.noteEvents = [];
         this.bmsData.notes.filter(n =>
-            // 通常ノート: BMS ch11-19 / PMS ch11-15,22-25 / LN系(ln・bss・mss): 5x方式はchannel=1-7になるため channel 不問
-            (n.type==='normal' && ((n.channel>=11 && n.channel<=19) || (this.currentSide==='PM' && n.channel>=22 && n.channel<=25) || (this._crossModeType==='pm-in-iidx' && n.channel>=22 && n.channel<=25))) ||
+            // DP BGMノーツは別途追加するためここでは除外
+            !n.dpBgm &&
+            // 通常ノート: BMS ch11-19 / DP ch21-29 / PMS ch11-15,22-25 / LN系
+            (n.type==='normal' && ((n.channel>=11 && n.channel<=19) || (this.bmsData.isDPChart && n.channel>=21 && n.channel<=29) || (this.currentSide==='PM' && n.channel>=22 && n.channel<=25) || (this._crossModeType==='pm-in-iidx' && n.channel>=22 && n.channel<=25))) ||
             (n.type==='ln' || n.type==='bss' || n.type==='mss')).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if (dl < 0 || dl >= this.laneCount) return;
@@ -4392,6 +4398,13 @@ class BMSViewer {
                 this.noteEvents.push({ px: endPx, dl, laneType, swappedLane, wavId: null, isEnd: true });
             }
         });
+        // DP BGMノーツ: 衝突した2P側をオートプレイ（視覚なし・WAVのみ）
+        if (this.bmsData.isDPChart) {
+            this.bmsData.notes.filter(n => n.dpBgm && n._rawVal).forEach(note => {
+                const px = this._pos2px(note.position);
+                this.noteEvents.push({ px, dl: 0, laneType: 'white-key', swappedLane: 1, wavId: note._rawVal, isAutoBgm: true });
+            });
+        }
         this.noteEvents.sort((a,b) => a.px - b.px);
         // adjPxSound / adjPxVisual（オフセット補正後トリガー位置）を計算
         this._recomputeAdjPx();
@@ -4588,7 +4601,7 @@ class BMSViewer {
     }
 
     _syncCombo() {
-        this.combo = this.noteEvents.filter(e => (e.adjPxVisual ?? e.px) < this.currentPixelPos).length;
+        this.combo = this.noteEvents.filter(e => !e.isAutoBgm && (e.adjPxVisual ?? e.px) < this.currentPixelPos).length;
         this.lastProcessedPx = this.currentPixelPos;
     }
 
@@ -4758,6 +4771,7 @@ class BMSViewer {
         const pmPositions = new Set();
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
+            if (e.isAutoBgm) continue; // DP BGMノーツは視覚効果なし
             const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
             if (_ePx <= prevPx) continue;
             if (_ePx > curPx)   break;
@@ -5109,9 +5123,36 @@ class BMSViewer {
         document.getElementById('bpmDisplay').textContent=Math.round((h.bpm||130)*this.realSpeed);
         document.getElementById('totalNotes').textContent=
             this.bmsData.notes.filter(n=>(n.type==='normal'||n.type==='ln'||n.type==='bss'||n.type==='mss') &&
+                !n.dpBgm &&
                 (this._crossModeType ? (n.lane>=0&&n.lane<this.laneCount) :
-                this.currentSide==='PM' ? (n.lane>=0&&n.lane<=8) : (n.channel>=11&&n.channel<=19))).length;
+                this.currentSide==='PM' ? (n.lane>=0&&n.lane<=8) :
+                (n.channel>=11&&n.channel<=19) || (this.bmsData.isDPChart&&n.channel>=21&&n.channel<=29))).length;
         document.getElementById('totalBarsDisplay').textContent = this.maxBars;
+    }
+
+    _applyDPMerge(bmsData) {
+        // DP検出: PMS以外でch21-29ノーツが存在する場合
+        if (bmsData.isPMS) return;
+        const has2P = bmsData.notes.some(n => n.channel >= 21 && n.channel <= 29);
+        if (!has2P) { bmsData.isDPChart = false; return; }
+        bmsData.isDPChart = true;
+
+        // 1P側の各レーンのノーツ位置を収集
+        const pos1P = new Map(); // lane → [position, ...]
+        for (const n of bmsData.notes) {
+            if (n.channel < 11 || n.channel > 19) continue;
+            if (!pos1P.has(n.lane)) pos1P.set(n.lane, []);
+            pos1P.get(n.lane).push(n.position);
+        }
+        // 2P側ノーツを確認: 同レーン同位置に1P側ノーツがあればBGM扱い
+        const THRESHOLD = 1e-6;
+        for (const n of bmsData.notes) {
+            if (n.channel < 21 || n.channel > 29) continue;
+            const positions = pos1P.get(n.lane);
+            if (positions && positions.some(p => Math.abs(p - n.position) < THRESHOLD)) {
+                n.dpBgm = true; // 衝突: BGMオートプレイ
+            }
+        }
     }
 
     _applyCrossModeRemap(bmsData) {
@@ -5181,6 +5222,7 @@ class BMSViewer {
             const parser = new BMSParser();
             parser.isPMS = bmsIsPMS;
             this.bmsData = parser.parse(this.bmsText);
+            this._applyDPMerge(this.bmsData);
             if (this._crossModeType) this._applyCrossModeRemap(this.bmsData);
             if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm = 130;
             const nb = this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));

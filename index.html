@@ -1779,7 +1779,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
                     <input class="vol-slider" type="range" id="judgeOffsetSlider"
-                        min="-200" max="200" value="0" step="1"
+                        min="-500" max="500" value="0" step="1"
                         style="flex:1;">
                     <span class="vol-val" id="judgeOffsetVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
@@ -1787,7 +1787,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="loop-btn" id="judgeOffsetMinus" style="font-size:14px;min-width:28px;">－</button>
                     <button class="loop-btn" id="judgeOffsetPlus"  style="font-size:14px;min-width:28px;">＋</button>
                     <button class="fx-btn"  id="judgeOffsetReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
+                    <span style="font-size:10px;color:#888;">(-500〜+500ms)</span>
                 </div>
             </div>
             </div><!-- /detail-body -->
@@ -2960,7 +2960,7 @@ class BMSViewer {
 
         // ── 判定オフセット ──────────────────────────────────────────────
         const _updateOffset = (val) => {
-            val = Math.max(-200, Math.min(200, Math.round(val)));
+            val = Math.max(-500, Math.min(500, Math.round(val)));
             this.judgeOffset = val;
             const sign = val > 0 ? '+' : '';
             document.getElementById('judgeOffsetVal').textContent       = sign + val + 'ms';
@@ -2976,7 +2976,12 @@ class BMSViewer {
         document.getElementById('judgeOffsetSlider').addEventListener('input', e => {
             _updateOffset(parseInt(e.target.value));
         });
-
+        document.getElementById('judgeOffsetMinus').addEventListener('click', () => {
+            _updateOffset((this.judgeOffset || 0) - 1);
+        });
+        document.getElementById('judgeOffsetPlus').addEventListener('click', () => {
+            _updateOffset((this.judgeOffset || 0) + 1);
+        });
         document.getElementById('judgeOffsetReset').addEventListener('click', () => {
             _updateOffset(0);
         });

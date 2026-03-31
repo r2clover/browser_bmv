@@ -1779,7 +1779,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
                     <input class="vol-slider" type="range" id="judgeOffsetSoundSlider"
-                        min="-100" max="100" value="0" step="1"
+                        min="-200" max="200" value="0" step="1"
                         style="flex:1;">
                     <span class="vol-val" id="judgeOffsetSoundVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
@@ -1787,7 +1787,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="loop-btn" id="judgeOffsetSoundMinus" style="font-size:14px;min-width:28px;">－</button>
                     <button class="loop-btn" id="judgeOffsetSoundPlus"  style="font-size:14px;min-width:28px;">＋</button>
                     <button class="fx-btn"  id="judgeOffsetSoundReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-100〜+100ms)</span>
+                    <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
                 </div>
             </div>
             <!-- 判定タイミング（描画） -->
@@ -1796,7 +1796,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="vol-row" style="align-items:center;gap:6px;width:100%;">
                     <span class="vol-label" style="min-width:28px;font-size:10px;color:#aaa;">OFS</span>
                     <input class="vol-slider" type="range" id="judgeOffsetVisualSlider"
-                        min="-100" max="100" value="0" step="1"
+                        min="-200" max="200" value="0" step="1"
                         style="flex:1;">
                     <span class="vol-val" id="judgeOffsetVisualVal" style="min-width:48px;text-align:right;color:#ff9900;font-weight:bold;">0ms</span>
                 </div>
@@ -1804,7 +1804,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="loop-btn" id="judgeOffsetVisualMinus" style="font-size:14px;min-width:28px;">－</button>
                     <button class="loop-btn" id="judgeOffsetVisualPlus"  style="font-size:14px;min-width:28px;">＋</button>
                     <button class="fx-btn"  id="judgeOffsetVisualReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
-                    <span style="font-size:10px;color:#888;">(-100〜+100ms)</span>
+                    <span style="font-size:10px;color:#888;">(-200〜+200ms)</span>
                 </div>
             </div>
             </div><!-- /detail-body -->
@@ -2163,8 +2163,8 @@ class BMSViewer {
         this.combo           = 0;
         this.effectsEnabled  = true;   // 後方互換用（現在は未使用）
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
-        this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -100〜+100
-        this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -100〜+100
+        this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -200〜+200
+        this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -200〜+200
         this._justColorIdx    = 0;         // JUSTカラーサイクル持続インデックス
         this._justFrameInterval = 1;         // 何フレームごとに色を変えるか
         this.judgeMode        = 'JUST'; // JUST: 3色サイクル / NORMAL: 黄色点滅 / PM_COOL: PMモード
@@ -2385,10 +2385,11 @@ class BMSViewer {
         this.audioStartSec  = this._px2sec(this.currentPixelPos);
 
         const rs     = Math.max(0.1, this.realSpeed);
+        const soundOffsetSec = (this.judgeOffsetSound || 0) / 1000; // BGMもキー音と同じオフセットを適用
         const bgmEvs = (this.bmsData&&this.bmsData.bgmEvents)||[];
         for (const ev of bgmEvs) {
             const evSec      = this._positionToSec(ev.position);
-            const wallOffset = (evSec - this.audioStartSec) / rs;
+            const wallOffset = (evSec - soundOffsetSec - this.audioStartSec) / rs;
             // position < 2 (小節0〜1 = #00001〜#00101) とそれ以降で音量を分ける
             const _bgmEnabled = ev.position < 2 ? this.wavBgm1Enabled : this.wavBgm2Enabled;
             if (!_bgmEnabled) continue; // WAV ON/OFFスイッチがOFFならスキップ
@@ -2402,9 +2403,9 @@ class BMSViewer {
                 );
             } else {
                 // 過去: srcOffset 秒目から即時再生（RS非依存）
-                const srcOffset = this.audioStartSec - evSec;
+                const srcOffset = this.audioStartSec - evSec + soundOffsetSec;
                 const buf = this.wavBuffers[ev.wavId];
-                if (buf && srcOffset < buf.duration) {
+                if (buf && srcOffset >= 0 && srcOffset < buf.duration) {
                     const node = this._createWavNode(ev.wavId, bgmVol);
                     if (node) node.start(this.audioPlayT0, srcOffset);
                 }
@@ -2978,7 +2979,7 @@ class BMSViewer {
 
         // ── 判定タイミング（音） ────────────────────────────────────────
         const _updateOffsetSound = (val) => {
-            val = Math.max(-100, Math.min(100, Math.round(val)));
+            val = Math.max(-200, Math.min(200, Math.round(val)));
             this.judgeOffsetSound = val;
             const sign = val > 0 ? '+' : '';
             document.getElementById('judgeOffsetSoundVal').textContent       = sign + val + 'ms';
@@ -3003,7 +3004,7 @@ class BMSViewer {
 
         // ── 判定タイミング（描画） ──────────────────────────────────────
         const _updateOffsetVisual = (val) => {
-            val = Math.max(-100, Math.min(100, Math.round(val)));
+            val = Math.max(-200, Math.min(200, Math.round(val)));
             this.judgeOffsetVisual = val;
             const sign = val > 0 ? '+' : '';
             document.getElementById('judgeOffsetVisualVal').textContent       = sign + val + 'ms';

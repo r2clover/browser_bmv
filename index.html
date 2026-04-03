@@ -214,7 +214,10 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:446px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:400px; }
+        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:400px; }
+        .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
+        .play-area.gauge-dead .lane { background:#1a0000 !important; }
+        .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
         .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
@@ -676,6 +679,73 @@
         }
 
         /* ── GREAT + コンボ表示 ── */
+        /* ── プレイモード判定文字（IIDX_play） ── */
+        .play-judge-positioner {
+            position:absolute; left:0; right:0; bottom:110px;
+            text-align:center; pointer-events:none; z-index:31;
+        }
+        .play-judge-display {
+            display:inline-flex; align-items:center; gap:12px;
+            opacity:0; white-space:nowrap; vertical-align:middle;
+            transform:scaleX(0.75); transform-origin:center bottom; transition:none;
+        }
+        .play-judge-label, .play-judge-combo {
+            font-size:var(--pj-size,56px); font-weight:800;
+            font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+            font-variant-numeric:tabular-nums; line-height:1;
+            background:linear-gradient(to bottom,#ffbf02 0%,#fffdf4 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+            filter:drop-shadow(0 0 8px rgba(255,191,2,0.8)) drop-shadow(0 0 16px rgba(255,191,2,0.4));
+        }
+        /* PGREAT: JUSTサイクルと共有 */
+        .play-judge-display.pj-pgreat-pink  .play-judge-label,
+        .play-judge-display.pj-pgreat-pink  .play-judge-combo {
+            background:linear-gradient(to bottom,#ff5595 0%,#ffa7c8 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important; filter:none !important;
+            text-shadow:0 0 8px rgba(255,105,180,.65),0 0 18px rgba(255,20,147,.4) !important;
+        }
+        .play-judge-display.pj-pgreat-blue  .play-judge-label,
+        .play-judge-display.pj-pgreat-blue  .play-judge-combo {
+            background:linear-gradient(to bottom,#63a2ff 0%,#a5c3ff 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important; filter:none !important;
+            text-shadow:0 0 8px rgba(0,153,204,.65),0 0 18px rgba(0,100,180,.4) !important;
+        }
+        .play-judge-display.pj-pgreat-green .play-judge-label,
+        .play-judge-display.pj-pgreat-green .play-judge-combo {
+            background:linear-gradient(to bottom,#aaffc8 0%,#d0ffe1 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important; filter:none !important;
+            text-shadow:0 0 8px rgba(102,255,153,.65),0 0 18px rgba(0,210,100,.4) !important;
+        }
+        /* GREAT/GOOD: 黄色（NORMAL同様）*/
+        .play-judge-display.pj-great .play-judge-label,
+        .play-judge-display.pj-great .play-judge-combo,
+        .play-judge-display.pj-good  .play-judge-label,
+        .play-judge-display.pj-good  .play-judge-combo {
+            background:linear-gradient(to bottom,#ffbf02 0%,#fffdf4 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important;
+            filter:drop-shadow(0 0 8px rgba(255,191,2,.8)) drop-shadow(0 0 16px rgba(255,191,2,.4)) !important;
+        }
+        /* BAD: グレー */
+        .play-judge-display.pj-bad .play-judge-label {
+            background:linear-gradient(to bottom,#999 0%,#ccc 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important;
+            filter:drop-shadow(0 0 4px rgba(180,180,180,.5)) !important;
+        }
+        /* POOR: ダークレッド */
+        .play-judge-display.pj-poor .play-judge-label {
+            background:linear-gradient(to bottom,#cc0000 0%,#ff4444 100%) !important;
+            -webkit-background-clip:text !important; background-clip:text !important;
+            -webkit-text-fill-color:transparent !important;
+            filter:drop-shadow(0 0 6px rgba(220,0,0,.6)) !important;
+        }
+        /* PMモードサイズ */
+        .pm-mode .play-judge-positioner { --pj-size:40px; }
+
         /* GREAT + コンボ表示 */
         /* GREAT + コンボ */
         .great-positioner {
@@ -1233,14 +1303,50 @@
             z-index:15;
         }
 
-        .status-bar {
-            position:absolute; bottom:5px; left:50%;
-            transform:translateX(-50%);
-            background:rgba(0,0,0,.75); padding:3px 12px;
-            border-radius:4px; font-size:11px; white-space:nowrap;
-            font-variant-numeric: tabular-nums;
+        /* ── play-footer: ゲージ + ステータスバー ── */
+        .play-footer {
+            flex-shrink:0; background:#0a0a0a; border-top:1px solid #2a2a2a;
         }
-        /* 数値スパンを固定幅に（ずれ防止） */
+        /* グルーブゲージ */
+        .groove-gauge-area {
+            display:flex; align-items:center; padding:3px 8px; gap:6px; height:20px; box-sizing:border-box;
+        }
+        .groove-gauge-track {
+            flex:1; height:12px; background:#111; border:1px solid #333; border-radius:2px; overflow:hidden;
+        }
+        .groove-gauge-bar {
+            height:100%; width:22%;
+            background:linear-gradient(to right,#005522,#00dd66);
+            border-radius:2px; transition:width 0.08s;
+        }
+        .groove-gauge-bar.gauge-red     { background:linear-gradient(to right,#660000,#ff2200); }
+        .groove-gauge-bar.gauge-easy    { background:linear-gradient(to right,#228800,#88ff44); }
+        .groove-gauge-bar.gauge-easy-hi { background:linear-gradient(to right,#881144,#ff66cc); }
+        .groove-gauge-bar.gauge-hard    { background:linear-gradient(to right,#880000,#ff2200); }
+        .groove-gauge-bar.gauge-exhard  { background:linear-gradient(to right,#886600,#ffdd00); }
+        .groove-gauge-bar.gauge-dan     { background:linear-gradient(to right,#884400,#ff8800); }
+        .groove-gauge-label {
+            font-size:10px; color:#00dd66; min-width:34px; text-align:right;
+            font-variant-numeric:tabular-nums;
+        }
+        .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
+        /* ステータスバー（2行） */
+        .status-bar {
+            padding:2px 8px 3px; font-size:10px; color:#aaa;
+            font-variant-numeric:tabular-nums; display:flex; flex-direction:column; gap:0;
+        }
+        .status-row {
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.5;
+        }
+        /* プレイ情報スパン固定幅 */
+        #scoreDisplay   { display:inline-block; min-width:5em; text-align:right; color:#fff; }
+        #gaugePctStat   { display:inline-block; min-width:3em; text-align:right; color:#00dd66; }
+        #pgCount        { display:inline-block; min-width:3em; text-align:right; color:#ffee00; }
+        #grCount        { display:inline-block; min-width:3em; text-align:right; color:#88ff88; }
+        #gdCount        { display:inline-block; min-width:3em; text-align:right; color:#aaaaff; }
+        #bdCount        { display:inline-block; min-width:3em; text-align:right; color:#ff8844; }
+        #prCount        { display:inline-block; min-width:3em; text-align:right; color:#ff4444; }
+        /* 既存JS参照用スパン（非表示） */
         #totalNotes      { display:inline-block; min-width:3em; text-align:right; }
         #bpmDisplay      { display:inline-block; min-width:3em; text-align:right; }
         #statusGreenNum  { display:inline-block; min-width:3em; text-align:right; }
@@ -1294,8 +1400,8 @@
             transform:translate(-50%,-50%);
             background:#1e1e1e; border:1px solid #555;
             border-radius:12px; padding:0;
-            min-width:290px; max-width:92vw;
-            max-height:88vh;
+            min-width:290px; max-width:92%;
+            max-height:88%;
             display:flex; flex-direction:column;
             z-index:1;
         }
@@ -1548,6 +1654,32 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- HELP -->
             <div class="detail-section nowrap">
                 <button class="fx-btn" id="helpBtn" style="width:100%;">HELP</button>
+            </div>
+            <!-- モード選択 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">モード</span>
+                <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
+                <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
+            </div>
+            <!-- GROOVE GAUGE タイプ選択 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">GROOVE GAUGE</span>
+                <button class="fx-btn on" id="gaugeNormalBtn">NORMAL</button>
+                <button class="fx-btn"   id="gaugeEasyBtn">EASY</button>
+                <button class="fx-btn"   id="gaugeHardBtn">HARD</button>
+                <button class="fx-btn"   id="gaugeExHardBtn">EX HARD</button>
+                <button class="fx-btn"   id="gaugeDanBtn">段位認定</button>
+            </div>
+            <!-- GROOVE GAUGE 初期値 -->
+            <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                <span class="detail-label">初期ゲージ値</span>
+                <div class="vol-row">
+                    <button class="loop-btn" id="gaugeInitMinus">－</button>
+                    <input class="vol-slider" type="range" id="gaugeInitSlider" min="2" max="100" step="2" value="22">
+                    <button class="loop-btn" id="gaugeInitPlus">＋</button>
+                    <span class="vol-val" id="gaugeInitVal">22</span>
+                    <span style="font-size:11px; color:#888;">%</span>
+                </div>
             </div>
             <!-- PLAY SPEED -->
             <div class="detail-section nowrap">
@@ -1842,6 +1974,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="great-combo" id="greatCombo">0</span>
             </div>
         </div>
+        <!-- プレイモード判定表示（IIDX_play） -->
+        <div class="play-judge-positioner">
+            <div class="play-judge-display" id="playJudgeDisplay">
+                <span class="play-judge-label" id="playJudgeLabel"></span>
+                <span class="play-judge-combo" id="playJudgeCombo"></span>
+            </div>
+        </div>
         <!-- PM 判定文字 (左/中/右 3ポジション) -->
         <div class="pm-judge-positioner pm-judge-L" id="pmJudge_L">
             <span class="pm-judge-label">COOL!!</span>
@@ -1857,27 +1996,53 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
         <div id="sudCover" class="sud-cover"></div>
-        <div class="status-bar" id="statusBar">
-            Total:<span id="totalNotes">0</span> |
-            BPM:<span id="bpmDisplay">0</span> |
-            <span style="color:#00ff88;">緑数字:<span id="statusGreenNum">—</span></span> |
-            <span id="statusElapsed" style="color:#fff;">0:00</span> |
-            小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span>
-            <span id="loopStatus"></span>
+    </div>
+
+    <!-- play-footer: グルーブゲージ + ステータスバー -->
+    <div class="play-footer">
+        <!-- グルーブゲージ -->
+        <div class="groove-gauge-area">
+            <div class="groove-gauge-track">
+                <div class="groove-gauge-bar" id="grooveGaugeBar" style="width:22%;"></div>
+            </div>
+            <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
+        </div>
+        <!-- ステータスバー 2行 -->
+        <div class="status-bar" id="statusBar" style="display:none;">
+            <!-- 行1: スコア・ゲージ・判定カウント -->
+            <div class="status-row">
+                SCORE:<span id="scoreDisplay">0</span>
+                &nbsp;PG:<span id="pgCount">0</span>
+                &nbsp;GR:<span id="grCount">0</span>
+                &nbsp;GD:<span id="gdCount">0</span>
+                &nbsp;BD:<span id="bdCount">0</span>
+                &nbsp;PR:<span id="prCount">0</span>
+            </div>
+            <!-- 行2: 従来ステータス情報 -->
+            <div class="status-row">
+                Total:<span id="totalNotes">0</span>
+                &nbsp;BPM:<span id="bpmDisplay">0</span>
+                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span>
+                &nbsp;<span id="statusElapsed" style="color:#ccc;">0:00</span>
+                &nbsp;小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span>
+                <span id="loopStatus"></span>
+            </div>
+        </div>
+        <!-- 非表示スパン（JS互換用） -->
+        <div style="display:none;" aria-hidden="true">
+            <span id="exScore">0</span>
+            <span id="achievementPct">0.00</span>
+            <span id="gaugePctStat">22</span>
         </div>
     </div>
 
-    <!-- シークバー（判定ラインの下） -->
+    <!-- シークバー -->
     <div class="seek-wrap" id="seekWrap">
         <div class="seek-inner">
             <div class="seek-track" id="seekTrack">
                 <div class="seek-fill"       id="seekFill"      style="width:0%"></div>
                 <div class="seek-loop-range" id="seekLoopRange"></div>
                 <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
-            </div>
-            <div class="seek-bar-labels">
-                <span id="seekLabelLeft">0</span>
-                <span id="seekLabelRight">—</span>
             </div>
         </div>
     </div>
@@ -2184,6 +2349,20 @@ class BMSViewer {
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
         this.bombMode         = 'B';     // ボム: A/B/OFF
+        this.isPlayMode       = false;   // false=オートプレイ / true=プレイモード
+        // プレイモード判定カウンター
+        this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
+        this._bdCount = 0; this._prCount = 0;
+        this._score   = 0;
+        this._gaugeType   = 'NORMAL'; // 'NORMAL'|'EASY'|'HARD'|'EXHARD'|'DAN'
+        this._gaugeInitPct = 22;  // 初期値（%、2%単位）
+        this._gaugeValue = 1100; // 内部値 0〜5000（100%=5000、初期値22%）
+        this._grInc   = 0;       // GREAT/PGREAT 1ノーツあたり増加量（ノーツ数確定後に計算）
+        this._gdInc   = 0;       // GOOD 増加量
+        this._heldLN  = new Map(); // dl → { tailEvent } 保持中LN管理
+        this._pjBlinkTimer = null;
+        this._pjFadeTimer  = null;
+        this._pjCycleTimer = null;
         this._targetFps       = 0;      // 描画FPS: 30/60/120/144/0(無制限)
         this._lastFrameRender = 0;      // FPSスロットル用
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
@@ -3306,6 +3485,50 @@ class BMSViewer {
         document.getElementById('bombBBtn').addEventListener('click',   () => _setBombMode('B'));
         document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
 
+        // モード選択（AUTO PLAY / PLAY MODE）
+        const _setPlayMode = (isPlay) => {
+            this.isPlayMode = isPlay;
+            document.getElementById('autoPlayModeBtn').classList.toggle('on', !isPlay);
+            document.getElementById('playModeBtn').classList.toggle('on',  isPlay);
+            if (isPlay) { this.combo = 0; }
+        };
+        document.getElementById('autoPlayModeBtn').addEventListener('click', () => _setPlayMode(false));
+        document.getElementById('playModeBtn').addEventListener('click',     () => _setPlayMode(true));
+
+        // GROOVE GAUGE 初期値
+        const _setGaugeInit = (pct) => {
+            const slider = document.getElementById('gaugeInitSlider');
+            const minV = +slider.min;
+            pct = Math.max(minV, Math.min(100, Math.round(pct / 2) * 2)); // 2%刻みにクランプ
+            this._gaugeInitPct = pct;
+            slider.value = pct;
+            document.getElementById('gaugeInitVal').textContent = pct;
+        };
+        document.getElementById('gaugeInitSlider').addEventListener('input', e => _setGaugeInit(+e.target.value));
+        document.getElementById('gaugeInitMinus').addEventListener('click', () => _setGaugeInit(this._gaugeInitPct - 2));
+        document.getElementById('gaugeInitPlus').addEventListener('click',  () => _setGaugeInit(this._gaugeInitPct + 2));
+
+        // GROOVE GAUGE タイプ選択
+        const _gaugeTypeMap = {
+            NORMAL:'gaugeNormalBtn', EASY:'gaugeEasyBtn',
+            HARD:'gaugeHardBtn', EXHARD:'gaugeExHardBtn', DAN:'gaugeDanBtn'
+        };
+        const _setGaugeType = (type) => {
+            this._gaugeType = type;
+            for (const [t, id] of Object.entries(_gaugeTypeMap))
+                document.getElementById(id).classList.toggle('on', t === type);
+            // HARD/EXHARD/DAN はスライダー下限を0%に、デフォルト100%
+            const isHeavy = type === 'HARD' || type === 'EXHARD' || type === 'DAN';
+            const slider = document.getElementById('gaugeInitSlider');
+            slider.min = isHeavy ? '0' : '2';
+            _setGaugeInit(isHeavy ? 100 : 22);
+            // 現在のゲージ表示カラーだけ更新（値は変えない）
+            const displayPct = Math.floor(this._gaugeValue / 100) * 2;
+            this._updateGrooveGauge(displayPct);
+        };
+        for (const [type, id] of Object.entries(_gaugeTypeMap))
+            document.getElementById(id).addEventListener('click', () => _setGaugeType(type));
+
         // 描画FPS
         const _fpsIds = { 30:'fps30Btn', 60:'fps60Btn', 120:'fps120Btn', 144:'fps144Btn', 0:'fpsUnlimitedBtn' };
         const _setFps = (fps) => {
@@ -3706,6 +3929,8 @@ class BMSViewer {
         // RS変化でBPMが変わるので緑数字を再適用してHSを更新
         const gv = document.getElementById('greenInput');
         if (gv) this._applyGreenNum(gv.value);
+
+        this._initKeyInput();
     }
 
     /* 現緑 = 175300 / (currentBPM × HS)  ← リアルタイム更新 */
@@ -4420,11 +4645,16 @@ class BMSViewer {
             const _wavPos = (this._quantizeMap && this.quantizeWav) ? _visPos : note.position;
             const px      = this._pos2px(_wavPos);
             const laneType = swappedLane===0 ? 'scratch' : [1,3,5,7].includes(swappedLane) ? 'white-key' : 'black-key';
-            this.noteEvents.push({ px, dl, laneType, swappedLane, wavId: note._rawVal||null });
-            // LN/BSS/MSS: 終端にも判定イベントを追加（WAVなし・終端フラグあり）
+            const headEv = { px, dl, laneType, swappedLane, wavId: note._rawVal||null };
+            this.noteEvents.push(headEv);
+            // LN/BSS/MSS: 終端にも判定イベントを追加（head↔tail相互参照）
             if ((note.type==='ln' || note.type==='bss' || note.type==='mss') && note.endPosition != null) {
                 const endPx = this._pos2px(note.endPosition);
-                this.noteEvents.push({ px: endPx, dl, laneType, swappedLane, wavId: null, isEnd: true });
+                const tailEv = { px: endPx, dl, laneType, swappedLane, wavId: null, isEnd: true };
+                headEv.isLN = true;
+                headEv._tailEvent = tailEv;
+                tailEv._headEvent = headEv;
+                this.noteEvents.push(tailEv);
             }
         });
         // DP BGMノーツ: 衝突した2P側をオートプレイ（視覚なし・WAVのみ）
@@ -4439,6 +4669,10 @@ class BMSViewer {
         this._recomputeAdjPx();
         // combo を現在位置に同期
         this._syncCombo();
+        // グルーブゲージ増加量を総ノーツ数から計算（LN尾端は除く）
+        const _gN = Math.max(1, this.noteEvents.filter(e => !e.isAutoBgm && !e.isEnd).length);
+        this._grInc = Math.floor(80000 / (_gN * 2 + 1400));
+        this._gdInc = Math.floor(this._grInc / 2);
 
         this._refreshLoopUI(false);
     }
@@ -4452,6 +4686,7 @@ class BMSViewer {
             btn.textContent='再生'; btn.classList.replace('btn-secondary','btn-success');
         } else {
             if(this.loopEnabled) this.currentPixelPos=this.barStartPx[this.loopStart]||0;
+            this._resetPlayCounters();
             this.isPlaying=true; btn.textContent='停止';
             btn.classList.replace('btn-success','btn-secondary');
             this._startAudio();
@@ -4466,19 +4701,27 @@ class BMSViewer {
          - realSpeed: RS倍率  ← ★テンポを変える
          - pixelsPerBar: HS倍率が反映済み  ← 視覚間隔を変える
     ============================================================ */
-    _animate() {
+    _animate(rafTime) {
         if (!this.isPlaying) return;
-        const now = performance.now();
+        // rAF タイムスタンプを優先（performance.now() より正確）
+        const now = (rafTime !== undefined) ? rafTime : performance.now();
 
         // FPSスロットル: 目標FPSより速い場合はフレームをスキップ
         if (this._targetFps > 0) {
             const minInterval = 1000 / this._targetFps;
-            if (now - this._lastFrameRender < minInterval - 0.5) {
-                this.animFrameId = requestAnimationFrame(() => this._animate());
+            if (now - this._lastFrameRender < minInterval - 1) {
+                this.animFrameId = requestAnimationFrame(t => this._animate(t));
                 return;
             }
+            // ドリフト防止: 次フレーム期待値を minInterval ずつ進める
+            if (this._lastFrameRender === 0) {
+                this._lastFrameRender = now;
+            } else {
+                this._lastFrameRender += minInterval;
+                // 大幅に遅れた場合はリセット（タブ復帰など）
+                if (now - this._lastFrameRender > minInterval * 2) this._lastFrameRender = now;
+            }
         }
-        this._lastFrameRender = now;
 
         const dt  = (now - this.lastTimestamp) / 1000;
         this.lastTimestamp = now;
@@ -4510,6 +4753,7 @@ class BMSViewer {
             if (span > 0 && this.currentPixelPos >= ep) {
                 this.currentPixelPos = sp + (this.currentPixelPos - ep) % span;
                 this._syncCombo();
+                this._resetPlayCounters();
                 if (this.isPlaying) this._startAudio();
             }
         } else {
@@ -4535,6 +4779,7 @@ class BMSViewer {
 
         const bpm = this._bpmAt(this.currentPixelPos);
         this._detectPassed(prevPx, this.currentPixelPos);
+        if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
         this._updatePositions();
         this._updateBgaImage();
@@ -4598,7 +4843,7 @@ class BMSViewer {
             }
         }
 
-        this.animFrameId = requestAnimationFrame(() => this._animate());
+        this.animFrameId = requestAnimationFrame(t => this._animate(t));
     }
 
     /* ── 判定ライン 拍連動グロー ── */
@@ -4641,6 +4886,7 @@ class BMSViewer {
     }
 
     _syncCombo() {
+        if (this.isPlayMode) { this.combo = 0; this.lastProcessedPx = this.currentPixelPos; return; }
         this.combo = this.noteEvents.filter(e => !e.isAutoBgm && (e.adjPxVisual ?? e.px) < this.currentPixelPos).length;
         this.lastProcessedPx = this.currentPixelPos;
     }
@@ -4804,52 +5050,54 @@ class BMSViewer {
     _detectPassed(prevPx, curPx) {
         const events = this.noteEvents;
 
-        // ── Pass 1: 判定エフェクト（adjPx基準 = オフセット適用）──────────────
-        //   コンボ加算・ボム・爆発エフェクト・GREAT表示 はオフセットでシフト
-        let triggered = false;
-        const bombed = new Set();
-        const pmPositions = new Set();
-        for (let i = 0; i < events.length; i++) {
-            const e = events[i];
-            if (e.isAutoBgm) continue; // DP BGMノーツは視覚効果なし
-            const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
-            if (_ePx <= prevPx) continue;
-            if (_ePx > curPx)   break;
-            this.combo++;
-            triggered = true;
-            // isEnd（LN/BSS終点）のボムは_updatePositions側で発火するためここでは除外
-            if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl); this._triggerExplosion(e.dl); bombed.add(e.dl); }
-            // PMモード: 判定ポジション収集（dl 0-2→L, 3-5→C, 6-8→R）
-            if (this.currentSide === 'PM' && !e.isEnd) {
-                pmPositions.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
+        // ── Pass 1: 判定エフェクト ──────────────────────────────────────────
+        // プレイモードでは自動判定しない（プレイヤー入力で判定）
+        if (!this.isPlayMode) {
+            let triggered = false;
+            const bombed = new Set();
+            const pmPositions = new Set();
+            for (let i = 0; i < events.length; i++) {
+                const e = events[i];
+                if (e.isAutoBgm) continue; // DP BGMノーツは視覚効果なし
+                const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
+                if (_ePx <= prevPx) continue;
+                if (_ePx > curPx)   break;
+                this.combo++;
+                triggered = true;
+                // isEnd（LN/BSS終点）のボムは_updatePositions側で発火するためここでは除外
+                if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl); this._triggerExplosion(e.dl); bombed.add(e.dl); }
+                // PMモード: 判定ポジション収集（dl 0-2→L, 3-5→C, 6-8→R）
+                if (this.currentSide === 'PM' && !e.isEnd) {
+                    pmPositions.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
+                }
+            }
+            if (triggered) {
+                if (this.currentSide === 'PM') this._showPMCool(pmPositions);
+                else this._showGreat();
             }
         }
 
-        // ── Pass 2: 音声再生（adjPx基準 = オフセット適用）──
+        // ── Pass 2: 音声再生 ──────────────────────────────────────────────
+        // プレイモードでは isAutoBgm（BGM・DP自動再生）のみ発音
         let _clapSC = false, _clapKey = false;
         for (let i = 0; i < events.length; i++) {
             const e = events[i];
+            if (this.isPlayMode && !e.isAutoBgm) continue; // プレイモード: キー音はスキップ
             const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
             if (_ePx2 <= prevPx) continue;
             if (_ePx2 > curPx)   break;
             if (e.wavId && this.wavBuffers[e.wavId]) {
                 this._playKeyWav(e.wavId);
             }
-            // ガイド音はWAVと独立して発音（LN/BSS終端は除く）
-            if (!e.isEnd && this.guideSoundLanes[e.swappedLane]) {
+            // ガイド音（オートプレイ時のみ）
+            if (!this.isPlayMode && !e.isEnd && this.guideSoundLanes[e.swappedLane]) {
                 if (e.swappedLane === 0) _clapSC = true;
                 else _clapKey = true;
             }
         }
-        if (_clapSC || _clapKey) {
-            // 両方鳴る場合は音量が大きい方を優先
+        if (!this.isPlayMode && (_clapSC || _clapKey)) {
             if (_clapSC && _clapKey) this._playClap(this.volSC >= this.volKey);
             else this._playClap(_clapSC);
-        }
-
-        if (triggered) {
-            if (this.currentSide === 'PM') this._showPMCool(pmPositions);
-            else this._showGreat();
         }
     }
 
@@ -4881,6 +5129,373 @@ class BMSViewer {
             const pe = document.getElementById(`pmJudge_${pos}`);
             if (pe) { pe.style.transition = 'none'; pe.style.opacity = '0'; }
         }
+    }
+
+    /* ============================================================
+       キー入力（プレイモード）
+    ============================================================ */
+    _initKeyInput() {
+        // IIDX: SC=ShiftLeft,Space / 1-7=Z,S,X,D,C,F,V
+        this._KEY_IIDX = {
+            ShiftLeft:0, Space:0,
+            KeyZ:1, KeyS:2, KeyX:3, KeyD:4, KeyC:5, KeyF:6, KeyV:7
+        };
+        // PM: 左白Z 左黄S 左緑X 左青D 赤C 右青F 右緑V 右黄G 右白B
+        this._KEY_PM = {
+            KeyZ:0, KeyS:1, KeyX:2, KeyD:3, KeyC:4, KeyF:5, KeyV:6, KeyG:7, KeyB:8
+        };
+        this._heldKeys = new Map(); // code → dl（押下中キー管理）
+
+        document.addEventListener('keydown', (e) => {
+            if (!this.isPlayMode) return;
+            // テキスト入力中は無視
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            if (e.repeat) return; // キーリピート無視
+
+            const dl = this._keyCodeToDl(e.code);
+            if (dl === -1) return;
+            e.preventDefault();
+            // 同コードの重複押下を防ぐ（ShiftLeft/Spaceが両方SCになる場合）
+            if (this._heldKeys.has(e.code)) return;
+            this._heldKeys.set(e.code, dl);
+            this._onLanePress(dl);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!this.isPlayMode) return;
+            const dl = this._keyCodeToDl(e.code);
+            if (dl === -1) return;
+            e.preventDefault();
+            this._heldKeys.delete(e.code);
+            this._onLaneRelease(dl);
+        });
+    }
+
+    _keyCodeToDl(code) {
+        if (this.currentSide === 'PM') return this._KEY_PM[code] ?? -1;
+        return this._KEY_IIDX[code] ?? -1;
+    }
+
+    // ── px/ms 変換ヘルパー ──────────────────────────────────────
+    _pxPerMs(atPx) {
+        const bpm = this._bpmAt(atPx) * this.realSpeed;
+        return bpm * this.pixelsPerBar / 240000;
+    }
+
+    // ── 判定計算（deltaMs: 正=早押し, 負=遅押し） ───────────────
+    _calcJudgment(deltaMs) {
+        const abs = Math.abs(deltaMs);
+        if (abs <=  16.67) return 'PGREAT';
+        if (abs <=  33.33) return 'GREAT';
+        if (abs <= 116.67) return 'GOOD';
+        if (deltaMs >= -210 && deltaMs <= 165) return 'BAD';
+        return null;
+    }
+
+    // ── 判定カウント・スコア・ゲージリセット ────────────────────
+    _resetPlayCounters() {
+        this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
+        this._bdCount = 0; this._prCount = 0;
+        this._score   = 0;
+        this.combo    = 0;
+        const ids = { pgCount:0, grCount:0, gdCount:0, bdCount:0, prCount:0, scoreDisplay:0 };
+        for (const [id, val] of Object.entries(ids)) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        }
+        const gc = document.getElementById('greatCombo');
+        if (gc) gc.textContent = 0;
+        // ゲージ初期値にリセット
+        this._gaugeValue = this._gaugeInitPct * 50; // % → 内部値（100%=5000なので×50）
+        this._updateGrooveGauge(this._gaugeInitPct);
+    }
+
+    // ── 判定適用（カウント・コンボ・表示） ──────────────────────
+    // isEmptyPoor=true: 空POOR（BADと同じ-100）、false: 見逃しPOOR（-300）
+    _applyJudgment(judgment, dl, isEmptyPoor = false) {
+        const key = { PGREAT:'_pgCount', GREAT:'_grCount', GOOD:'_gdCount', BAD:'_bdCount', POOR:'_prCount' }[judgment];
+        if (key) this[key]++;
+        const idMap = { PGREAT:'pgCount', GREAT:'grCount', GOOD:'gdCount', BAD:'bdCount', POOR:'prCount' };
+        const el = document.getElementById(idMap[judgment]);
+        if (el) el.textContent = this[key] || 0;
+
+        // スコア加算
+        if (judgment === 'PGREAT') this._score += 2;
+        else if (judgment === 'GREAT') this._score += 1;
+        const sc = document.getElementById('scoreDisplay');
+        if (sc) sc.textContent = this._score;
+
+        // グルーブゲージ
+        this._applyGauge(judgment, isEmptyPoor);
+
+        // コンボ
+        if (judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD') {
+            this.combo++;
+        } else {
+            this.combo = 0;
+        }
+        // エフェクト
+        if (judgment !== 'POOR' && dl !== undefined) this._triggerExplosion(dl);
+
+        this._showPlayJudgment(judgment);
+    }
+
+    // ── グルーブゲージ増減 ────────────────────────────────────
+    _applyGauge(judgment, isEmptyPoor = false) {
+        if (!this.isPlayMode) return;
+        const GAUGE_MAX = 5000;
+        const cur = this._gaugeValue;
+        let delta = 0;
+        const isPG = judgment === 'PGREAT' || judgment === 'GREAT';
+
+        switch (this._gaugeType) {
+            case 'EASY':
+                if      (isPG)              delta =  this._grInc;
+                else if (judgment==='GOOD') delta =  this._gdInc;
+                else if (judgment==='BAD')  delta = -80;
+                else if (judgment==='POOR') delta =  isEmptyPoor ? -80 : -240;
+                break;
+            case 'HARD': {
+                if      (isPG)              delta =  8;    // +0.16%
+                else if (judgment==='GOOD') delta =  0;
+                else if (judgment==='BAD')  delta = -250;  // -5%
+                else if (judgment==='POOR') delta =  isEmptyPoor ? -250 : -450; // -5% or -9%
+                if (delta < 0 && cur <= 1500) delta = Math.ceil(delta / 2); // 残30%以下補正
+                break;
+            }
+            case 'EXHARD':
+                if      (isPG)              delta =  8;    // +0.16%
+                else if (judgment==='GOOD') delta =  0;
+                else if (judgment==='BAD')  delta = -500;  // -10%
+                else if (judgment==='POOR') delta =  isEmptyPoor ? -500 : -900; // -10% or -18%
+                break;
+            case 'DAN': {
+                if      (isPG)              delta =  8;    // +0.16%
+                else if (judgment==='GOOD') delta =  2;    // +0.04%（GREAT比25%）
+                else if (judgment==='BAD')  delta = -75;   // -1.5%
+                else if (judgment==='POOR') delta =  isEmptyPoor ? -75 : -125; // -1.5% or -2.5%
+                if (delta < 0 && cur <= 1500) delta = Math.ceil(delta / 2); // 残30%以下補正
+                break;
+            }
+            default: // NORMAL
+                if      (isPG)              delta =  this._grInc;
+                else if (judgment==='GOOD') delta =  this._gdInc;
+                else if (judgment==='BAD')  delta = -100;
+                else if (judgment==='POOR') delta =  isEmptyPoor ? -100 : -300;
+        }
+
+        this._gaugeValue = Math.max(0, Math.min(GAUGE_MAX, cur + delta));
+        const displayPct = Math.floor(this._gaugeValue / 100) * 2;
+        this._updateGrooveGauge(displayPct);
+    }
+
+    // ── プレイモード判定文字表示 ─────────────────────────────────
+    _showPlayJudgment(judgment) {
+        if (!this.judgementEnabled) return;
+        const disp  = document.getElementById('playJudgeDisplay');
+        const label = document.getElementById('playJudgeLabel');
+        const combo = document.getElementById('playJudgeCombo');
+        if (!disp) return;
+
+        const PJ_COLORS = ['pj-pgreat-pink', 'pj-pgreat-blue', 'pj-pgreat-green'];
+        const ALL_CLS   = [...PJ_COLORS, 'pj-great', 'pj-good', 'pj-bad', 'pj-poor'];
+
+        // PGREAT ラベルはモードによって変わる
+        const labelText = {
+            PGREAT: this.currentSide === 'PM' ? 'COOL!!' : 'PGREAT',
+            GREAT: 'GREAT', GOOD: 'GOOD', BAD: 'BAD', POOR: 'POOR'
+        }[judgment] || judgment;
+        label.textContent = labelText;
+
+        // BAD/POOR: コンボ非表示・中央寄せ
+        const showCombo = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
+        combo.style.display = showCombo ? '' : 'none';
+        if (showCombo) combo.textContent = this.combo;
+
+        // タイマーリセット
+        if (this._pjFadeTimer)  { clearTimeout(this._pjFadeTimer);   this._pjFadeTimer  = null; }
+        if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+
+        disp.style.transition = 'none';
+        disp.style.opacity    = '1';
+        disp.classList.remove(...ALL_CLS);
+        label.style.filter = '';
+        combo.style.filter = '';
+
+        if (judgment === 'PGREAT') {
+            // JUSTサイクル継続（止まっていれば起動）
+            if (!this._pjCycleTimer) {
+                let _cf = 0;
+                const cycle = () => {
+                    if (_cf % (this._justFrameInterval || 1) === 0) {
+                        disp.classList.remove(...PJ_COLORS);
+                        disp.classList.add(PJ_COLORS[this._justColorIdx % 3]);
+                        this._justColorIdx++;
+                    }
+                    _cf++;
+                    this._pjCycleTimer = requestAnimationFrame(cycle);
+                };
+                this._pjCycleTimer = requestAnimationFrame(cycle);
+            }
+        } else if (judgment === 'GREAT') {
+            disp.classList.add('pj-great');
+            // NORMAL: 点滅
+            if (!this._pjBlinkTimer) {
+                let bright = true;
+                this._pjBlinkTimer = setInterval(() => {
+                    bright = !bright;
+                    disp.style.opacity = bright ? '1' : '0.8';
+                }, 33);
+            }
+        } else if (judgment === 'GOOD') {
+            disp.classList.add('pj-good');
+            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
+        } else if (judgment === 'BAD') {
+            disp.classList.add('pj-bad');
+            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
+            if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+        } else { // POOR
+            disp.classList.add('pj-poor');
+            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
+            if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+        }
+
+        // 500ms後フェードアウト
+        this._pjFadeTimer = setTimeout(() => {
+            if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
+            disp.classList.remove(...ALL_CLS, ...PJ_COLORS);
+            disp.style.transition = 'none';
+            disp.style.opacity    = '0';
+            label.style.filter = 'none';
+            combo.style.filter = 'none';
+        }, 500);
+    }
+
+    // ── キー押下（判定） ─────────────────────────────────────────
+    _onLanePress(dl) {
+        this._triggerBomb(dl);
+        if (!this.isPlayMode) return;
+
+        const curPx    = this.currentPixelPos;
+        const pxPerMs  = this._pxPerMs(curPx);
+        const BAD_E    = 165  * pxPerMs; // 早押し限界
+        const BAD_L    = 210  * pxPerMs; // 遅押し限界
+        const POOR_E   = 500  * pxPerMs; // 空POOR早押し限界
+
+        // BAD窓内で最近傍のノーツを探す
+        let best = null, bestAbs = Infinity;
+        for (const e of this.noteEvents) {
+            if (e.dl !== dl || e.isAutoBgm || e.judged || e.isEnd) continue;
+            const refPx = e.adjPxVisual ?? e.px;
+            const delta = refPx - curPx; // 正=早押し
+            if (delta > BAD_E || delta < -BAD_L) continue;
+            const abs = Math.abs(delta);
+            if (abs < bestAbs) { bestAbs = abs; best = e; }
+        }
+
+        if (best) {
+            // WAV再生
+            if (best.wavId && this.wavBuffers[best.wavId]) this._playKeyWav(best.wavId);
+            // 判定
+            const refPx  = best.adjPxVisual ?? best.px;
+            const deltaMs = (refPx - curPx) / pxPerMs;
+            const judgment = this._calcJudgment(deltaMs);
+            best.judged = true;
+            this._applyJudgment(judgment, dl);
+            // LN保持開始
+            if (best.isLN && best._tailEvent) {
+                this._heldLN.set(dl, { tailEvent: best._tailEvent });
+            }
+        } else {
+            // 空POOR チェック（早押し側のみ: BAD_E < delta <= POOR_E）
+            let emptyPoor = false;
+            for (const e of this.noteEvents) {
+                if (e.dl !== dl || e.isAutoBgm || e.judged || e.isEnd) continue;
+                const refPx = e.adjPxVisual ?? e.px;
+                const delta = refPx - curPx;
+                if (delta > BAD_E && delta <= POOR_E) { emptyPoor = true; break; }
+            }
+            if (emptyPoor) this._applyJudgment('POOR', dl, true); // 空POOR
+            // WAVは近傍から
+            const wavId = this._findNearestWavId(dl);
+            if (wavId && this.wavBuffers[wavId]) this._playKeyWav(wavId);
+        }
+    }
+
+    // ── キー解放（LN終点判定） ───────────────────────────────────
+    _onLaneRelease(dl) {
+        if (!this.isPlayMode) return;
+        const held = this._heldLN.get(dl);
+        if (!held) return;
+        this._heldLN.delete(dl);
+
+        const tailEv = held.tailEvent;
+        if (!tailEv || tailEv.judged) return;
+
+        const curPx   = this.currentPixelPos;
+        const pxPerMs = this._pxPerMs(curPx);
+        const BAD_E   = 165 * pxPerMs;
+        const BAD_L   = 210 * pxPerMs;
+        const refPx   = tailEv.adjPxVisual ?? tailEv.px;
+        const delta   = refPx - curPx; // 正=まだ先にある(早離し)
+
+        if (delta > BAD_L) {
+            // 早すぎる離し → POOR
+            tailEv.judged = true;
+            this._applyJudgment('POOR', dl);
+        } else if (delta >= -BAD_E) {
+            // 窓内 → 通常判定
+            const deltaMs  = delta / pxPerMs;
+            const judgment = this._calcJudgment(deltaMs);
+            tailEv.judged  = true;
+            this._applyJudgment(judgment, dl);
+        }
+        // それより遅い離しは _checkMissedNotes で処理済み
+    }
+
+    // ── 見逃しPOOR / LN失敗検出（animate内から呼ぶ） ────────────
+    _checkMissedNotes(prevPx, curPx) {
+        if (!this.noteEvents) return;
+        const pxPerMs = this._pxPerMs(curPx);
+        const BAD_L   = 210 * pxPerMs; // 遅押し限界を超えたら見逃し
+        const BAD_E   = 165 * pxPerMs;
+
+        for (const e of this.noteEvents) {
+            if (e.isAutoBgm || e.judged) continue;
+            const refPx = e.adjPxVisual ?? e.px;
+
+            if (!e.isEnd) {
+                // 通常ノーツ / LN始点: BAD遅押し窓を超えたらPOOR
+                if (refPx < curPx - BAD_L) {
+                    e.judged = true;
+                    // LNの場合は終点もスキップ
+                    if (e._tailEvent) e._tailEvent.judged = true;
+                    this._applyJudgment('POOR', e.dl);
+                }
+            } else {
+                // LN終点: 押し続けてBAD早押し窓を超えたらPOOR
+                if (refPx < curPx - BAD_E) {
+                    e.judged = true;
+                    this._heldLN.delete(e.dl);
+                    this._applyJudgment('POOR', e.dl);
+                }
+            }
+        }
+    }
+
+    // 現在位置から最も近いノーツのWAVを取得
+    _findNearestWavId(dl) {
+        if (!this.noteEvents) return null;
+        const curPx = this.currentPixelPos;
+        let bestWavId = null, bestDist = Infinity;
+        for (const e of this.noteEvents) {
+            if (e.dl !== dl || e.isEnd || !e.wavId || e.isAutoBgm) continue;
+            const dist = Math.abs(e.px - curPx);
+            if (dist < bestDist) { bestDist = dist; bestWavId = e.wavId; }
+        }
+        return bestWavId;
     }
 
     _triggerBomb(dl) {
@@ -5052,14 +5667,50 @@ class BMSViewer {
         }
     }
 
+    /* ── グルーブゲージ表示更新 ── */
+    _updateGrooveGauge(pct) {
+        // pct: 0〜100の数値
+        const bar   = document.getElementById('grooveGaugeBar');
+        const label = document.getElementById('grooveGaugePct');
+        const stat  = document.getElementById('gaugePctStat');
+        if (!bar) return;
+        // pct は 2%刻みで渡される想定（_applyGauge / _resetGauge から）
+        const clamped = Math.max(0, Math.min(100, pct));
+        bar.style.width = clamped + '%';
+        if (label) label.textContent = Math.floor(clamped) + '%';
+        if (stat)  stat.textContent  = Math.floor(clamped);
+
+        // ゲージタイプ別カラー
+        bar.classList.remove('gauge-red','gauge-easy','gauge-easy-hi','gauge-hard','gauge-exhard','gauge-dan');
+        let labelColor = '#00dd66';
+        switch (this._gaugeType || 'NORMAL') {
+            case 'EASY':
+                if (clamped >= 80) { bar.classList.add('gauge-easy-hi'); labelColor = '#ff66cc'; }
+                else               { bar.classList.add('gauge-easy');    labelColor = '#88ff44'; }
+                break;
+            case 'HARD':
+                bar.classList.add('gauge-hard');  labelColor = '#ff4422'; break;
+            case 'EXHARD':
+                bar.classList.add('gauge-exhard'); labelColor = '#ffdd00'; break;
+            case 'DAN':
+                bar.classList.add('gauge-dan');   labelColor = '#ff8800'; break;
+            default: // NORMAL
+                if (clamped >= 80) { bar.classList.add('gauge-red'); labelColor = '#ff4422'; }
+        }
+        if (label) label.style.color = labelColor;
+
+        // 0%で play-area 背景を赤に
+        const playArea = document.querySelector('.play-area');
+        if (playArea) playArea.classList.toggle('gauge-dead', clamped === 0);
+    }
+
     /* ── シークバー更新 ── */
     _updateSeekBar() {
         if (!this.bmsData || this.totalPx <= 0) return;
         const pct = Math.min(1, this.currentPixelPos / this.totalPx) * 100;
         document.getElementById('seekFill').style.width = pct + '%';
         document.getElementById('seekThumb').style.left = pct + '%';
-        document.getElementById('seekLabelRight').textContent = this.maxBars + '小節';
-        document.getElementById('seekLabelLeft').textContent  = '0';
+        // seekLabelLeft/Right は削除済み（Phase1レイアウト変更）
         // ループ区間オーバーレイ
         const lr = document.getElementById('seekLoopRange');
         if (this.loopEnabled && this.barStartPx.length) {
@@ -5087,6 +5738,7 @@ class BMSViewer {
         }
         this.currentPixelPos = targetPx;
         this._syncCombo();
+        this._resetPlayCounters();
         this._resetEffectElements(); // シーク時にエフェクト要素の描画ゴミをクリア
         this._updatePositions();
         this._updateBgaImage();

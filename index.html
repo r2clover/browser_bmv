@@ -5285,7 +5285,8 @@ class BMSViewer {
                 else if (judgment==='POOR') delta =  isEmptyPoor ? -100 : -300;
         }
 
-        this._gaugeValue = Math.max(0, Math.min(GAUGE_MAX, cur + delta));
+        const gaugeMin = (this._gaugeType === 'NORMAL' || this._gaugeType === 'EASY') ? 100 : 0;
+        this._gaugeValue = Math.max(gaugeMin, Math.min(GAUGE_MAX, cur + delta));
         const displayPct = Math.floor(this._gaugeValue / 100) * 2;
         this._updateGrooveGauge(displayPct);
     }

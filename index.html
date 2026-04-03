@@ -5063,6 +5063,7 @@ class BMSViewer {
                 if (_ePx <= prevPx) continue;
                 if (_ePx > curPx)   break;
                 this.combo++;
+                this._applyGauge('PGREAT'); // AUTO PLAYは全ノーツPGREAT扱い
                 triggered = true;
                 // isEnd（LN/BSS終点）のボムは_updatePositions側で発火するためここでは除外
                 if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl); this._triggerExplosion(e.dl); bombed.add(e.dl); }
@@ -5209,6 +5210,25 @@ class BMSViewer {
         // ゲージ初期値にリセット
         this._gaugeValue = this._gaugeInitPct * 50; // % → 内部値（100%=5000なので×50）
         this._updateGrooveGauge(this._gaugeInitPct);
+        // プレイモード: judgedフラグをリセットし、現在位置より前のノーツを判定済みにマーク
+        // （シーク後に _checkMissedNotes が過去ノーツを一斉POORするのを防ぐ）
+        if (this.noteEvents && this.isPlayMode) {
+            this.noteEvents.forEach(e => { e.judged = false; });
+            const curPx   = this.currentPixelPos;
+            const pxPerMs = this._pxPerMs(curPx) || 1;
+            const BAD_L   = 210 * pxPerMs;
+            const BAD_E   = 165 * pxPerMs;
+            for (const e of this.noteEvents) {
+                if (e.isAutoBgm) continue;
+                const refPx = e.adjPxVisual ?? e.px;
+                if (!e.isEnd && refPx < curPx - BAD_L) {
+                    e.judged = true;
+                    if (e._tailEvent) e._tailEvent.judged = true;
+                } else if (e.isEnd && refPx < curPx - BAD_E) {
+                    e.judged = true;
+                }
+            }
+        }
     }
 
     // ── 判定適用（カウント・コンボ・表示） ──────────────────────
@@ -5243,7 +5263,6 @@ class BMSViewer {
 
     // ── グルーブゲージ増減 ────────────────────────────────────
     _applyGauge(judgment, isEmptyPoor = false) {
-        if (!this.isPlayMode) return;
         const GAUGE_MAX = 5000;
         const cur = this._gaugeValue;
         let delta = 0;

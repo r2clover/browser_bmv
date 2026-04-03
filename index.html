@@ -1807,10 +1807,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">描画FPS</span>
                 <button class="fx-btn"    id="fps30Btn">30</button>
-                <button class="fx-btn on" id="fps60Btn">60</button>
+                <button class="fx-btn"    id="fps60Btn">60</button>
                 <button class="fx-btn"    id="fps120Btn">120</button>
                 <button class="fx-btn"    id="fps144Btn">144</button>
-                <button class="fx-btn"    id="fpsUnlimitedBtn">無制限</button>
+                <button class="fx-btn on" id="fpsUnlimitedBtn">無制限</button>
             </div>
             </div><!-- /detail-body -->
         </div>
@@ -2184,7 +2184,7 @@ class BMSViewer {
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
         this.bombMode         = 'B';     // ボム: A/B/OFF
-        this._targetFps       = 60;     // 描画FPS: 30/60/120/144/0(無制限)
+        this._targetFps       = 0;      // 描画FPS: 30/60/120/144/0(無制限)
         this._lastFrameRender = 0;      // FPSスロットル用
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
         this.lnHeadPin        = false; // LN モードB: ヘッドをJLに固定

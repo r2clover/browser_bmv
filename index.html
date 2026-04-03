@@ -1803,6 +1803,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span style="font-size:10px;color:#888;">(-300〜+300ms)</span>
                 </div>
             </div>
+            <!-- 描画FPS -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">描画FPS</span>
+                <button class="fx-btn"    id="fps30Btn">30</button>
+                <button class="fx-btn on" id="fps60Btn">60</button>
+                <button class="fx-btn"    id="fps120Btn">120</button>
+                <button class="fx-btn"    id="fps144Btn">144</button>
+                <button class="fx-btn"    id="fpsUnlimitedBtn">無制限</button>
+            </div>
             </div><!-- /detail-body -->
         </div>
     </div>
@@ -2175,6 +2184,8 @@ class BMSViewer {
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
         this.bombMode         = 'B';     // ボム: A/B/OFF
+        this._targetFps       = 60;     // 描画FPS: 30/60/120/144/0(無制限)
+        this._lastFrameRender = 0;      // FPSスロットル用
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
         this.lnHeadPin        = false; // LN モードB: ヘッドをJLに固定
         this.wavBgm1Enabled   = true;  // BGM1 WAV ON/OFF (position<2)
@@ -3294,6 +3305,19 @@ class BMSViewer {
         document.getElementById('bombABtn').addEventListener('click',   () => _setBombMode('A'));
         document.getElementById('bombBBtn').addEventListener('click',   () => _setBombMode('B'));
         document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
+
+        // 描画FPS
+        const _fpsIds = { 30:'fps30Btn', 60:'fps60Btn', 120:'fps120Btn', 144:'fps144Btn', 0:'fpsUnlimitedBtn' };
+        const _setFps = (fps) => {
+            this._targetFps = fps;
+            Object.entries(_fpsIds).forEach(([f, id]) =>
+                document.getElementById(id).classList.toggle('on', Number(f) === fps));
+        };
+        document.getElementById('fps30Btn').addEventListener('click',        () => _setFps(30));
+        document.getElementById('fps60Btn').addEventListener('click',        () => _setFps(60));
+        document.getElementById('fps120Btn').addEventListener('click',       () => _setFps(120));
+        document.getElementById('fps144Btn').addEventListener('click',       () => _setFps(144));
+        document.getElementById('fpsUnlimitedBtn').addEventListener('click', () => _setFps(0));
 
         // BPM 表示モード（ライン表示 / 数字のみ / OFF）
         const _setBpmMode = (mode) => {
@@ -4445,6 +4469,17 @@ class BMSViewer {
     _animate() {
         if (!this.isPlaying) return;
         const now = performance.now();
+
+        // FPSスロットル: 目標FPSより速い場合はフレームをスキップ
+        if (this._targetFps > 0) {
+            const minInterval = 1000 / this._targetFps;
+            if (now - this._lastFrameRender < minInterval - 0.5) {
+                this.animFrameId = requestAnimationFrame(() => this._animate());
+                return;
+            }
+        }
+        this._lastFrameRender = now;
+
         const dt  = (now - this.lastTimestamp) / 1000;
         this.lastTimestamp = now;
 

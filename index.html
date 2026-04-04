@@ -1321,7 +1321,7 @@
         .groove-gauge-bar {
             height:100%; width:22%;
             background:#00dd66;
-            border-radius:2px; transition:width 0.08s;
+            transition:width 0.08s;
         }
         .groove-gauge-bar.gauge-red     { background:#ff2200; }
         .groove-gauge-bar.gauge-easy    { background:#88ff44; }
@@ -5932,11 +5932,11 @@ class BMSViewer {
 
         const _setTwo = (green, darkGreen, darkRed) => {
             if (clamped > 80) {
-                const split = (80 / clamped * 100).toFixed(2);
-                const rem   = (100 - parseFloat(split)).toFixed(2);
+                const split = (80 / clamped * 100).toFixed(4);
+                const rem   = (100 - parseFloat(split)).toFixed(4);
                 bar.style.background =
                     `${_stripe(green)} 0 0/${split}% 100% no-repeat,` +
-                    `${_stripe('#ff2200')} ${split}% 0/${rem}% 100% no-repeat`;
+                    `${_stripe('#ff2200')} 100% 0/${rem}% 100% no-repeat`;
             } else {
                 _setSingle(green);
             }

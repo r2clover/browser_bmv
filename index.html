@@ -5277,19 +5277,30 @@ class BMSViewer {
 
     // ── アナログ皿（ターンテーブル）検出 ─────────────────────────
     // beatoraja の AnalogScratchAlgorithm に準拠: 軸が動いている間だけON
+    // ホールドカウンター: 軸が ±1.0 でクランプされた瞬間に delta=0 となり
+    // 偽リリースが発生するのを防ぐため、最後の移動検出後 HOLD_FRAMES フレーム
+    // は ON を維持する。
     _pollScratch(gp, axisIdx, dl) {
-        const TICK = 0.009; // 最小移動量（beatoraja INFINITAS/DAO準拠）
-        const axKey  = `${gp.index}_ax${axisIdx}`;
-        const scrKey = `${gp.index}_scr${axisIdx}`;
+        const TICK        = 0.009; // 最小移動量（beatoraja INFINITAS/DAO準拠）
+        const HOLD_FRAMES = 3;     // 最後の移動後に ON を維持するフレーム数
+        const axKey   = `${gp.index}_ax${axisIdx}`;
+        const scrKey  = `${gp.index}_scr${axisIdx}`;
+        const holdKey = `${gp.index}_sh${axisIdx}`;
+
         const cur  = gp.axes[axisIdx] ?? 0;
         const prev = this._gpPrevAxes.get(axKey) ?? cur;
         this._gpPrevAxes.set(axKey, cur);
 
-        const moving  = Math.abs(cur - prev) >= TICK;
-        const wasMove = this._gpPrevButtons.get(scrKey) || false;
-        if (moving && !wasMove) this._onLanePress(dl);
-        else if (!moving && wasMove) this._onLaneRelease(dl);
-        this._gpPrevButtons.set(scrKey, moving);
+        const moving = Math.abs(cur - prev) >= TICK;
+        let holdCount = this._gpPrevAxes.get(holdKey) ?? (HOLD_FRAMES + 1);
+        holdCount = moving ? 0 : holdCount + 1;
+        this._gpPrevAxes.set(holdKey, holdCount);
+
+        const active    = holdCount <= HOLD_FRAMES;
+        const wasActive = this._gpPrevButtons.get(scrKey) || false;
+        if (active && !wasActive) this._onLanePress(dl);
+        else if (!active && wasActive) this._onLaneRelease(dl);
+        this._gpPrevButtons.set(scrKey, active);
     }
 
     _keyCodeToDl(code) {

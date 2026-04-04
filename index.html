@@ -1317,16 +1317,6 @@
         }
         .groove-gauge-track {
             flex:1; height:12px; background:#111; border:1px solid #333; border-radius:2px; overflow:hidden;
-            position:relative;
-        }
-        @keyframes gauge-blink {
-            0%, 49.9% { opacity: 1; }
-            50%, 100%  { opacity: 0; }
-        }
-        .groove-gauge-blink {
-            position:absolute; top:0; bottom:0; width:3px;
-            animation: gauge-blink 0.4s step-end infinite;
-            pointer-events:none; display:none;
         }
         .groove-gauge-bar {
             height:100%; width:22%;
@@ -2027,7 +2017,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="groove-gauge-spacer"></span>
             <div class="groove-gauge-track">
                 <div class="groove-gauge-bar" id="grooveGaugeBar" style="width:22%;"></div>
-                <div class="groove-gauge-blink" id="grooveGaugeBlink"></div>
             </div>
             <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
         </div>
@@ -5977,36 +5966,6 @@ class BMSViewer {
                 _setTwo('#00dd66', '#003318', '#330800');
         }
         if (label) label.style.color = labelColor;
-
-        // 点滅ストライプ（次の6px境界まで貯まっていない端のストライプ）
-        const blinkEl = document.getElementById('grooveGaugeBlink');
-        if (blinkEl) {
-            const PERIOD = 6;
-            const trackW = track ? track.clientWidth : 0;
-            const gaugeType = this._gaugeType || 'NORMAL';
-            if (clamped > 0 && clamped < 100 && trackW > 0) {
-                const barPx = clamped / 100 * trackW;
-                const partialStart = Math.floor(barPx / PERIOD) * PERIOD;
-                if (barPx - partialStart > 0.5) {
-                    const posPct = partialStart / trackW * 100;
-                    let blinkColor;
-                    if (gaugeType === 'NORMAL' || gaugeType === 'EASY') {
-                        blinkColor = posPct < 80
-                            ? (gaugeType === 'EASY' ? '#88ff44' : '#00dd66')
-                            : '#ff2200';
-                    } else if (gaugeType === 'HARD') { blinkColor = '#ff2200'; }
-                    else if (gaugeType === 'EXHARD') { blinkColor = '#ffdd00'; }
-                    else                             { blinkColor = '#ff8800'; } // DAN
-                    blinkEl.style.left = posPct + '%';
-                    blinkEl.style.background = blinkColor;
-                    blinkEl.style.display = '';
-                } else {
-                    blinkEl.style.display = 'none';
-                }
-            } else {
-                blinkEl.style.display = 'none';
-            }
-        }
 
         // 0%で play-area 背景を赤に
         const playArea = document.querySelector('.play-area');

@@ -1218,7 +1218,7 @@
         /* ── PM モード判定文字 (COOL!!) ── */
         .pm-judge-positioner {
             position: absolute;
-            bottom: 110px;
+            bottom: 70px;
             opacity: 0;
             pointer-events: none;
             z-index: 30;
@@ -1250,6 +1250,10 @@
             font-variant-numeric: tabular-nums;
             visibility: hidden;
         }
+        .pm-judge-label.pm-jl-great { background-image: linear-gradient(to bottom, #ffee00 0%, #ffffff 100%); }
+        .pm-judge-label.pm-jl-good  { background-image: linear-gradient(to bottom, #dc143c 0%, #ffffff 100%); }
+        .pm-judge-label.pm-jl-bad   { background-image: linear-gradient(to bottom, #4488ff 0%, #aaccff 100%); }
+        .pm-judge-label.pm-jl-poor  { background-image: linear-gradient(to bottom, #ff4444 0%, #ffaaaa 100%); }
         /* ── キービーム長 ── */
         .beam-normal .lane-bomb { height: 100%; }
         .beam-long   .lane      { overflow: visible; }
@@ -1313,22 +1317,33 @@
         }
         .groove-gauge-track {
             flex:1; height:12px; background:#111; border:1px solid #333; border-radius:2px; overflow:hidden;
+            position:relative;
+        }
+        @keyframes gauge-blink {
+            0%, 49.9% { opacity: 1; }
+            50%, 100%  { opacity: 0; }
+        }
+        .groove-gauge-blink {
+            position:absolute; top:0; bottom:0; width:3px;
+            animation: gauge-blink 0.4s step-end infinite;
+            pointer-events:none; display:none;
         }
         .groove-gauge-bar {
             height:100%; width:22%;
-            background:linear-gradient(to right,#005522,#00dd66);
+            background:#00dd66;
             border-radius:2px; transition:width 0.08s;
         }
-        .groove-gauge-bar.gauge-red     { background:linear-gradient(to right,#660000,#ff2200); }
-        .groove-gauge-bar.gauge-easy    { background:linear-gradient(to right,#228800,#88ff44); }
-        .groove-gauge-bar.gauge-easy-hi { background:linear-gradient(to right,#881144,#ff66cc); }
-        .groove-gauge-bar.gauge-hard    { background:linear-gradient(to right,#880000,#ff2200); }
-        .groove-gauge-bar.gauge-exhard  { background:linear-gradient(to right,#886600,#ffdd00); }
-        .groove-gauge-bar.gauge-dan     { background:linear-gradient(to right,#884400,#ff8800); }
+        .groove-gauge-bar.gauge-red     { background:#ff2200; }
+        .groove-gauge-bar.gauge-easy    { background:#88ff44; }
+        .groove-gauge-bar.gauge-easy-hi { background:#ff66cc; }
+        .groove-gauge-bar.gauge-hard    { background:#ff2200; }
+        .groove-gauge-bar.gauge-exhard  { background:#ffdd00; }
+        .groove-gauge-bar.gauge-dan     { background:#ff8800; }
         .groove-gauge-label {
             font-size:10px; color:#00dd66; min-width:34px; text-align:right;
             font-variant-numeric:tabular-nums;
         }
+        .groove-gauge-spacer { min-width:34px; }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
         /* ステータスバー（2行） */
         .status-bar {
@@ -1341,11 +1356,11 @@
         /* プレイ情報スパン固定幅 */
         #scoreDisplay   { display:inline-block; min-width:5em; text-align:right; color:#fff; }
         #gaugePctStat   { display:inline-block; min-width:3em; text-align:right; color:#00dd66; }
-        #pgCount        { display:inline-block; min-width:3em; text-align:right; color:#ffee00; }
-        #grCount        { display:inline-block; min-width:3em; text-align:right; color:#88ff88; }
-        #gdCount        { display:inline-block; min-width:3em; text-align:right; color:#aaaaff; }
-        #bdCount        { display:inline-block; min-width:3em; text-align:right; color:#ff8844; }
-        #prCount        { display:inline-block; min-width:3em; text-align:right; color:#ff4444; }
+        #pgCount        { display:inline-block; min-width:3em; text-align:right; color:#ff69b4; }
+        #grCount        { display:inline-block; min-width:3em; text-align:right; color:#ffee00; }
+        #gdCount        { display:inline-block; min-width:3em; text-align:right; color:#dc143c; }
+        #bdCount        { display:inline-block; min-width:3em; text-align:right; color:#4488ff; }
+        #prCount        { display:inline-block; min-width:3em; text-align:right; color:#aaaaaa; }
         /* 既存JS参照用スパン（非表示） */
         #totalNotes      { display:inline-block; min-width:3em; text-align:right; }
         #bpmDisplay      { display:inline-block; min-width:3em; text-align:right; }
@@ -2009,8 +2024,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="play-footer">
         <!-- グルーブゲージ -->
         <div class="groove-gauge-area">
+            <span class="groove-gauge-spacer"></span>
             <div class="groove-gauge-track">
                 <div class="groove-gauge-bar" id="grooveGaugeBar" style="width:22%;"></div>
+                <div class="groove-gauge-blink" id="grooveGaugeBlink"></div>
             </div>
             <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
         </div>
@@ -2403,6 +2420,7 @@ class BMSViewer {
 
         this._bindEvents();
         this._renderLanes();
+        this._updateGrooveGauge(this._gaugeInitPct);
     }
 
     get pixelsPerBar() { return this.basePixelsPerBar * this.hiSpeed; }
@@ -5275,30 +5293,68 @@ class BMSViewer {
         }
     }
 
+    // ── アナログ軸の差分をtick整数に変換（beatoraja computeAnalogDiff 準拠）
+    // ラップアラウンド（±1.0 折り返し）を補正してtick単位の整数を返す
+    _computeAnalogDiff(oldVal, newVal) {
+        const TICK = 0.009;
+        let diff = newVal - oldVal;
+        if      (diff >  1.0) diff -= (2 + TICK / 2);
+        else if (diff < -1.0) diff += (2 + TICK / 2);
+        diff /= TICK;
+        return diff >= 0 ? Math.ceil(diff) : Math.floor(diff);
+    }
+
     // ── アナログ皿（ターンテーブル）検出 ─────────────────────────
-    // beatoraja の AnalogScratchAlgorithm に準拠: 軸が動いている間だけON
-    // ホールドカウンター: 軸が ±1.0 でクランプされた瞬間に delta=0 となり
-    // 偽リリースが発生するのを防ぐため、最後の移動検出後 HOLD_FRAMES フレーム
-    // は ON を維持する。
+    // beatoraja AnalogScratchAlgorithm Version2 に準拠
+    //   - 2tick 累積で ON（ノイズ除去）
+    //   - threshold*2 フレーム変化なしで OFF（デフォルト200フレーム≒3.3秒@60fps）
+    //   - ラップアラウンドは _computeAnalogDiff で吸収
     _pollScratch(gp, axisIdx, dl) {
-        const TICK        = 0.009; // 最小移動量（beatoraja INFINITAS/DAO準拠）
-        const HOLD_FRAMES = 3;     // 最後の移動後に ON を維持するフレーム数
+        const THRESHOLD = 100; // beatoraja デフォルト閾値（ON後タイムアウト = 200f）
         const axKey   = `${gp.index}_ax${axisIdx}`;
         const scrKey  = `${gp.index}_scr${axisIdx}`;
-        const holdKey = `${gp.index}_sh${axisIdx}`;
+        const cntKey  = `${gp.index}_cnt${axisIdx}`;
+        const tckKey  = `${gp.index}_tck${axisIdx}`;
 
-        const cur  = gp.axes[axisIdx] ?? 0;
-        const prev = this._gpPrevAxes.get(axKey) ?? cur;
-        this._gpPrevAxes.set(axKey, cur);
+        const cur = gp.axes[axisIdx] ?? 0;
 
-        const moving = Math.abs(cur - prev) >= TICK;
-        let holdCount = this._gpPrevAxes.get(holdKey) ?? (HOLD_FRAMES + 1);
-        holdCount = moving ? 0 : holdCount + 1;
-        this._gpPrevAxes.set(holdKey, holdCount);
+        // 初回フレーム: 前回値を初期化して終了
+        if (!this._gpPrevAxes.has(axKey)) {
+            this._gpPrevAxes.set(axKey, cur);
+            this._gpPrevAxes.set(cntKey, 1);
+            this._gpPrevAxes.set(tckKey, 0);
+            return;
+        }
 
-        const active    = holdCount <= HOLD_FRAMES;
+        const prev    = this._gpPrevAxes.get(axKey);
+        let   counter = this._gpPrevAxes.get(cntKey);
+        let   tickAcc = this._gpPrevAxes.get(tckKey);
+        let   active  = this._gpPrevButtons.get(scrKey) || false;
+
+        if (cur !== prev) {
+            const ticks = Math.abs(this._computeAnalogDiff(prev, cur));
+            if (!active) {
+                // 非アクティブ中: tick累積 → 2tick以上でON
+                if (tickAcc === 0 || counter <= THRESHOLD) tickAcc += ticks;
+                if (tickAcc >= 2) active = true;
+            }
+            counter = 0;
+            this._gpPrevAxes.set(axKey, cur);
+        }
+
+        // タイムアウト: THRESHOLD*2 フレーム変化なし → OFF
+        if (counter > THRESHOLD * 2 && active) {
+            active  = false;
+            tickAcc = 0;
+            counter = 0;
+        }
+
+        counter++;
+        this._gpPrevAxes.set(cntKey, counter);
+        this._gpPrevAxes.set(tckKey, tickAcc);
+
         const wasActive = this._gpPrevButtons.get(scrKey) || false;
-        if (active && !wasActive) this._onLanePress(dl);
+        if  (active && !wasActive)  this._onLanePress(dl);
         else if (!active && wasActive) this._onLaneRelease(dl);
         this._gpPrevButtons.set(scrKey, active);
     }
@@ -5392,7 +5448,7 @@ class BMSViewer {
         // エフェクト
         if (judgment !== 'POOR' && dl !== undefined) this._triggerExplosion(dl);
 
-        this._showPlayJudgment(judgment);
+        this._showPlayJudgment(judgment, dl);
     }
 
     // ── グルーブゲージ増減 ────────────────────────────────────
@@ -5445,8 +5501,9 @@ class BMSViewer {
     }
 
     // ── プレイモード判定文字表示 ─────────────────────────────────
-    _showPlayJudgment(judgment) {
+    _showPlayJudgment(judgment, dl) {
         if (!this.judgementEnabled) return;
+        if (this.currentSide === 'PM') { this._showPMPlayJudgment(judgment, dl); return; }
         const disp  = document.getElementById('playJudgeDisplay');
         const label = document.getElementById('playJudgeLabel');
         const combo = document.getElementById('playJudgeCombo');
@@ -5457,7 +5514,7 @@ class BMSViewer {
 
         // PGREAT ラベルはモードによって変わる
         const labelText = {
-            PGREAT: this.currentSide === 'PM' ? 'COOL!!' : 'PGREAT',
+            PGREAT: this.currentSide === 'PM' ? 'COOL!!' : 'GREAT',
             GREAT: 'GREAT', GOOD: 'GOOD', BAD: 'BAD', POOR: 'POOR'
         }[judgment] || judgment;
         label.textContent = labelText;
@@ -5786,6 +5843,42 @@ class BMSViewer {
         }
     }
 
+    /* ── エフェクト: PM プレイモード判定文字表示 ── */
+    _showPMPlayJudgment(judgment, dl) {
+        const showCombo = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
+        const pos = (dl !== undefined) ? (dl <= 2 ? 'L' : dl <= 5 ? 'C' : 'R') : 'C';
+
+        const labelText  = { PGREAT:'COOL!!', GREAT:'GREAT', GOOD:'GOOD', BAD:'BAD', POOR:'BAD' }[judgment] || judgment;
+        const colorCls   = { GREAT:'pm-jl-great', GOOD:'pm-jl-good', BAD:'pm-jl-bad', POOR:'pm-jl-bad' };
+        const allColorCls = Object.values(colorCls);
+
+        const el = document.getElementById(`pmJudge_${pos}`);
+        if (!el) return;
+
+        const labelEl = el.querySelector('.pm-judge-label');
+        if (labelEl) {
+            labelEl.textContent = labelText;
+            labelEl.classList.remove(...allColorCls);
+            if (colorCls[judgment]) labelEl.classList.add(colorCls[judgment]);
+        }
+
+        if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
+        el.style.transition = 'none';
+        el.style.opacity = '0.8';
+        el.getBoundingClientRect();
+        el.style.transition = 'opacity 0.5s ease';
+        el.style.opacity = '0';
+
+        for (const p of ['L', 'C', 'R']) {
+            const ce = document.getElementById(`pmJudgeCombo_${p}`);
+            if (ce) ce.style.visibility = (showCombo && p === pos) ? 'visible' : 'hidden';
+        }
+        if (showCombo) {
+            const ce = document.getElementById(`pmJudgeCombo_${pos}`);
+            if (ce) ce.textContent = this.combo;
+        }
+    }
+
     /* ── エフェクト: PM COOL!! 表示 ── */
     _showPMCool(positions) {
         if (!this.judgementEnabled) return;
@@ -5835,23 +5928,85 @@ class BMSViewer {
         if (stat)  stat.textContent  = Math.floor(clamped);
 
         // ゲージタイプ別カラー
+        const track = bar.parentElement;
         bar.classList.remove('gauge-red','gauge-easy','gauge-easy-hi','gauge-hard','gauge-exhard','gauge-dan');
+        // 全背景サブプロパティをリセット
+        bar.style.background = '';
         let labelColor = '#00dd66';
+
+        const _stripe = (color) =>
+            `repeating-linear-gradient(to right, ${color} 0px, ${color} 3px, transparent 3px, transparent 6px)`;
+
+        const _setSingle = (color) => {
+            bar.style.background = _stripe(color);
+        };
+
+        const _setTwo = (green, darkGreen, darkRed) => {
+            if (clamped > 80) {
+                const split = (80 / clamped * 100).toFixed(2);
+                const rem   = (100 - parseFloat(split)).toFixed(2);
+                bar.style.background =
+                    `${_stripe(green)} 0 0/${split}% 100% no-repeat,` +
+                    `${_stripe('#ff2200')} ${split}% 0/${rem}% 100% no-repeat`;
+            } else {
+                _setSingle(green);
+            }
+            if (track) track.style.background =
+                `linear-gradient(to right, ${darkGreen} 80%, ${darkRed} 80%)`;
+        };
+
         switch (this._gaugeType || 'NORMAL') {
             case 'EASY':
-                if (clamped >= 80) { bar.classList.add('gauge-easy-hi'); labelColor = '#ff66cc'; }
-                else               { bar.classList.add('gauge-easy');    labelColor = '#88ff44'; }
+                labelColor = clamped >= 80 ? '#ff2200' : '#88ff44';
+                _setTwo('#88ff44', '#1a3300', '#330800');
                 break;
             case 'HARD':
-                bar.classList.add('gauge-hard');  labelColor = '#ff4422'; break;
+                labelColor = '#ff4422';
+                _setSingle('#ff2200');
+                if (track) track.style.background = '#330800'; break;
             case 'EXHARD':
-                bar.classList.add('gauge-exhard'); labelColor = '#ffdd00'; break;
+                labelColor = '#ffdd00';
+                _setSingle('#ffdd00');
+                if (track) track.style.background = '#332c00'; break;
             case 'DAN':
-                bar.classList.add('gauge-dan');   labelColor = '#ff8800'; break;
+                labelColor = '#ff8800';
+                _setSingle('#ff8800');
+                if (track) track.style.background = '#331a00'; break;
             default: // NORMAL
-                if (clamped >= 80) { bar.classList.add('gauge-red'); labelColor = '#ff4422'; }
+                labelColor = clamped >= 80 ? '#ff2200' : '#00dd66';
+                _setTwo('#00dd66', '#003318', '#330800');
         }
         if (label) label.style.color = labelColor;
+
+        // 点滅ストライプ（次の6px境界まで貯まっていない端のストライプ）
+        const blinkEl = document.getElementById('grooveGaugeBlink');
+        if (blinkEl) {
+            const PERIOD = 6;
+            const trackW = track ? track.clientWidth : 0;
+            const gaugeType = this._gaugeType || 'NORMAL';
+            if (clamped > 0 && clamped < 100 && trackW > 0) {
+                const barPx = clamped / 100 * trackW;
+                const partialStart = Math.floor(barPx / PERIOD) * PERIOD;
+                if (barPx - partialStart > 0.5) {
+                    const posPct = partialStart / trackW * 100;
+                    let blinkColor;
+                    if (gaugeType === 'NORMAL' || gaugeType === 'EASY') {
+                        blinkColor = posPct < 80
+                            ? (gaugeType === 'EASY' ? '#88ff44' : '#00dd66')
+                            : '#ff2200';
+                    } else if (gaugeType === 'HARD') { blinkColor = '#ff2200'; }
+                    else if (gaugeType === 'EXHARD') { blinkColor = '#ffdd00'; }
+                    else                             { blinkColor = '#ff8800'; } // DAN
+                    blinkEl.style.left = posPct + '%';
+                    blinkEl.style.background = blinkColor;
+                    blinkEl.style.display = '';
+                } else {
+                    blinkEl.style.display = 'none';
+                }
+            } else {
+                blinkEl.style.display = 'none';
+            }
+        }
 
         // 0%で play-area 背景を赤に
         const playArea = document.querySelector('.play-area');

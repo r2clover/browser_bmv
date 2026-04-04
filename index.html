@@ -1661,6 +1661,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
                 <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
             </div>
+            <!-- IIDX コントローラー（IIDXモード時のみ表示） -->
+            <div class="detail-section nowrap" id="iidxControllerSection" style="display:none;">
+                <span class="detail-label">コントローラー</span>
+                <button class="fx-btn on" id="gpIidxOffBtn">OFF</button>
+                <button class="fx-btn"   id="gpPremiumBtn">ENTRY/PREMIUM</button>
+                <button class="fx-btn"   id="gpPs2Btn">PS2</button>
+            </div>
             <!-- GROOVE GAUGE タイプ選択 -->
             <div class="detail-section nowrap">
                 <span class="detail-label">GROOVE GAUGE</span>
@@ -2360,6 +2367,9 @@ class BMSViewer {
         this._grInc   = 0;       // GREAT/PGREAT 1ノーツあたり増加量（ノーツ数確定後に計算）
         this._gdInc   = 0;       // GOOD 増加量
         this._heldLN  = new Map(); // dl → { tailEvent } 保持中LN管理
+        this._gpPrevButtons = new Map(); // gamepadIndex_buttonIndex → pressed
+        this._gpIidxType = 'OFF';       // 'OFF'|'PREMIUM'|'PS2'
+        this._gpPrevAxes = new Map();   // "gpIdx_axisIdx" → previous axis value
         this._pjBlinkTimer = null;
         this._pjFadeTimer  = null;
         this._pjCycleTimer = null;
@@ -2536,7 +2546,7 @@ class BMSViewer {
     ============================================================ */
     _ensureAudioCtx() {
         if (!this._audioCtx) {
-            this._audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+            this._audioCtx = new (window.AudioContext||window.webkitAudioContext)({ latencyHint: 'interactive' });
             // AudioContext の状態変化を監視
             // iOS Safari はバックグラウンド移行時に 'interrupted' にする
             this._audioCtx.onstatechange = () => {
@@ -2555,6 +2565,12 @@ class BMSViewer {
         }
         if (this._audioCtx.state === 'suspended' || this._audioCtx.state === 'interrupted')
             this._audioCtx.resume().catch(() => {});
+        // キー音用共有 GainNode（毎回生成するオーバーヘッドを削減）
+        if (!this._keyGainNode) {
+            this._keyGainNode = this._audioCtx.createGain();
+            this._keyGainNode.gain.value = Math.max(0, this.wavVolKey);
+            this._keyGainNode.connect(this._audioCtx.destination);
+        }
     }
 
     _startAudio() {
@@ -2647,10 +2663,16 @@ class BMSViewer {
 
     _playKeyWav(wavId) {
         if (!wavId) return;
-        if (!this.wavKeyEnabled) return; // KEY WAV ミュート
+        if (!this.wavKeyEnabled) return;
         this._ensureAudioCtx();
-        const node = this._createWavNode(wavId, this.wavVolKey);
-        if (node) node.start(this._audioCtx.currentTime);
+        const buf = this.wavBuffers[wavId];
+        if (!buf || !this._audioCtx || !this._keyGainNode) return;
+        // 共有 GainNode に直接接続して GainNode 生成コストをゼロに
+        const src = this._audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.playbackRate.value = Math.max(0.1, this.realSpeed);
+        src.connect(this._keyGainNode);
+        src.start(this._audioCtx.currentTime); // できる限り早く再生
     }
 
     /* ── WAVデコード (base-62対応・大文字小文字区別) ── */
@@ -3047,6 +3069,8 @@ class BMSViewer {
         document.getElementById('fileInput').addEventListener('change', e => this._loadFile(e));
         document.getElementById('playBtn').addEventListener('click', () => this._togglePlay());
 
+        this._initKeyInput(); // キー入力リスナーを初期化時に一度だけ登録
+
         // HS
         // 緑数字入力 → HS自動計算
         document.getElementById('greenInput').addEventListener('input', e => {
@@ -3424,6 +3448,7 @@ class BMSViewer {
             document.getElementById('beamOffBtn').style.display = '';
             document.getElementById('pmBeamPinkBtn').style.display = isPM ? '' : 'none';
             document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
+            document.getElementById('iidxControllerSection').style.display = isPM ? 'none' : '';
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 document.getElementById('justFrameSection').style.display = 'none';
@@ -3494,6 +3519,19 @@ class BMSViewer {
         };
         document.getElementById('autoPlayModeBtn').addEventListener('click', () => _setPlayMode(false));
         document.getElementById('playModeBtn').addEventListener('click',     () => _setPlayMode(true));
+
+        // IIDX コントローラータイプ選択
+        const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn' };
+        const _setGpIidx = (type) => {
+            this._gpIidxType = type;
+            for (const [t, id] of Object.entries(_gpIidxIds))
+                document.getElementById(id).classList.toggle('on', t === type);
+            // タイプ変更時に状態をリセット
+            this._gpPrevButtons = new Map();
+            this._gpPrevAxes    = new Map();
+        };
+        for (const [type, id] of Object.entries(_gpIidxIds))
+            document.getElementById(id).addEventListener('click', () => _setGpIidx(type));
 
         // GROOVE GAUGE 初期値
         const _setGaugeInit = (pct) => {
@@ -3711,7 +3749,7 @@ class BMSViewer {
         };
         mkVolWav('volWavBGM0','volWavBGM0Val', v=>{ this.wavVolBGM0=v; }); // 〜#00101
         mkVolWav('volWavBGM','volWavBGMVal',   v=>{ this.wavVolBGM=v;  }); // #00201〜
-        mkVolWav('volWavKey','volWavKeyVal',   v=>{ this.wavVolKey=v;  });
+        mkVolWav('volWavKey','volWavKeyVal',   v=>{ this.wavVolKey=v; if(this._keyGainNode) this._keyGainNode.gain.value=Math.max(0,v); });
         // BMS選択モーダル キャンセル
         const _bmsOvl=()=>document.getElementById('bmsSelectOverlay');
         document.getElementById('bmsSelectCancel')?.addEventListener('click',()=>{ _bmsOvl().style.display='none'; });
@@ -3929,8 +3967,6 @@ class BMSViewer {
         // RS変化でBPMが変わるので緑数字を再適用してHSを更新
         const gv = document.getElementById('greenInput');
         if (gv) this._applyGreenNum(gv.value);
-
-        this._initKeyInput();
     }
 
     /* 現緑 = 175300 / (currentBPM × HS)  ← リアルタイム更新 */
@@ -4778,6 +4814,7 @@ class BMSViewer {
         }
 
         const bpm = this._bpmAt(this.currentPixelPos);
+        this._pollGamepad();
         this._detectPassed(prevPx, this.currentPixelPos);
         if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
@@ -5173,9 +5210,95 @@ class BMSViewer {
         });
     }
 
+    // ── ゲームパッドポーリング（_animate から毎フレーム呼ぶ） ──
+    _pollGamepad() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const isPM = this.currentSide === 'PM';
+        const isIidx = !isPM && this._gpIidxType !== 'OFF';
+        if (!isPM && !isIidx) return;
+
+        for (const gp of gamepads) {
+            if (!gp) continue;
+            if (isPM) {
+                // PM: ボタン 0-8 → dl 0-8（左白〜右白）
+                for (let i = 0; i < 9; i++) {
+                    const btn = gp.buttons[i];
+                    if (!btn) continue;
+                    const key = `${gp.index}_b${i}`;
+                    const pressed = btn.pressed;
+                    const was = this._gpPrevButtons.get(key) || false;
+                    if (pressed && !was) this._onLanePress(i);
+                    else if (!pressed && was) this._onLaneRelease(i);
+                    this._gpPrevButtons.set(key, pressed);
+                }
+            } else {
+                this._pollIidxPad(gp);
+            }
+        }
+    }
+
+    // ── IIDX コントローラーポーリング ────────────────────────────
+    _pollIidxPad(gp) {
+        // baseDl(1P基準) → actualDl（2Pは変換）
+        const toDl = (base) => this.currentSide === '2P' ? (base === 0 ? 7 : base - 1) : base;
+
+        const _btn = (btnIdx, baseDl) => {
+            const btn = gp.buttons[btnIdx];
+            if (!btn) return;
+            const key = `${gp.index}_b${btnIdx}`;
+            const pressed = btn.pressed;
+            const was = this._gpPrevButtons.get(key) || false;
+            if (pressed && !was) this._onLanePress(toDl(baseDl));
+            else if (!pressed && was) this._onLaneRelease(toDl(baseDl));
+            this._gpPrevButtons.set(key, pressed);
+        };
+
+        if (this._gpIidxType === 'PREMIUM') {
+            // ENTRY/PREMIUM: buttons[0-6]=Key1-7, axis[0]=皿
+            for (let i = 0; i < 7; i++) _btn(i, i + 1);
+            this._pollScratch(gp, 0, toDl(0));
+
+        } else if (this._gpIidxType === 'PS2') {
+            // PS2: button配列が異なる
+            // [btnIdx, baseDl]
+            [[3,1],[6,2],[2,3],[7,4],[1,5],[4,6]].forEach(([bi,bd]) => _btn(bi, bd));
+            // AXIS4_MINUS (axes[3] < -0.5) → Key7
+            const ax3key = `${gp.index}_ax3btn`;
+            const ax3val = gp.axes[3] ?? 0;
+            const ax3pressed = ax3val < -0.5;
+            const ax3was = this._gpPrevButtons.get(ax3key) || false;
+            if (ax3pressed && !ax3was) this._onLanePress(toDl(7));
+            else if (!ax3pressed && ax3was) this._onLaneRelease(toDl(7));
+            this._gpPrevButtons.set(ax3key, ax3pressed);
+            // AXIS3 (axes[2]) → 皿
+            this._pollScratch(gp, 2, toDl(0));
+        }
+    }
+
+    // ── アナログ皿（ターンテーブル）検出 ─────────────────────────
+    // beatoraja の AnalogScratchAlgorithm に準拠: 軸が動いている間だけON
+    _pollScratch(gp, axisIdx, dl) {
+        const TICK = 0.009; // 最小移動量（beatoraja INFINITAS/DAO準拠）
+        const axKey  = `${gp.index}_ax${axisIdx}`;
+        const scrKey = `${gp.index}_scr${axisIdx}`;
+        const cur  = gp.axes[axisIdx] ?? 0;
+        const prev = this._gpPrevAxes.get(axKey) ?? cur;
+        this._gpPrevAxes.set(axKey, cur);
+
+        const moving  = Math.abs(cur - prev) >= TICK;
+        const wasMove = this._gpPrevButtons.get(scrKey) || false;
+        if (moving && !wasMove) this._onLanePress(dl);
+        else if (!moving && wasMove) this._onLaneRelease(dl);
+        this._gpPrevButtons.set(scrKey, moving);
+    }
+
     _keyCodeToDl(code) {
         if (this.currentSide === 'PM') return this._KEY_PM[code] ?? -1;
-        return this._KEY_IIDX[code] ?? -1;
+        const dl = this._KEY_IIDX[code] ?? -1;
+        if (dl === -1) return -1;
+        // 2Pモードは applyLane と同じ変換: SC(0)→7, Key1-7(1-7)→0-6
+        if (this.currentSide === '2P') return dl === 0 ? 7 : dl - 1;
+        return dl;
     }
 
     // ── px/ms 変換ヘルパー ──────────────────────────────────────

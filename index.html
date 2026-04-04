@@ -6182,6 +6182,47 @@ class BMSViewer {
                 if (n.lane === 0) n.lane = scratchLane.get(n) ?? 8;
                 else if (keyMap[n.lane] !== undefined) n.lane = keyMap[n.lane];
             }
+            // 無理押し解消処理（0-based PMレーン: 0=左白〜8=右白）
+            // 1-based [a,b,c] → 0-based [a-1,b-1,c-1]
+            const _IMPOSSIBLE = [
+                [0,3,6],[0,3,7],[0,3,8],[0,4,7],[0,4,8],[0,5,8],
+                [1,4,7],[1,4,8],[1,5,8],[2,5,8]
+            ];
+            const _isImpossible = (laneSet) =>
+                _IMPOSSIBLE.some(c => c.every(l => laneSet.has(l)));
+            const _rightmostImpossible = (laneSet) => {
+                let mx = -1;
+                for (const c of _IMPOSSIBLE)
+                    if (c.every(l => laneSet.has(l))) mx = Math.max(mx, ...c);
+                return mx;
+            };
+            // 同時押しグループをpositionでまとめる
+            const _byPos = new Map();
+            for (const n of bmsData.notes) {
+                if (n.lane < 0 || n.lane > 8) continue;
+                if (!_byPos.has(n.position)) _byPos.set(n.position, []);
+                _byPos.get(n.position).push(n);
+            }
+            for (const grpNotes of _byPos.values()) {
+                if (grpNotes.length < 3) continue;
+                for (let iter = 0; iter < 50; iter++) {
+                    const laneSet = new Set(grpNotes.map(n => n.lane));
+                    if (!_isImpossible(laneSet)) break;
+                    const rmLane = _rightmostImpossible(laneSet);
+                    if (rmLane < 0) break;
+                    const noteToMove = grpNotes.find(n => n.lane === rmLane);
+                    if (!noteToMove) break;
+                    let moved = false;
+                    for (let t = rmLane - 1; t >= 0; t--) {
+                        if (!laneSet.has(t)) {
+                            noteToMove.lane = t;
+                            moved = true;
+                            break;
+                        }
+                    }
+                    if (!moved) break;
+                }
+            }
         } else if (this._crossModeType === 'pm-in-iidx') {
             // PMレーン → IIDX鍵盤
             // 左白(0)→1鍵, 左黄(1)→2鍵, 左緑(2)→3鍵, 左青(3)→4鍵, 赤(4)→5鍵

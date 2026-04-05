@@ -1172,6 +1172,12 @@
         .charge-pm-pop-face .note-ln.ln-pm-red    { background:linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(150,20,20,1.0) 35%,rgba(230,60,60,1.0) 47%,rgba(255,80,80,1.0) 50%,rgba(230,60,60,1.0) 53%,rgba(150,20,20,1.0) 65%,rgba(60,0,0,1.0) 100%); }
         /* ── PM ポップ君風 判定前発光筒（暗幕を均一暗色に）── */
         .charge-pm-pop-face .ln-dim-mask { background:rgba(0,0,0,0.60); }
+        /* ── PM ポップ君風 LN チューブ 発光フレーム2（明るいコマ）── */
+        .charge-pm-pop-face .note-ln.ln-pm-white.ln-anim-f2  { background:linear-gradient(to right,rgba(60,60,60,1.0) 0%,rgba(200,200,200,1.0) 30%,rgba(255,255,255,1.0) 45%,rgba(255,255,255,1.0) 55%,rgba(200,200,200,1.0) 70%,rgba(60,60,60,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-yellow.ln-anim-f2 { background:linear-gradient(to right,rgba(80,55,0,1.0) 0%,rgba(220,170,20,1.0) 30%,rgba(255,240,100,1.0) 45%,rgba(255,240,100,1.0) 55%,rgba(220,170,20,1.0) 70%,rgba(80,55,0,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-green.ln-anim-f2  { background:linear-gradient(to right,rgba(0,50,0,1.0) 0%,rgba(40,200,40,1.0) 30%,rgba(120,255,120,1.0) 45%,rgba(120,255,120,1.0) 55%,rgba(40,200,40,1.0) 70%,rgba(0,50,0,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-blue.ln-anim-f2   { background:linear-gradient(to right,rgba(0,15,60,1.0) 0%,rgba(40,100,220,1.0) 30%,rgba(120,180,255,1.0) 45%,rgba(120,180,255,1.0) 55%,rgba(40,100,220,1.0) 70%,rgba(0,15,60,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-red.ln-anim-f2    { background:linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(200,30,30,1.0) 30%,rgba(255,120,120,1.0) 45%,rgba(255,120,120,1.0) 55%,rgba(200,30,30,1.0) 70%,rgba(60,0,0,1.0) 100%); }
         /* ── PM ポップ君風ライト ノーツ ── */
         .notes-pm-pop-lite .note.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-white,
@@ -1213,8 +1219,12 @@
         .charge-pm-pop-lite .cn-pm-green-start-cap,  .charge-pm-pop-lite .cn-pm-green-end-cap,
         .charge-pm-pop-lite .cn-pm-blue-start-cap,   .charge-pm-pop-lite .cn-pm-blue-end-cap,
         .charge-pm-pop-lite .cn-pm-red-start-cap,    .charge-pm-pop-lite .cn-pm-red-end-cap { display:none !important; }
-        /* ── PM ポップ君風ライト 判定前発光筒（暗幕を均一暗色に）── */
-        .charge-pm-pop-lite .ln-dim-mask { background:rgba(0,0,0,0.60); }
+        /* ── PM ポップ君風ライト 判定前発光筒（ノーツ色と同じ）── */
+        .charge-pm-pop-lite .note-ln.ln-pm-white  .ln-dim-mask { background:#ddd; }
+        .charge-pm-pop-lite .note-ln.ln-pm-yellow .ln-dim-mask { background:#fafa02; }
+        .charge-pm-pop-lite .note-ln.ln-pm-green  .ln-dim-mask { background:#04c000; }
+        .charge-pm-pop-lite .note-ln.ln-pm-blue   .ln-dim-mask { background:#0065f7; }
+        .charge-pm-pop-lite .note-ln.ln-pm-red    .ln-dim-mask { background:#ff5555; }
 
         /* ── JUDGE SIMPLE（グラデ・発光・点滅なし） ── */
         #greatDisplay.judge-simple .great-label,
@@ -1661,7 +1671,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.813</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.815</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3477,6 +3487,9 @@ class BMSViewer {
                 _setChargeStyle('PM_POP_LITE');
                 document.getElementById('judgeSizeInput').value = 26;
                 _applyJudgeSize();
+                this.lnHeadPin = true;
+                document.getElementById('lnModeBBtn').classList.add('on');
+                document.getElementById('lnModeABtn').classList.remove('on');
             } else {
                 // IIDXに戻ったとき、PM系が選択中なら通常に戻す
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
@@ -4986,8 +4999,8 @@ class BMSViewer {
             }
         }
 
-        // LN発光筒アニメーション: チャージノーツAのみ 8フレームごとにframe1/frame2を切替
-        if (this.chargeStyle === 'A' && this.lnElements && this.lnElements.length) {
+        // LN発光筒アニメーション: チャージノーツA / PM_POP_FACE 8フレームごとにframe1/frame2を切替
+        if ((this.chargeStyle === 'A' || this.chargeStyle === 'PM_POP_FACE') && this.lnElements && this.lnElements.length) {
             this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
             if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
                 const isF2 = this._lnAnimFrameCount === 8;

@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.825</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.832</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -1751,8 +1751,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- SUD+ モード -->
             <div class="detail-section nowrap">
                 <span class="detail-label">SUD+</span>
-                <button class="fx-btn on" id="sudModeABtn">モードA</button>
-                <button class="fx-btn" id="sudModeBBtn">モードB</button>
+                <button class="fx-btn" id="sudModeABtn">緑数字固定</button>
+                <button class="fx-btn" id="sudModeBBtn">HS固定</button>
+                <button class="fx-btn on" id="sudModeCBtn">IIDX(FS)準拠</button>
             </div>
             <!-- ノーツ描画 A/B/PM_POP/PM_BEAT_C -->
             <div class="detail-section">
@@ -1779,7 +1780,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- チャージノーツ処理モード -->
             <div class="detail-section nowrap">
                 <span class="detail-label">チャージノーツ処理</span>
-                <button class="fx-btn on" id="lnModeABtn">通常</button>
+                <button class="fx-btn on" id="lnModeABtn">判定ライン通過</button>
                 <button class="fx-btn"    id="lnModeBBtn">判定ラインに残す</button>
             </div>
             <!-- キービーム -->
@@ -1836,7 +1837,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="judgeJustBtn">JUST</button>
                 <button class="fx-btn"    id="judgeNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="judgeSimpleBtn">SIMPLE</button>
-                <button class="fx-btn"    id="pmJudgeCoolBtn" style="display:none;">COOL!!</button>
+                <button class="fx-btn"    id="pmJudgeCoolBtn" style="display:none;">ON</button>
                 <button class="fx-btn"    id="judgeOffBtn">OFF</button>
             </div>
             <!-- JUST カラーサイクル フレーム数 -->
@@ -2915,7 +2916,8 @@ class BMSViewer {
             const gnEl=document.getElementById('greenInput');
             const gn=(gnEl?parseFloat(gnEl.value):0)||250;
             const bpm=(this.bmsData.headers.bpm||130)*this.realSpeed;
-            this.hiSpeed=Math.max(0.01,175300/(bpm*gn));
+            this.targetGreenNum = gn;
+            this.hiSpeed = this._calcAdjustedHS(bpm, gn);
             const lbl='×'+this.hiSpeed.toFixed(2);
             document.getElementById('hsValue').textContent  =lbl;
         }
@@ -3241,7 +3243,20 @@ class BMSViewer {
             this.sudEnabled = !this.sudEnabled;
             document.getElementById('sudBtn').classList.toggle('on', this.sudEnabled);
             this._sudUpdateCoverDOM();
-            this._reapplyHS();
+            if (this.sudMode === 'C') {
+                // モードC: ON/OFFはHSそのまま、緑数字だけ更新
+                // ONにした瞬間: 現在の可視緑数字をtargetGreenNumとして記録
+                if (this.sudEnabled && this.bmsData) {
+                    const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
+                    const _effH = 400;
+                    const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
+                    const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
+                    this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
+                }
+                this._updateRealGreen();
+            } else {
+                this._reapplyHS();
+            }
         });
         document.getElementById('sudUpBtn').addEventListener('click', () => {
             this._setSudCoverPx(this.sudCoverPx - 5);
@@ -3253,14 +3268,33 @@ class BMSViewer {
             this.sudMode = 'A';
             document.getElementById('sudModeABtn').classList.add('on');
             document.getElementById('sudModeBBtn').classList.remove('on');
+            document.getElementById('sudModeCBtn').classList.remove('on');
             if (this.sudEnabled) this._reapplyHS();
         });
         document.getElementById('sudModeBBtn').addEventListener('click', () => {
             this.sudMode = 'B';
             document.getElementById('sudModeBBtn').classList.add('on');
             document.getElementById('sudModeABtn').classList.remove('on');
+            document.getElementById('sudModeCBtn').classList.remove('on');
             if (this.sudEnabled) this._reapplyHS();
             this._updateRealGreen();
+        });
+        document.getElementById('sudModeCBtn').addEventListener('click', () => {
+            // モードCに切替: 現在の可視緑数字をtargetGreenNumとして取り込み、HS再計算
+            if (this.sudEnabled && this.bmsData) {
+                const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
+                const _effH = 400;
+                const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
+                const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
+                this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
+                const gnEl = document.getElementById('greenInput');
+                if (gnEl) gnEl.value = this.targetGreenNum;
+            }
+            this.sudMode = 'C';
+            document.getElementById('sudModeCBtn').classList.add('on');
+            document.getElementById('sudModeABtn').classList.remove('on');
+            document.getElementById('sudModeBBtn').classList.remove('on');
+            if (this.sudEnabled) this._reapplyHS();
         });
 
         document.getElementById('lnModeABtn').addEventListener('click', () => {
@@ -3436,6 +3470,8 @@ class BMSViewer {
             if (style === 'PM_POP_LITE')   pa.classList.add('notes-pm-pop-lite');
             if (style === 'PM_BEAT_POP')   pa.classList.add('notes-pm-beat-pop');
             if (style === 'PM_BEAT_C')     pa.classList.add('notes-pm-beatc');
+            // ノーツ変更に連動してチャージノーツも同名スタイルに変更
+            _setChargeStyle(style);
         };
         document.getElementById('notesStyleABtn').addEventListener('click',         () => _setNotesStyle('A'));
         document.getElementById('notesStyleBBtn').addEventListener('click',         () => _setNotesStyle('B'));
@@ -3496,6 +3532,15 @@ class BMSViewer {
                 document.getElementById('lnModeBBtn').classList.add('on');
                 document.getElementById('lnModeABtn').classList.remove('on');
                 _setGaugeType('PM_NORMAL');
+                // SUD+デフォルト: OFF, モードB
+                this.sudEnabled = false;
+                this.sudMode = 'B';
+                document.getElementById('sudBtn').classList.remove('on');
+                document.getElementById('sudModeABtn').classList.remove('on');
+                document.getElementById('sudModeBBtn').classList.add('on');
+                document.getElementById('sudModeCBtn').classList.remove('on');
+                this._sudUpdateCoverDOM();
+                this._updateRealGreen();
             } else {
                 // IIDXに戻ったとき、PM系が選択中なら通常に戻す
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
@@ -3503,6 +3548,15 @@ class BMSViewer {
                 if (_isPmGaugeType(this._gaugeType)) _setGaugeType('NORMAL');
                 document.getElementById('judgeSizeInput').value = 56;
                 _applyJudgeSize();
+                // SUD+デフォルト: ON, モードC
+                this.sudEnabled = true;
+                this.sudMode = 'C';
+                document.getElementById('sudBtn').classList.add('on');
+                document.getElementById('sudModeABtn').classList.remove('on');
+                document.getElementById('sudModeBBtn').classList.remove('on');
+                document.getElementById('sudModeCBtn').classList.add('on');
+                if (this.bmsData) this._reapplyHS();
+                else this._sudUpdateCoverDOM();
             }
             // モード切替時にLANEオプションをリセット
             const laneDefault = isPM ? '123456789' : '1234567';
@@ -3551,6 +3605,8 @@ class BMSViewer {
                     if (_pe) { _pe.style.transition = 'none'; _pe.style.opacity = '0'; }
                 }
             }
+            // モード切替後にSUD+カバーの左右位置とサイズを再計算（レーン幅が変わるため）
+            setTimeout(() => this._sudUpdateCoverDOM(), 0);
         };
         this._updateStylesForMode = _updateStylesForMode;
 
@@ -4110,8 +4166,8 @@ class BMSViewer {
         if (this.sudEnabled) {
             const effH   = 400; // SUD+有効ゾーン（0px基準）
             const visEff = Math.max(0, Math.min(effH, 400 - this.sudCoverPx));
-            if (this.sudMode === 'A') {
-                // モードA: SUD+位置に関係なく頭緑をそのまま表示
+            if (this.sudMode === 'A' || this.sudMode === 'C') {
+                // モードA/C: SUD+位置に関係なく目標緑数字をそのまま表示
                 if (el) el.textContent = Math.round(this.targetGreenNum || green);
                 return;
             }
@@ -4969,8 +5025,8 @@ class BMSViewer {
         if (this.sudEnabled) {
             const _effH   = 400; // SUD+有効ゾーン高さ（0px基準）
             const _visEff = Math.max(0, Math.min(_effH, 400 - this.sudCoverPx));
-            if (this.sudMode === 'A') {
-                // モードA: SUD+位置に関係なく頭緑をそのまま表示
+            if (this.sudMode === 'A' || this.sudMode === 'C') {
+                // モードA/C: 目標緑数字を固定表示
                 _greenT = Math.round(this.targetGreenNum || _greenRaw);
             } else if (this.sudMode === 'B') {
                 _greenT = _visEff >= _effH ? _greenRaw : Math.round(_greenRaw * (_visEff / _effH));
@@ -5007,12 +5063,16 @@ class BMSViewer {
         }
 
         // LN発光筒アニメーション: チャージノーツA / PM_POP_FACE 8フレームごとにframe1/frame2を切替
+        // PM_POP_FACEは判定中（dimMask非表示）のときだけアニメーション、判定前はframe1固定
         if ((this.chargeStyle === 'A' || this.chargeStyle === 'PM_POP_FACE') && this.lnElements && this.lnElements.length) {
             this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
             if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
                 const isF2 = this._lnAnimFrameCount === 8;
+                const isPopFace = this.chargeStyle === 'PM_POP_FACE';
                 for (const el of this.lnElements) {
-                    el.classList.toggle('ln-anim-f2', isF2);
+                    // PM_POP_FACEは判定中（dimMaskがnone）の筒のみf2に切替、判定前はf1固定
+                    const active = !isPopFace || (el._dimMask && el._dimMask.style.display === 'none');
+                    el.classList.toggle('ln-anim-f2', isF2 && active);
                 }
             }
         }
@@ -5127,7 +5187,7 @@ class BMSViewer {
     // SUD+のHS計算（モードA: 有効ゾーンへの食い込みに応じて調整）
     _calcAdjustedHS(bpm, gn) {
         const baseHS = 175300 / (bpm * gn);
-        if (this.sudEnabled && this.sudMode === 'A') {
+        if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
             const effH     = 400; // SUD+有効ゾーン（0px基準）
             const laneH    = 400;
             const visEff   = Math.max(1, Math.min(effH, laneH - this.sudCoverPx));
@@ -5185,7 +5245,7 @@ class BMSViewer {
         const MIN = 20, MAX = 400;
         this.sudCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._sudUpdateCoverDOM();
-        if (rebuild && this.sudEnabled && this.sudMode === 'A') this._reapplyHS();
+        if (rebuild && this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) this._reapplyHS();
         else if (rebuild) this._updateRealGreen();
     }
 
@@ -5200,7 +5260,7 @@ class BMSViewer {
         const onEnd  = () => {
             if (!dragging) return;
             dragging = false;
-            if (this.sudEnabled && this.sudMode === 'A') this._reapplyHS();
+            if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) this._reapplyHS();
             else this._updateRealGreen();
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup',   onMouseUp);

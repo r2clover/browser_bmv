@@ -3915,9 +3915,15 @@ class BMSViewer {
             document.getElementById('rsBtn').classList.toggle('on', this.regulSpeed);
             if (this.bmsData) {
                 // RS切り替え → 前計算やり直し（ノーツ・ビーム再描画）
+                const posFrac    = this._px2posFrac(this.currentPixelPos);
+                const wasPlaying = this.isPlaying;
+                if (wasPlaying) { this.isPlaying = false; cancelAnimationFrame(this.animFrameId); }
                 this._precompute();
+                this.currentPixelPos = this._pos2px(posFrac);
                 this.renderNotes();
-                this._updateScrollPosition();
+                this._updatePositions();
+                if (wasPlaying) { this.isPlaying = true; this.lastTimestamp = performance.now(); this._animate(); }
+                else this._updateRealGreen();
             }
         });
 

@@ -1125,6 +1125,20 @@
         .charge-pm-pop-face .ln-note-end.pm-green::before,  .charge-pm-pop-face .ln-note-end.pm-green::after,
         .charge-pm-pop-face .ln-note-end.pm-blue::before,   .charge-pm-pop-face .ln-note-end.pm-blue::after,
         .charge-pm-pop-face .ln-note-end.pm-red::before,    .charge-pm-pop-face .ln-note-end.pm-red::after { content:none !important; }
+        /* ── pm_pop-face 終点ノーツ: 上側のみ・白枠なし（notesStyleに関係なく適用）── */
+        .charge-pm-pop-face .ln-note-end.pm-white,
+        .charge-pm-pop-face .ln-note-end.pm-yellow,
+        .charge-pm-pop-face .ln-note-end.pm-green,
+        .charge-pm-pop-face .ln-note-end.pm-blue,
+        .charge-pm-pop-face .ln-note-end.pm-red {
+            height:9px !important; border-radius:12px 12px 0 0 !important;
+            box-shadow:none !important; transform:none !important;
+        }
+        .charge-pm-pop-face .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
+        .charge-pm-pop-face .ln-note-end.pm-yellow { background:linear-gradient(to bottom,#707000 0%,#a0a000 35%,#c8c800 70%,#d8d800 100%) !important; }
+        .charge-pm-pop-face .ln-note-end.pm-green  { background:linear-gradient(to bottom,#015000 0%,#027000 35%,#038500 70%,#04a000 100%) !important; }
+        .charge-pm-pop-face .ln-note-end.pm-blue   { background:linear-gradient(to bottom,#002580 0%,#0038b0 35%,#004ad0 70%,#005ae0 100%) !important; }
+        .charge-pm-pop-face .ln-note-end.pm-red    { background:linear-gradient(to bottom,#990000 0%,#bb1010 35%,#cc2020 70%,#dd3030 100%) !important; }
         /* ── PM LN 始点・終点ノーツ ── */
         .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
         .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
@@ -1219,6 +1233,20 @@
         .charge-pm-pop-lite .cn-pm-green-start-cap,  .charge-pm-pop-lite .cn-pm-green-end-cap,
         .charge-pm-pop-lite .cn-pm-blue-start-cap,   .charge-pm-pop-lite .cn-pm-blue-end-cap,
         .charge-pm-pop-lite .cn-pm-red-start-cap,    .charge-pm-pop-lite .cn-pm-red-end-cap { display:none !important; }
+        /* ── pm_pop-lite 終点ノーツ: 上側のみ・白枠なし（notesStyleに関係なく適用）── */
+        .charge-pm-pop-lite .ln-note-end.pm-white,
+        .charge-pm-pop-lite .ln-note-end.pm-yellow,
+        .charge-pm-pop-lite .ln-note-end.pm-green,
+        .charge-pm-pop-lite .ln-note-end.pm-blue,
+        .charge-pm-pop-lite .ln-note-end.pm-red {
+            height:9px !important; border-radius:12px 12px 0 0 !important;
+            box-shadow:none !important; transform:none !important;
+        }
+        .charge-pm-pop-lite .ln-note-end.pm-white  { background:#ddd !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-yellow { background:#fafa02 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-green  { background:#04c000 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-blue   { background:#0065f7 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-red    { background:#ff5555 !important; }
         /* ── PM ポップ君風ライト 判定前発光筒（ノーツ色と同じ）── */
         .charge-pm-pop-lite .note-ln.ln-pm-white  .ln-dim-mask { background:#ddd; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow .ln-dim-mask { background:#fafa02; }
@@ -1672,7 +1700,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.834</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.835</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

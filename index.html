@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.823</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.824</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2686,7 +2686,7 @@ class BMSViewer {
 
         // BGA動画を音楽時間に同期して再生
         const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
-        if (vid && vid.src && vid.style.display !== 'none') {
+        if (vid && vid.src) {
             const startSec = this.audioStartSec;
             if (vid.readyState >= 1) {
                 const dur = vid.duration;
@@ -3032,19 +3032,8 @@ class BMSViewer {
             ctx.drawImage(vid, (cw - dw) * 0.5, (ch - dh) * 0.5, dw, dh);
         };
 
-        // rVFC 対応ブラウザは動画フレーム生成タイミングで描画（ゲームループと独立）
-        if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-            this._bgaVfcActive = true;
-            const _vfcLoop = () => {
-                if (!this._bgaVfcActive) return;
-                _drawFrame();
-                vid.requestVideoFrameCallback(_vfcLoop);
-            };
-            vid.requestVideoFrameCallback(_vfcLoop);
-        } else {
-            // フォールバック: 30fps タイマー（ゲームの rAF とは別スレッドスケジュール）
-            this._bgaDrawTimer = setInterval(_drawFrame, 1000 / 30);
-        }
+        // setInterval で 30fps 描画（display:none のビデオからも drawImage は機能する）
+        this._bgaDrawTimer = setInterval(_drawFrame, 1000 / 30);
 
         // 動画が止まった時のリカバリ
         vid.onwaiting = vid.onstalled = () => {

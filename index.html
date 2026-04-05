@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.832</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.834</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -1685,6 +1685,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">モード</span>
                 <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
                 <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
+            </div>
+            <!-- クォンタイズ再生モード -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">クォンタイズ再生</span>
+                <button class="fx-btn"    id="quantizeWavOffBtn">元の譜面</button>
+                <button class="fx-btn on" id="quantizeWavOnBtn">クォンタイズ後</button>
             </div>
             <!-- IIDX コントローラー（IIDXモード時のみ表示） -->
             <div class="detail-section nowrap" id="iidxControllerSection" style="display:none;">
@@ -2416,7 +2422,7 @@ class BMSViewer {
         this.wavKeyEnabled    = true;  // KEY WAV ON/OFF
         // クォンタイズ
         this.quantizeMode    = null;   // null | '16' | '8'
-        this.quantizeWav     = false;  // false=ビジュアルのみ, true=WAVも適用
+        this.quantizeWav     = true;   // false=ビジュアルのみ, true=WAVも適用
         this._quantizeMap    = null;   // Map<note, quantizedPosition>
 
         this.noteEvents      = [];
@@ -3381,6 +3387,16 @@ class BMSViewer {
         };
         document.getElementById('quantize16Btn').addEventListener('click', () => _setQuantize('16'));
         document.getElementById('quantize8Btn') .addEventListener('click', () => _setQuantize('8'));
+        document.getElementById('quantizeWavOffBtn').addEventListener('click', () => {
+            this.quantizeWav = false;
+            document.getElementById('quantizeWavOffBtn').classList.add('on');
+            document.getElementById('quantizeWavOnBtn').classList.remove('on');
+        });
+        document.getElementById('quantizeWavOnBtn').addEventListener('click', () => {
+            this.quantizeWav = true;
+            document.getElementById('quantizeWavOnBtn').classList.add('on');
+            document.getElementById('quantizeWavOffBtn').classList.remove('on');
+        });
 
 
         // 区間

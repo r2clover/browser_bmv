@@ -1642,7 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.805</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.806</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5788,15 +5788,12 @@ class BMSViewer {
     // ── キー解放（LN終点判定） ───────────────────────────────────
     _onLaneRelease(dl) {
         if (!this.isPlayMode) return;
-        // PLAYモード: キー離しでキービームをフェードアウト
+        // PLAYモード: キー離しでキービームを即時非表示
         if (this.beamEnabled) {
             const el = this.bombElements[dl];
             if (el) {
                 el.getAnimations().forEach(a => a.cancel());
-                el.animate(
-                    [{ opacity: el.style.opacity || '1' }, { opacity: 0 }],
-                    { duration: 80, easing: 'ease-out', fill: 'forwards' }
-                );
+                el.style.opacity = '0';
             }
         }
         const held = this._heldLN.get(dl);

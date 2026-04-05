@@ -1671,7 +1671,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.817</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.819</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2059,7 +2059,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="status-row">
                 Total:<span id="totalNotes">0</span>
                 &nbsp;BPM:<span id="bpmDisplay">0</span>
-                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span><span id="sudWhiteNum" style="display:none; margin-left:4px; font-size:11px; color:#ffffff; font-family:monospace; min-width:3ch; text-align:right;"></span>
+                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span>
+                &nbsp;<span style="color:#ffffff; font-size:11px;">SUD+:<span id="sudWhiteNum" style="font-family:monospace; display:inline-block; min-width:3ch; text-align:right;">OFF</span></span>
                 &nbsp;<span id="statusElapsed" style="color:#ccc;">0:00</span>
                 &nbsp;小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span>
                 <span id="loopStatus"></span>
@@ -3233,8 +3234,6 @@ class BMSViewer {
         document.getElementById('sudBtn').addEventListener('click', () => {
             this.sudEnabled = !this.sudEnabled;
             document.getElementById('sudBtn').classList.toggle('on', this.sudEnabled);
-            const wn = document.getElementById('sudWhiteNum');
-            if (wn) wn.style.display = this.sudEnabled ? 'inline-block' : 'none';
             this._sudUpdateCoverDOM();
             this._reapplyHS();
         });
@@ -3495,6 +3494,7 @@ class BMSViewer {
                 // IIDXに戻ったとき、PM系が選択中なら通常に戻す
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.chargeStyle)) _setChargeStyle('A');
+                if (_isPmGaugeType(this._gaugeType)) _setGaugeType('NORMAL');
                 document.getElementById('judgeSizeInput').value = 56;
                 _applyJudgeSize();
             }
@@ -5153,7 +5153,12 @@ class BMSViewer {
     _sudUpdateCoverDOM() {
         const cover = document.getElementById('sudCover');
         if (!cover) return;
-        if (!this.sudEnabled) { cover.style.display = 'none'; return; }
+        if (!this.sudEnabled) {
+            cover.style.display = 'none';
+            const wn = document.getElementById('sudWhiteNum');
+            if (wn) wn.textContent = 'OFF';
+            return;
+        }
         const lc = document.getElementById('lanesContainer');
         const pa = document.querySelector('.play-area');
         if (!lc || !pa) { cover.style.display = 'none'; return; }

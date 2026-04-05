@@ -2413,30 +2413,44 @@ class BMSViewer {
         // _bpmAtBar 用にソート済みBPM変化リストをキャッシュ（毎バー再ソートを回避）
         this._sortedBpmChanges = (this.bmsData ? (this.bmsData.bpmChanges || []) : [])
             .slice().sort((a, b) => a.position - b.position);
+
+        // timingPoints を先に構築（barStartPxに依存しないため先行可能）
+        // RSモードで barStartPx を timing ベースで計算するために必要
+        this._buildTimingPoints();
+
         this.barStartPx = [];
         this.barPxScale = [];
-        let cum = 0;
-        // RS基準BPM: 曲の先頭（position=0）での実効BPM（頭緑と一致させる）
+
         const _rsStartBpm = this.regulSpeed && this.bmsData
             ? this._bpmAtBar(0) : 1;
-        for (let b = 0; b <= this.maxBars + 1; b++) {
-            this.barStartPx[b] = cum;
-            let scale = 1;
-            if (this.regulSpeed) {
+
+        if (this.regulSpeed && this.bmsData) {
+            // RSモード: barStartPx を音楽時間ベースで構築
+            // _pos2px = _positionToSec(pos) * _rsK で等速スクロールを保証
+            // 小節途中のBPM変化でも currentPixelPos の進みが一定になる
+            this._rsK = _rsStartBpm * this.pixelsPerBar / 240; // px/sec
+            for (let b = 0; b <= this.maxBars + 1; b++) {
+                this.barStartPx[b] = this._positionToSec(b) * this._rsK;
                 const bpmHere = this._bpmAtBar(b);
-                if (bpmHere > 0) scale = _rsStartBpm / bpmHere;
+                this.barPxScale[b] = bpmHere > 0 ? _rsStartBpm / bpmHere : 1;
             }
-            this.barPxScale[b] = scale;
-            cum += this._barLen(b) * this.pixelsPerBar * scale;
+            this.totalPx = this._positionToSec(this.maxBars + 2) * this._rsK;
+        } else {
+            this._rsK = null;
+            let cum = 0;
+            for (let b = 0; b <= this.maxBars + 1; b++) {
+                this.barStartPx[b] = cum;
+                this.barPxScale[b] = 1;
+                cum += this._barLen(b) * this.pixelsPerBar;
+            }
+            this.totalPx = cum;
         }
-        this.totalPx = cum;
 
         // BPM変化：ピクセル位置に変換（baseBPMをそのまま保存。RS適用は _bpmAt で行う）
         this.bpmEvents = (this.bmsData.bpmChanges || [])
             .map(ev => ({ pixelPos: this._pos2px(ev.position), baseBpm: ev.bpm }))
             .sort((a, b) => a.pixelPos - b.pixelPos);
         this._buildBeatMap();
-        this._buildTimingPoints();
         // _precompute() で barStartPx が変わるたびに noteEvents[].px を再計算
         this._recomputeNoteEventPx();
     }
@@ -3027,6 +3041,10 @@ class BMSViewer {
     _barLen(b) { const v=this.bmsData.barLengths[b]; return (v!==undefined&&v>0)?v:1.0; }
 
     _pos2px(pos) {
+        // RSモード: 音楽時間に比例させることで小節途中BPM変化でも等速スクロール
+        if (this.regulSpeed && this._rsK) {
+            return this._positionToSec(pos) * this._rsK;
+        }
         const bar = Math.floor(pos), frac = pos - bar;
         // 範囲外（曲末以降）は totalPx を返す（0 に飛ばない）
         if (!this.barStartPx || bar >= this.barStartPx.length)
@@ -3043,6 +3061,9 @@ class BMSViewer {
     }
 
     _px2posFrac(px) {
+        if (this.regulSpeed && this._rsK) {
+            return this._secToPosition(px / this._rsK);
+        }
         const bar=this._px2bar(px);
         const scale=(this.barPxScale&&this.barPxScale[bar])||1;
         const h=this._barLen(bar)*this.pixelsPerBar*scale;
@@ -4817,7 +4838,9 @@ class BMSViewer {
             this.currentPixelPos = this._pos2px(targetPos);
         } else {
             // フォールバック: 再生前は dt ベース（最大 50ms でクランプ）
-            const bpm = this._bpmAt(this.currentPixelPos);
+            const bpm = (this.regulSpeed && this._rsK)
+                ? this._bpmAtBar(0) * this.realSpeed
+                : this._bpmAt(this.currentPixelPos);
             this.currentPixelPos += bpm * this.pixelsPerBar / 240 * Math.min(dt, 0.05);
         }
 
@@ -5398,6 +5421,10 @@ class BMSViewer {
 
     // ── px/ms 変換ヘルパー ──────────────────────────────────────
     _pxPerMs(atPx) {
+        // RSモード: 等速スクロールなので定数値（小節途中BPM変化に関わらず一定）
+        if (this.regulSpeed && this._rsK) {
+            return this._rsK * this.realSpeed / 1000;
+        }
         // _bpmAt はすでに baseBpm * realSpeed を返すため、追加の realSpeed 乗算は不要
         return this._bpmAt(atPx) * this.pixelsPerBar / 240000;
     }

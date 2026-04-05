@@ -1642,7 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.803</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.805</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5778,6 +5778,7 @@ class BMSViewer {
                 if (delta > BAD_E && delta <= POOR_E) { emptyPoor = true; break; }
             }
             if (emptyPoor) this._applyJudgment('POOR', dl, true); // 空POOR
+            else if (this.currentSide === 'PM') this._triggerBomb(dl, 'BAD'); // 判定なし空押し → BAD色ビーム
             // WAVは近傍から
             const wavId = this._findNearestWavId(dl);
             if (wavId && this.wavBuffers[wavId]) this._playKeyWav(wavId);
@@ -5787,6 +5788,17 @@ class BMSViewer {
     // ── キー解放（LN終点判定） ───────────────────────────────────
     _onLaneRelease(dl) {
         if (!this.isPlayMode) return;
+        // PLAYモード: キー離しでキービームをフェードアウト
+        if (this.beamEnabled) {
+            const el = this.bombElements[dl];
+            if (el) {
+                el.getAnimations().forEach(a => a.cancel());
+                el.animate(
+                    [{ opacity: el.style.opacity || '1' }, { opacity: 0 }],
+                    { duration: 80, easing: 'ease-out', fill: 'forwards' }
+                );
+            }
+        }
         const held = this._heldLN.get(dl);
         if (!held) return;
         this._heldLN.delete(dl);
@@ -5875,10 +5887,17 @@ class BMSViewer {
                     el.classList.remove('pm-j-pgreat','pm-j-great','pm-j-good','pm-j-bad');
                 }
                 el.getAnimations().forEach(a => a.cancel());
-                el.animate(
-                    [{ opacity: 1.0 }, { opacity: 0.9, offset: 0.15 }, { opacity: 0 }],
-                    { duration: 200, easing: 'ease-out', fill: 'forwards' }
-                );
+                if (this.isPlayMode) {
+                    // PLAY MODE: キーを離すまで opacity:1 で持続
+                    el.style.opacity = '1';
+                } else {
+                    // AUTO MODE: 従来通り短いフラッシュ
+                    el.style.opacity = '';
+                    el.animate(
+                        [{ opacity: 1.0 }, { opacity: 0.9, offset: 0.15 }, { opacity: 0 }],
+                        { duration: 200, easing: 'ease-out', fill: 'forwards' }
+                    );
+                }
             }
         }
     }
@@ -6222,8 +6241,8 @@ class BMSViewer {
             if (el._dimMask) {
                 el._dimMask.style.display = cur >= el._pixelPos ? 'none' : '';
             }
-            // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（一度だけ）
-            if (el._pixelEndPos !== undefined && el._dl !== undefined &&
+            // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（AUTOのみ、PLAYは_onLaneReleaseで処理）
+            if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined &&
                 !el._endBombed && this.isPlaying && cur >= el._pixelEndPos) {
                 el._endBombed = true;
                 this._triggerBomb(el._dl, 'PGREAT');

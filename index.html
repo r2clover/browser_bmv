@@ -1062,26 +1062,30 @@
             box-shadow:inset 0 0 0 1px rgba(160,20,20,0.9);
             background:linear-gradient(to bottom,#cc0000 0%,#dd2222 10%,#ee3333 25%,#ff5555 32%,#fff 35%,#fff 65%,#ff5555 68%,#ee3333 75%,#dd2222 90%,#cc0000 100%); }
         .notes-pm-pop .note          { transform:translateY(50%) !important; }
-        /* pm_pop LN 始点: 下半分（ストライプ→暗色）通常ノーツの下半分に重なる */
+        /* pm_pop LN 始点: 通常ノーツと同じ */
         .notes-pm-pop .ln-note-start.pm-white,
         .notes-pm-pop .ln-note-start.pm-yellow,
         .notes-pm-pop .ln-note-start.pm-green,
         .notes-pm-pop .ln-note-start.pm-blue,
         .notes-pm-pop .ln-note-start.pm-red {
-            height:9px !important; border-radius:0 0 12px 12px !important;
-            background-size:100% 200% !important; background-position:0% 100% !important;
-            transform:translateY(100%) !important;
+            height:18px !important; border-radius:12px !important;
+            background-size:100% 100% !important; background-position:0% 0% !important;
+            transform:translateY(50%) !important;
         }
-        /* pm_pop LN 終点: 上半分（暗色→ストライプ）*/
+        /* pm_pop LN 終点: 上半分・ストライプ（白線）なし */
         .notes-pm-pop .ln-note-end.pm-white,
         .notes-pm-pop .ln-note-end.pm-yellow,
         .notes-pm-pop .ln-note-end.pm-green,
         .notes-pm-pop .ln-note-end.pm-blue,
         .notes-pm-pop .ln-note-end.pm-red {
             height:9px !important; border-radius:12px 12px 0 0 !important;
-            background-size:100% 200% !important; background-position:0% 0% !important;
-            transform:none !important;
+            background-size:100% !important; transform:none !important;
         }
+        .notes-pm-pop .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
+        .notes-pm-pop .ln-note-end.pm-yellow { background:linear-gradient(to bottom,#707000 0%,#a0a000 35%,#c8c800 70%,#d8d800 100%) !important; }
+        .notes-pm-pop .ln-note-end.pm-green  { background:linear-gradient(to bottom,#015000 0%,#027000 35%,#038500 70%,#04a000 100%) !important; }
+        .notes-pm-pop .ln-note-end.pm-blue   { background:linear-gradient(to bottom,#002580 0%,#0038b0 35%,#004ad0 70%,#005ae0 100%) !important; }
+        .notes-pm-pop .ln-note-end.pm-red    { background:linear-gradient(to bottom,#990000 0%,#bb1010 35%,#cc2020 70%,#dd3030 100%) !important; }
         /* ── PM ポップ君風ノーツ - 目（通常ノーツ） ── */
         /* 左目 (::before) - 黒目を右寄りにして寄り目 */
         .notes-pm-pop-face .note.pm-white::before,
@@ -1115,6 +1119,12 @@
             background:radial-gradient(circle at 32% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
             top:1px; right:calc(35% - 2px); z-index:1; pointer-events:none;
         }
+        /* ── pm_pop-face LN 終点ノーツ: 目を非表示 ── */
+        .charge-pm-pop-face .ln-note-end.pm-white::before,  .charge-pm-pop-face .ln-note-end.pm-white::after,
+        .charge-pm-pop-face .ln-note-end.pm-yellow::before, .charge-pm-pop-face .ln-note-end.pm-yellow::after,
+        .charge-pm-pop-face .ln-note-end.pm-green::before,  .charge-pm-pop-face .ln-note-end.pm-green::after,
+        .charge-pm-pop-face .ln-note-end.pm-blue::before,   .charge-pm-pop-face .ln-note-end.pm-blue::after,
+        .charge-pm-pop-face .ln-note-end.pm-red::before,    .charge-pm-pop-face .ln-note-end.pm-red::after { content:none !important; }
         /* ── PM LN 始点・終点ノーツ ── */
         .ln-note-start.pm-white,  .ln-note-end.pm-white  { box-shadow:inset 0 0 0 1px rgba(200,200,200,0.9),inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#888 0%,#fff 50%,#888 100%); }
         .ln-note-start.pm-yellow, .ln-note-end.pm-yellow { box-shadow:inset 0 0 0 1px rgba(220,180,0,0.9),  inset 0 2px 5px rgba(0,0,0,0.55); background:linear-gradient(to right,#a07000 0%,#ffe060 50%,#a07000 100%); }
@@ -1171,24 +1181,24 @@
         .notes-pm-pop-lite .ln-note-start.pm-red,
         .notes-pm-pop-lite .ln-note-end.pm-red     { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#ff5555 calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#ff5555 calc(50% + 1px)); }
         .notes-pm-pop-lite .note { transform:translateY(50%) !important; }
-        /* LN ヘッド（下半分）*/
+        /* LN 始点: 通常ノーツと同じ */
         .notes-pm-pop-lite .ln-note-start.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-yellow,
         .notes-pm-pop-lite .ln-note-start.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
-        .notes-pm-pop-lite .ln-note-start.pm-red   { height:9px !important; border-radius:0 0 12px 12px !important; transform:translateY(100%) !important; }
-        /* LN テール（上半分）*/
-        .notes-pm-pop-lite .ln-note-end.pm-white,
-        .notes-pm-pop-lite .ln-note-end.pm-yellow,
-        .notes-pm-pop-lite .ln-note-end.pm-green,
-        .notes-pm-pop-lite .ln-note-end.pm-blue,
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; border-radius:12px 12px 0 0 !important; transform:none !important; }
-        /* LN チューブ */
-        .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#ddd; }
-        .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#fafa02; }
-        .charge-pm-pop-lite .note-ln.ln-pm-green  { background:#04c000; }
-        .charge-pm-pop-lite .note-ln.ln-pm-blue   { background:#0065f7; }
-        .charge-pm-pop-lite .note-ln.ln-pm-red    { background:#ff5555; }
+        .notes-pm-pop-lite .ln-note-start.pm-red   { height:18px !important; border-radius:12px !important; transform:translateY(50%) !important; }
+        /* LN 終点: 上半分・ストライプなし */
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; border-radius:12px 12px 0 0 !important; background:#ddd !important;    transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; border-radius:12px 12px 0 0 !important; background:#fafa02 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; border-radius:12px 12px 0 0 !important; background:#04c000 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; border-radius:12px 12px 0 0 !important; background:#0065f7 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; border-radius:12px 12px 0 0 !important; background:#ff5555 !important; transform:none !important; }
+        /* LN チューブ: 判定中はノーツ色より少し明るい色 */
+        .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#eeeeee; }
+        .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#ffff66; }
+        .charge-pm-pop-lite .note-ln.ln-pm-green  { background:#44ff44; }
+        .charge-pm-pop-lite .note-ln.ln-pm-blue   { background:#55aaff; }
+        .charge-pm-pop-lite .note-ln.ln-pm-red    { background:#ff7777; }
         /* キャップ非表示 */
         .charge-pm-pop-lite .cn-pm-white-start-cap,  .charge-pm-pop-lite .cn-pm-white-end-cap,
         .charge-pm-pop-lite .cn-pm-yellow-start-cap, .charge-pm-pop-lite .cn-pm-yellow-end-cap,
@@ -1642,7 +1652,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.810</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.811</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5834,7 +5844,8 @@ class BMSViewer {
             this._applyJudgment(judgment, dl);
             // LN保持開始
             if (best.isLN && best._tailEvent) {
-                this._heldLN.set(dl, { tailEvent: best._tailEvent });
+                const isGoodPlus = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
+                this._heldLN.set(dl, { tailEvent: best._tailEvent, pinEligible: isGoodPlus });
             }
         } else {
             // 空POOR チェック（早押し側のみ: BAD_E < delta <= POOR_E）
@@ -6336,7 +6347,9 @@ class BMSViewer {
             }
             // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定
             if (el._headNote) {
-                if (this.lnHeadPin && cur >= el._pixelPos && cur < el._pixelEndPos) {
+                const _pinHeld = this._heldLN ? this._heldLN.get(el._dl) : null;
+                const _pinOk = !this.isPlayMode || (_pinHeld && _pinHeld.pinEligible);
+                if (this.lnHeadPin && _pinOk && cur >= el._pixelPos && cur < el._pixelEndPos) {
                     el._headNote.style.bottom = (cur - el._pixelPos) + 'px';
                     el._headCap.style.display = 'none';
                 } else {

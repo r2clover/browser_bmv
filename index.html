@@ -214,7 +214,7 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:200px; }
+        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:500px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
@@ -1671,7 +1671,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.815</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.817</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -1795,8 +1795,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section" id="pmBeamLengthSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
                 <span class="detail-label">キービームの長さ</span>
                 <div class="vol-row">
-                    <input class="vol-slider" type="range" id="pmBeamLengthSlider" min="0" max="1000" value="200">
-                    <span class="vol-val" id="pmBeamLengthVal">400</span>
+                    <input class="vol-slider" type="range" id="pmBeamLengthSlider" min="0" max="1000" value="500">
+                    <span class="vol-val" id="pmBeamLengthVal">500</span>
                     <span style="font-size:11px; color:#888;">px</span>
                 </div>
                 <span style="font-size:10px; color:#666;">※pmライトは変更不可</span>
@@ -3490,6 +3490,7 @@ class BMSViewer {
                 this.lnHeadPin = true;
                 document.getElementById('lnModeBBtn').classList.add('on');
                 document.getElementById('lnModeABtn').classList.remove('on');
+                _setGaugeType('PM_NORMAL');
             } else {
                 // IIDXに戻ったとき、PM系が選択中なら通常に戻す
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
@@ -3573,7 +3574,7 @@ class BMSViewer {
         const _pmBeamSlider = document.getElementById('pmBeamLengthSlider');
         const _pmBeamVal    = document.getElementById('pmBeamLengthVal');
         const _applyPMBeamLength = () => {
-            const h = parseInt(_pmBeamSlider.value) || 400;
+            const h = parseInt(_pmBeamSlider.value) || 500;
             _pmBeamVal.textContent = h;
             document.querySelector('.play-area').style.setProperty('--pm-beam-h', h + 'px');
         };

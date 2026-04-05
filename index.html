@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.822</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.823</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2002,7 +2002,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     </div>
 
     <div class="play-area">
-        <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
+        <video id="bgaVideo" muted loop playsinline preload="auto" style="display:none;"></video>
+        <canvas id="bgaCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;z-index:0;pointer-events:none;will-change:transform;transform:translateZ(0);"></canvas>
         <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
         <div class="loading" id="loading" style="display:none;">読み込み中...</div>
         <div class="great-positioner">
@@ -2961,7 +2962,11 @@ class BMSViewer {
         vid.pause();
         vid.removeAttribute('src');
         vid.load();
-        vid.style.display = 'none';
+        // canvas 描画ループを停止・クリア
+        this._bgaVfcActive = false;
+        if (this._bgaDrawTimer) { clearInterval(this._bgaDrawTimer); this._bgaDrawTimer = null; }
+        const _cReset = document.getElementById('bgaCanvas');
+        if (_cReset) { _cReset.style.display = 'none'; if (this._bgaCtx) this._bgaCtx.clearRect(0, 0, _cReset.width, _cReset.height); }
         // 画像BGA側もリセット
         const _imgEl = document.getElementById('bgaImage');
         if (_imgEl) { _imgEl.src = ''; _imgEl.style.display = 'none'; _imgEl.dataset.bmpId = ''; }
@@ -2995,21 +3000,52 @@ class BMSViewer {
         const blob = new Blob([foundBuf], { type: 'video/mp4' });
         this._bgaVideoBlobUrl = URL.createObjectURL(blob);
         vid.src = this._bgaVideoBlobUrl;
-        vid.style.display = this.bgaEnabled ? 'block' : 'none';
         vid.load();
         document.querySelector('.play-area').classList.add('bga-active');
         // 透過率を反映
         if (this._applyBgaOpacity) this._applyBgaOpacity(parseInt(document.getElementById('bgaOpacitySlider').value));
-        // 動画表示中はFPSを30に自動調整（既に設定済みでない場合）
-        if (this.bgaEnabled && this._targetFps !== 30) {
-            this._bgaSavedFps = this._targetFps;
-            this._targetFps = 30;
-            const _fpsIds = { 30:'fps30Btn', 60:'fps60Btn', 120:'fps120Btn', 144:'fps144Btn', 0:'fpsUnlimitedBtn' };
-            Object.entries(_fpsIds).forEach(([f, id]) => {
-                const el = document.getElementById(id);
-                if (el) el.classList.toggle('on', Number(f) === 30);
-            });
+
+        // canvas セットアップ
+        const _bgaC = document.getElementById('bgaCanvas');
+        if (_bgaC) {
+            this._bgaCanvas = _bgaC;
+            _bgaC.width  = 384;
+            _bgaC.height = 400;
+            this._bgaCtx = _bgaC.getContext('2d', { alpha: false, desynchronized: true });
+            _bgaC.style.display = this.bgaEnabled ? 'block' : 'none';
         }
+
+        // 前回の描画ループを停止
+        this._bgaVfcActive = false;
+        if (this._bgaDrawTimer) { clearInterval(this._bgaDrawTimer); this._bgaDrawTimer = null; }
+
+        // canvas への描画関数（object-fit:cover 相当）
+        const _drawFrame = () => {
+            const ctx = this._bgaCtx;
+            const c   = this._bgaCanvas;
+            if (!ctx || !c || vid.readyState < 2) return;
+            const vw = vid.videoWidth, vh = vid.videoHeight;
+            if (!vw || !vh) return;
+            const cw = c.width, ch = c.height;
+            const scale = Math.max(cw / vw, ch / vh);
+            const dw = vw * scale, dh = vh * scale;
+            ctx.drawImage(vid, (cw - dw) * 0.5, (ch - dh) * 0.5, dw, dh);
+        };
+
+        // rVFC 対応ブラウザは動画フレーム生成タイミングで描画（ゲームループと独立）
+        if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+            this._bgaVfcActive = true;
+            const _vfcLoop = () => {
+                if (!this._bgaVfcActive) return;
+                _drawFrame();
+                vid.requestVideoFrameCallback(_vfcLoop);
+            };
+            vid.requestVideoFrameCallback(_vfcLoop);
+        } else {
+            // フォールバック: 30fps タイマー（ゲームの rAF とは別スレッドスケジュール）
+            this._bgaDrawTimer = setInterval(_drawFrame, 1000 / 30);
+        }
+
         // 動画が止まった時のリカバリ
         vid.onwaiting = vid.onstalled = () => {
             if (this.isPlaying && this.bgaEnabled) setTimeout(() => { vid.play().catch(() => {}); }, 200);
@@ -3719,23 +3755,12 @@ class BMSViewer {
             document.getElementById('bgaOnBtn').classList.toggle('on',  show);
             document.getElementById('bgaOffBtn').classList.toggle('on', !show);
             const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
-            if (vid) vid.style.display = show ? 'block' : 'none';
+            // video は常に非表示（canvas が描画担当）。再生/停止だけ制御
             if (show && this.isPlaying && vid && vid.src) vid.play().catch(() => {});
             else if (!show && vid) vid.pause();
-            // BGA動画表示中はFPSを30に下げ、非表示で元に戻す
-            if (vid && vid.src) {
-                if (show) {
-                    if (this._targetFps !== 30) {
-                        this._bgaSavedFps = this._targetFps;
-                        _setFps(30);
-                    }
-                } else {
-                    if (this._bgaSavedFps !== undefined) {
-                        _setFps(this._bgaSavedFps);
-                        this._bgaSavedFps = undefined;
-                    }
-                }
-            }
+            // canvas の表示切替
+            const bgaC = this._bgaCanvas || document.getElementById('bgaCanvas');
+            if (bgaC && vid && vid.src) bgaC.style.display = show ? 'block' : 'none';
             const img = document.getElementById('bgaImage');
             if (img && this._bgaImageBlobUrls && Object.keys(this._bgaImageBlobUrls).length) {
                 img.style.display = show ? 'block' : 'none';
@@ -5013,7 +5038,7 @@ class BMSViewer {
 
         // BGA動画ドリフト補正（10秒ごと・1秒以上のズレのみ補正）
         const vid = this._bgaVideoEl;
-        if (vid && vid.src && !vid.paused && this.audioPlayStart > 0) {
+        if (vid && vid.src && !vid.paused && this.bgaEnabled && this.audioPlayStart > 0) {
             if (!this._bgaDriftCheck) this._bgaDriftCheck = 0;
             this._bgaDriftCheck += dt;
             if (this._bgaDriftCheck >= 10) {

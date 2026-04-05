@@ -5132,7 +5132,7 @@ class BMSViewer {
                 this._applyGauge('PGREAT'); // AUTO PLAYは全ノーツPGREAT扱い
                 triggered = true;
                 // isEnd（LN/BSS終点）のボムは_updatePositions側で発火するためここでは除外
-                if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl); this._triggerExplosion(e.dl); bombed.add(e.dl); }
+                if (!e.isEnd && !bombed.has(e.dl)) { this._triggerBomb(e.dl, 'PGREAT'); this._triggerExplosion(e.dl); bombed.add(e.dl); }
                 // PMモード: 判定ポジション収集（dl 0-2→L, 3-5→C, 6-8→R）
                 if (this.currentSide === 'PM' && !e.isEnd) {
                     pmPositions.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
@@ -5493,6 +5493,7 @@ class BMSViewer {
         }
         // エフェクト
         if (judgment !== 'POOR' && dl !== undefined) this._triggerExplosion(dl);
+        if (this.currentSide === 'PM' && dl !== undefined) this._triggerBomb(dl, judgment);
 
         this._showPlayJudgment(judgment, dl);
     }
@@ -5632,7 +5633,7 @@ class BMSViewer {
 
     // ── キー押下（判定） ─────────────────────────────────────────
     _onLanePress(dl) {
-        this._triggerBomb(dl);
+        if (this.currentSide !== 'PM') this._triggerBomb(dl);
         if (!this.isPlayMode) return;
 
         const curPx    = this.currentPixelPos;
@@ -5755,11 +5756,25 @@ class BMSViewer {
         return bestWavId;
     }
 
-    _triggerBomb(dl) {
+    _triggerBomb(dl, judgment = null) {
         // キービーム（レーングロー）
         if (this.beamEnabled) {
             const el = this.bombElements[dl];
             if (el) {
+                // PMモード: 判定結果に応じてビーム色を変える
+                if (this.currentSide === 'PM' && judgment) {
+                    const _PMC = {
+                        PGREAT: ['rgba(255,80,170,0.90)', 'rgba(255,80,170,0.60)', 'rgba(210,55,145,0.28)'],
+                        GREAT:  ['rgba(255,220,0,0.90)',  'rgba(255,220,0,0.60)',  'rgba(200,175,0,0.28)'],
+                        GOOD:   ['rgba(220,20,60,0.90)',  'rgba(220,20,60,0.60)',  'rgba(175,15,45,0.28)'],
+                        BAD:    ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
+                        POOR:   ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
+                    };
+                    const c = _PMC[judgment] || _PMC.PGREAT;
+                    el.style.background = `linear-gradient(to top, ${c[0]} 0%, ${c[1]} 20%, ${c[2]} 55%, transparent 100%)`;
+                } else {
+                    el.style.background = '';
+                }
                 el.getAnimations().forEach(a => a.cancel());
                 el.animate(
                     [{ opacity: 1.0 }, { opacity: 0.9, offset: 0.15 }, { opacity: 0 }],
@@ -6087,7 +6102,14 @@ class BMSViewer {
                 return;
             }
             // プレイエリアは 400px: 下端が上方に 420px 以上ある要素は画面外（overflow:hidden でクリップ済み）
-            if (el._pixelPos - cur > 420) return;
+            if (el._pixelPos - cur > 420) {
+                // 一度画面内に入ったノートが後退シークで上方に出た場合、style.bottom をリセット
+                if (el._offscreen === false) {
+                    el.style.bottom = (el._pixelPos - cur) + 'px';
+                    el._offscreen = undefined;
+                }
+                return;
+            }
             el._offscreen = false;
             el.style.bottom = (el._pixelPos - cur) + 'px';
             // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
@@ -6098,7 +6120,7 @@ class BMSViewer {
             if (el._pixelEndPos !== undefined && el._dl !== undefined &&
                 !el._endBombed && this.isPlaying && cur >= el._pixelEndPos) {
                 el._endBombed = true;
-                this._triggerBomb(el._dl);
+                this._triggerBomb(el._dl, 'PGREAT');
                 this._triggerExplosion(el._dl);
             }
             // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定

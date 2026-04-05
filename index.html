@@ -1309,9 +1309,8 @@
             flex:1; height:12px; background:#111; border:1px solid #333; border-radius:2px; overflow:hidden;
         }
         .groove-gauge-bar {
-            height:100%; width:22%;
+            height:100%; width:100%;
             background:#00dd66;
-            transition:width 0.08s;
         }
         .groove-gauge-bar.gauge-red     { background:#ff2200; }
         .groove-gauge-bar.gauge-easy    { background:#88ff44; }
@@ -1643,6 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v798</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2008,7 +2008,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="groove-gauge-area">
             <span class="groove-gauge-spacer"></span>
             <div class="groove-gauge-track">
-                <div class="groove-gauge-bar" id="grooveGaugeBar" style="width:22%;"></div>
+                <div class="groove-gauge-bar" id="grooveGaugeBar"></div>
             </div>
             <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
         </div>
@@ -6029,7 +6029,9 @@ class BMSViewer {
         if (!bar) return;
         // pct は 2%刻みで渡される想定（_applyGauge / _resetGauge から）
         const clamped = Math.max(0, Math.min(100, pct));
-        bar.style.width = clamped + '%';
+        // バーは常に幅100%。グラデーションのtransparentで「空」部分を表現する
+        // （width%で境界を計算するとブラウザの独立丸めでサブピクセルずれが発生するため）
+        bar.style.width = '100%';
         if (label) label.textContent = Math.floor(clamped) + '%';
         if (stat)  stat.textContent  = Math.floor(clamped);
 
@@ -6040,17 +6042,22 @@ class BMSViewer {
         bar.style.background = '';
         let labelColor = '#00dd66';
 
+        // 単色ゲージ: 0〜clamped% は色、それ以降は透明（トラック背景が透ける）
         const _setSingle = (color) => {
-            bar.style.background = color;
+            bar.style.background = clamped > 0
+                ? `linear-gradient(to right, ${color} ${clamped}%, transparent ${clamped}%)`
+                : 'transparent';
         };
 
+        // 2色ゲージ (NORMAL/EASY): 80%が緑/赤の境界（固定値で指定→サブピクセルずれなし）
         const _setTwo = (green, darkGreen, darkRed) => {
             if (clamped > 80) {
-                const split = (80 / clamped * 100).toFixed(4);
                 bar.style.background =
-                    `linear-gradient(to right, ${green} ${split}%, #ff2200 ${split}%)`;
+                    `linear-gradient(to right, ${green} 80%, #ff2200 80%, #ff2200 ${clamped}%, transparent ${clamped}%)`;
             } else {
-                _setSingle(green);
+                bar.style.background = clamped > 0
+                    ? `linear-gradient(to right, ${green} ${clamped}%, transparent ${clamped}%)`
+                    : 'transparent';
             }
             if (track) track.style.background =
                 `linear-gradient(to right, ${darkGreen} 80%, ${darkRed} 80%)`;

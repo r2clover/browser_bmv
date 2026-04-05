@@ -2347,7 +2347,6 @@ class BMSViewer {
         this.laneSwapReverse = null;
         this.targetGreenNum  = 260;
         this.combo           = 0;
-        this.effectsEnabled  = true;   // 後方互換用（現在は未使用）
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
         this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -300〜+300
         this.judgeOffsetVisual = 0;     // 判定タイミング（描画）(ms) -300〜+300
@@ -2420,6 +2419,9 @@ class BMSViewer {
        ※ realSpeed はピクセル位置に影響しない（BPMのみ変わる）
     ============================================================ */
     _precompute() {
+        // _bpmAtBar 用にソート済みBPM変化リストをキャッシュ（毎バー再ソートを回避）
+        this._sortedBpmChanges = (this.bmsData ? (this.bmsData.bpmChanges || []) : [])
+            .slice().sort((a, b) => a.position - b.position);
         this.barStartPx = [];
         this.barPxScale = [];
         let cum = 0;
@@ -3051,7 +3053,8 @@ class BMSViewer {
 
     _px2posFrac(px) {
         const bar=this._px2bar(px);
-        const h=this._barLen(bar)*this.pixelsPerBar;
+        const scale=(this.barPxScale&&this.barPxScale[bar])||1;
+        const h=this._barLen(bar)*this.pixelsPerBar*scale;
         return bar + (h>0 ? Math.min(1,(px-this.barStartPx[bar])/h) : 0);
     }
 
@@ -3068,8 +3071,9 @@ class BMSViewer {
     _bpmAtBar(bar) {
         if (!this.bmsData) return 130;
         let bpm = this.bmsData.headers.bpm || 130;
-        const changes = (this.bmsData.bpmChanges || [])
-            .slice().sort((a, b) => a.position - b.position);
+        // _precompute でキャッシュ済みのソート配列を使用（未初期化時はフォールバック）
+        const changes = this._sortedBpmChanges
+            || (this.bmsData.bpmChanges || []).slice().sort((a, b) => a.position - b.position);
         for (const ev of changes) {
             if (ev.position <= bar) bpm = ev.bpm; else break;
         }
@@ -3966,6 +3970,14 @@ class BMSViewer {
                 }).catch(() => {});
             }
         }, { passive: true });
+
+        // タブ・ウィンドウ・アプリを閉じたとき音声を強制停止（1回だけ登録）
+        const _forceStopOnClose = () => {
+            this._stopAudio();
+            if (this._audioCtx) this._audioCtx.close().catch(() => {});
+        };
+        window.addEventListener('beforeunload', _forceStopOnClose);
+        window.addEventListener('pagehide',     _forceStopOnClose);
     }
 
     /* ============================================================ RS 処理 */
@@ -3977,13 +3989,6 @@ class BMSViewer {
             el.textContent = Math.round(base * this.realSpeed);
         });
 
-        // タブ・ウィンドウ・アプリを閉じたとき音声を強制停止
-        const _forceStopOnClose = () => {
-            this._stopAudio();
-            if (this._audioCtx) this._audioCtx.close().catch(() => {});
-        };
-        window.addEventListener('beforeunload', _forceStopOnClose);
-        window.addEventListener('pagehide',     _forceStopOnClose);
         // ステータスバーの RS 表示を更新
         // RS != 1.0 のとき枠色を変えて視覚フィードバック
         document.getElementById('rsControl').classList.toggle('active', Math.abs(this.realSpeed - 1.0) > 0.001);
@@ -4861,8 +4866,7 @@ class BMSViewer {
         if (_posT   !== this._lastPosText)   { document.getElementById('positionDisplay').textContent = _posT;   this._lastPosText   = _posT;   }
         if (_bpmT   !== this._lastBpmText)   { document.getElementById('bpmDisplay').textContent      = _bpmT;   this._lastBpmText   = _bpmT;   }
         if (_greenT !== this._lastGreenText) { document.getElementById('statusGreenNum').textContent  = _greenT; this._lastGreenText = _greenT; }
-        // ステータスバー: 現緑・経過時間
-        document.getElementById('statusGreenNum').textContent = _greenT;
+        // ステータスバー: 経過時間
         if (this.audioPlayStart > 0) {
             const elapsedSec = Math.max(0, (performance.now() / 1000 - this.audioPlayStart) * this.realSpeed + this.audioStartSec);
             const mm = Math.floor(elapsedSec / 60);
@@ -5380,8 +5384,8 @@ class BMSViewer {
 
     // ── px/ms 変換ヘルパー ──────────────────────────────────────
     _pxPerMs(atPx) {
-        const bpm = this._bpmAt(atPx) * this.realSpeed;
-        return bpm * this.pixelsPerBar / 240000;
+        // _bpmAt はすでに baseBpm * realSpeed を返すため、追加の realSpeed 乗算は不要
+        return this._bpmAt(atPx) * this.pixelsPerBar / 240000;
     }
 
     // ── 判定計算（deltaMs: 正=早押し, 負=遅押し） ───────────────

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BMS Viewer</title>
@@ -1642,7 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.800</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.803</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3890,7 +3890,10 @@ class BMSViewer {
             const gnEl = document.getElementById('greenInput');
             const gn   = parseFloat(gnEl.value);
             if (isNaN(gn) || gn <= 0) return;
-            const currentBpm = this._bpmAt(this.currentPixelPos);
+            // RSオン時はスクロール速度が曲頭BPM固定なので頭BPMを使う
+            const currentBpm = (this.regulSpeed && this.bmsData)
+                ? this._bpmAtBar(0) * this.realSpeed
+                : this._bpmAt(this.currentPixelPos);
             if (currentBpm <= 0) return;
             // HS = 175300 / (現在BPM × 頭緑)、SUD+モードAを考慮
             this.targetGreenNum = gn;
@@ -4421,7 +4424,7 @@ class BMSViewer {
         const PM_LABELS = ['白','黄','緑','青','赤','青','緑','黄','白'];
         const labels=this.currentSide==='1P'?['SC','1','2','3','4','5','6','7']:['1','2','3','4','5','6','7','SC'];
         for (let i=0;i<this.laneCount;i++) {
-            const lane=document.createElement('div'); lane.className='lane';
+            const lane=document.createElement('div'); lane.className='lane'; lane.dataset.dl=i;
             if (this.currentSide === 'PM') {
                 lane.classList.add(PM_COLORS[i]);
             } else {
@@ -5258,7 +5261,54 @@ class BMSViewer {
         this._KEY_PM = {
             KeyZ:0, KeyS:1, KeyX:2, KeyD:3, KeyC:4, KeyF:5, KeyV:6, KeyG:7, KeyB:8
         };
+        // ── ズーム抑制（double-tap / pinch） ────────────────────────
+        let _lastTapMs = 0;
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) { e.preventDefault(); return; } // pinchズーム抑制
+            const now = Date.now();
+            if (now - _lastTapMs < 300) e.preventDefault(); // double-tapズーム抑制
+            _lastTapMs = now;
+        }, { passive: false });
+
         this._heldKeys = new Map(); // code → dl（押下中キー管理）
+        this._touchLaneMap = new Map(); // touchId → dl（タッチ中レーン管理）
+
+        // ── タッチ入力（PLAY MODE） ──────────────────────────────────
+        const _lanesContainer = document.getElementById('lanesContainer');
+        const _getTouchDl = (touch) => {
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            const laneEl = el?.closest('[data-dl]');
+            return laneEl ? parseInt(laneEl.dataset.dl, 10) : -1;
+        };
+        _lanesContainer.addEventListener('touchstart', (e) => {
+            if (!this.isPlayMode) return;
+            e.preventDefault();
+            for (const t of e.changedTouches) {
+                if (this._touchLaneMap.has(t.identifier)) continue;
+                const dl = _getTouchDl(t);
+                if (dl === -1) continue;
+                this._touchLaneMap.set(t.identifier, dl);
+                this._onLanePress(dl);
+            }
+        }, { passive: false });
+        _lanesContainer.addEventListener('touchend', (e) => {
+            if (!this.isPlayMode) return;
+            e.preventDefault();
+            for (const t of e.changedTouches) {
+                const dl = this._touchLaneMap.get(t.identifier);
+                if (dl === undefined) continue;
+                this._touchLaneMap.delete(t.identifier);
+                this._onLaneRelease(dl);
+            }
+        }, { passive: false });
+        _lanesContainer.addEventListener('touchcancel', (e) => {
+            for (const t of e.changedTouches) {
+                const dl = this._touchLaneMap.get(t.identifier);
+                if (dl === undefined) continue;
+                this._touchLaneMap.delete(t.identifier);
+                if (this.isPlayMode) this._onLaneRelease(dl);
+            }
+        });
 
         document.addEventListener('keydown', (e) => {
             if (!this.isPlayMode) return;

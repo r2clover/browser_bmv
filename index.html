@@ -844,7 +844,7 @@
                 rgba(30,180,185, 0.28) 55%,
                 transparent 100%);
         }
-        /* ── PM キービーム (pm_PINK): 白/緑/赤レーン用 (44px幅) ── */
+        /* ── PM キービーム (pmノーマル): グラデーション ── */
         .lane-bomb.pm-white,
         .lane-bomb.pm-green,
         .lane-bomb.pm-red,
@@ -852,23 +852,23 @@
         .lane-bomb.pm-blue { z-index: 11; }
         .lane-bomb.pm-white,
         .lane-bomb.pm-green,
-        .lane-bomb.pm-red {
-            height: var(--pm-beam-h, 400px);
+        .lane-bomb.pm-red,
+        .lane-bomb.pm-yellow,
+        .lane-bomb.pm-blue {
+            height: var(--pm-beam-h, 200px);
             background: linear-gradient(to top,
                 rgba(255, 80, 170, 0.90) 0%,
                 rgba(255, 80, 170, 0.60) 20%,
                 rgba(210, 55, 145, 0.28) 55%,
                 transparent 100%);
         }
-        /* ── PM キービーム (pm_PINK): 黄/青レーン用 (38px幅) ── */
-        .lane-bomb.pm-yellow,
-        .lane-bomb.pm-blue {
-            height: var(--pm-beam-h, 400px);
-            background: linear-gradient(to top,
-                rgba(255, 80, 170, 0.90) 0%,
-                rgba(255, 80, 170, 0.60) 20%,
-                rgba(210, 55, 145, 0.28) 55%,
-                transparent 100%);
+        /* ── PM キービーム (pmライト): ソリッドカラー・軽量 ── */
+        .beam-pm-lite .lane-bomb.pm-white,
+        .beam-pm-lite .lane-bomb.pm-green,
+        .beam-pm-lite .lane-bomb.pm-red,
+        .beam-pm-lite .lane-bomb.pm-yellow,
+        .beam-pm-lite .lane-bomb.pm-blue {
+            background: rgba(255, 80, 170, 0.70);
         }
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
@@ -1744,7 +1744,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="beamShortBtn">SHORT</button>
                 <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="beamLongBtn">LONG</button>
-                <button class="fx-btn"    id="pmBeamPinkBtn" style="display:none;">PINK</button>
+                <button class="fx-btn"    id="pmBeamNormalBtn" style="display:none;">pmノーマル</button>
+                <button class="fx-btn"    id="pmBeamLiteBtn"   style="display:none;">pmライト</button>
                 <button class="fx-btn"    id="beamOffBtn">OFF</button>
             </div>
             <!-- PM キービームの長さ -->
@@ -3447,24 +3448,25 @@ class BMSViewer {
             _judgeIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
             document.getElementById('judgeOffBtn').style.display = '';
             document.getElementById('pmJudgeCoolBtn').style.display = isPM ? '' : 'none';
-            // キービームボタン切り替え（IIDX: SHORT/NORMAL/LONG/OFF, PM: pm_PINK）
+            // キービームボタン切り替え（IIDX: SHORT/NORMAL/LONG/OFF, PM: pmノーマル/pmライト）
             const _beamIidxIds = ['beamShortBtn','beamNormalBtn','beamLongBtn'];
             _beamIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
             document.getElementById('beamOffBtn').style.display = '';
-            document.getElementById('pmBeamPinkBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('pmBeamNormalBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('pmBeamLiteBtn').style.display   = isPM ? '' : 'none';
             document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
             document.getElementById('iidxControllerSection').style.display = isPM ? 'none' : '';
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 document.getElementById('justFrameSection').style.display = 'none';
-                _setBeamLength('OFF');
+                _setBeamLength('PM_LITE');
                 // IIDXの判定表示をリセット
                 const _gd = document.getElementById('greatDisplay');
                 if (_gd) { _gd.style.transition = 'none'; _gd.style.opacity = '0'; }
             } else {
                 if (this.judgeMode === 'PM_COOL') _setJudgeMode('JUST');
                 document.getElementById('justFrameSection').style.display = this.judgeMode === 'JUST' ? '' : 'none';
-                if (this.keyBeamLength === 'PM_PINK') _setBeamLength('SHORT');
+                if (this.keyBeamLength === 'PM_NORMAL' || this.keyBeamLength === 'PM_LITE') _setBeamLength('SHORT');
                 // PM判定表示をリセット
                 for (const _p of ['L','C','R']) {
                     if (this._pmJudgeFadeTimer[_p]) { clearTimeout(this._pmJudgeFadeTimer[_p]); this._pmJudgeFadeTimer[_p] = null; }
@@ -3482,17 +3484,20 @@ class BMSViewer {
             ['Short','Normal','Long','Off'].forEach(l =>
                 document.getElementById(`beam${l}Btn`).classList.toggle('on', len === l.toUpperCase())
             );
-            document.getElementById('pmBeamPinkBtn').classList.toggle('on', len === 'PM_PINK');
+            document.getElementById('pmBeamNormalBtn').classList.toggle('on', len === 'PM_NORMAL');
+            document.getElementById('pmBeamLiteBtn').classList.toggle('on',   len === 'PM_LITE');
             const pa = document.querySelector('.play-area');
-            pa.classList.remove('beam-normal', 'beam-long');
-            if (len === 'NORMAL') pa.classList.add('beam-normal');
-            if (len === 'LONG')   pa.classList.add('beam-long');
+            pa.classList.remove('beam-normal', 'beam-long', 'beam-pm-lite');
+            if (len === 'NORMAL')  pa.classList.add('beam-normal');
+            if (len === 'LONG')    pa.classList.add('beam-long');
+            if (len === 'PM_LITE') pa.classList.add('beam-pm-lite');
         };
-        document.getElementById('beamShortBtn').addEventListener('click',  () => _setBeamLength('SHORT'));
-        document.getElementById('beamNormalBtn').addEventListener('click', () => _setBeamLength('NORMAL'));
-        document.getElementById('beamLongBtn').addEventListener('click',   () => _setBeamLength('LONG'));
-        document.getElementById('beamOffBtn').addEventListener('click',    () => _setBeamLength('OFF'));
-        document.getElementById('pmBeamPinkBtn').addEventListener('click', () => _setBeamLength('PM_PINK'));
+        document.getElementById('beamShortBtn').addEventListener('click',    () => _setBeamLength('SHORT'));
+        document.getElementById('beamNormalBtn').addEventListener('click',   () => _setBeamLength('NORMAL'));
+        document.getElementById('beamLongBtn').addEventListener('click',     () => _setBeamLength('LONG'));
+        document.getElementById('beamOffBtn').addEventListener('click',      () => _setBeamLength('OFF'));
+        document.getElementById('pmBeamNormalBtn').addEventListener('click', () => _setBeamLength('PM_NORMAL'));
+        document.getElementById('pmBeamLiteBtn').addEventListener('click',   () => _setBeamLength('PM_LITE'));
 
         // PM キービームの長さスライダー
         const _pmBeamSlider = document.getElementById('pmBeamLengthSlider');
@@ -5763,15 +5768,28 @@ class BMSViewer {
             if (el) {
                 // PMモード: 判定結果に応じてビーム色を変える
                 if (this.currentSide === 'PM' && judgment) {
-                    const _PMC = {
-                        PGREAT: ['rgba(255,80,170,0.90)', 'rgba(255,80,170,0.60)', 'rgba(210,55,145,0.28)'],
-                        GREAT:  ['rgba(255,220,0,0.90)',  'rgba(255,220,0,0.60)',  'rgba(200,175,0,0.28)'],
-                        GOOD:   ['rgba(220,20,60,0.90)',  'rgba(220,20,60,0.60)',  'rgba(175,15,45,0.28)'],
-                        BAD:    ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
-                        POOR:   ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
-                    };
-                    const c = _PMC[judgment] || _PMC.PGREAT;
-                    el.style.background = `linear-gradient(to top, ${c[0]} 0%, ${c[1]} 20%, ${c[2]} 55%, transparent 100%)`;
+                    if (this.keyBeamLength === 'PM_LITE') {
+                        // pmライト: ソリッドカラー（グラデーションなし）
+                        const _PMLC = {
+                            PGREAT: 'rgba(255,80,170,0.75)',
+                            GREAT:  'rgba(255,220,0,0.75)',
+                            GOOD:   'rgba(220,20,60,0.75)',
+                            BAD:    'rgba(68,136,255,0.75)',
+                            POOR:   'rgba(68,136,255,0.75)',
+                        };
+                        el.style.background = _PMLC[judgment] || _PMLC.PGREAT;
+                    } else {
+                        // pmノーマル: グラデーション
+                        const _PMC = {
+                            PGREAT: ['rgba(255,80,170,0.90)', 'rgba(255,80,170,0.60)', 'rgba(210,55,145,0.28)'],
+                            GREAT:  ['rgba(255,220,0,0.90)',  'rgba(255,220,0,0.60)',  'rgba(200,175,0,0.28)'],
+                            GOOD:   ['rgba(220,20,60,0.90)',  'rgba(220,20,60,0.60)',  'rgba(175,15,45,0.28)'],
+                            BAD:    ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
+                            POOR:   ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
+                        };
+                        const c = _PMC[judgment] || _PMC.PGREAT;
+                        el.style.background = `linear-gradient(to top, ${c[0]} 0%, ${c[1]} 20%, ${c[2]} 55%, transparent 100%)`;
+                    }
                 } else {
                     el.style.background = '';
                 }

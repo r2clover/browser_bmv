@@ -867,19 +867,20 @@
         .lane-bomb.pm-j-great  { background: linear-gradient(to top, rgba(255,220,0,0.90)  0%, rgba(255,220,0,0.60)  20%, rgba(200,175,0,0.28)  55%, transparent 100%); }
         .lane-bomb.pm-j-good   { background: linear-gradient(to top, rgba(220,20,60,0.90)  0%, rgba(220,20,60,0.60)  20%, rgba(175,15,45,0.28)  55%, transparent 100%); }
         .lane-bomb.pm-j-bad    { background: linear-gradient(to top, rgba(68,136,255,0.90) 0%, rgba(68,136,255,0.60) 20%, rgba(50,100,220,0.28)  55%, transparent 100%); }
-        /* ── PM ビーム判定色クラス (pmライト: ソリッドカラー) ── */
-        .beam-pm-lite .lane-bomb.pm-j-pgreat { background: rgba(255,80,170,0.75); }
-        .beam-pm-lite .lane-bomb.pm-j-great  { background: rgba(255,220,0,0.75); }
-        .beam-pm-lite .lane-bomb.pm-j-good   { background: rgba(220,20,60,0.75); }
-        .beam-pm-lite .lane-bomb.pm-j-bad    { background: rgba(68,136,255,0.75); }
-        /* ── PM キービーム (pmライト): 初期デフォルト色 ── */
+        /* ── PM キービーム (pmライト): 高さ全画面・透過強め ── */
         .beam-pm-lite .lane-bomb.pm-white,
         .beam-pm-lite .lane-bomb.pm-green,
         .beam-pm-lite .lane-bomb.pm-red,
         .beam-pm-lite .lane-bomb.pm-yellow,
         .beam-pm-lite .lane-bomb.pm-blue {
-            background: rgba(255, 80, 170, 0.70);
+            height: 100%;
+            background: rgba(255, 80, 170, 0.35);
         }
+        /* ── PM ビーム判定色クラス (pmライト: ソリッドカラー・透過強め) ── */
+        .beam-pm-lite .lane-bomb.pm-j-pgreat { background: rgba(255,80,170,0.35); }
+        .beam-pm-lite .lane-bomb.pm-j-great  { background: rgba(255,220,0,0.35); }
+        .beam-pm-lite .lane-bomb.pm-j-good   { background: rgba(220,20,60,0.35); }
+        .beam-pm-lite .lane-bomb.pm-j-bad    { background: rgba(68,136,255,0.35); }
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
@@ -1766,6 +1767,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span class="vol-val" id="pmBeamLengthVal">400</span>
                     <span style="font-size:11px; color:#888;">px</span>
                 </div>
+                <span style="font-size:10px; color:#666;">※pmライトは変更不可</span>
             </div>
             <!-- ボム -->
             <div class="detail-section nowrap">

@@ -1642,7 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v798</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.798</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3492,7 +3492,7 @@ class BMSViewer {
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 document.getElementById('justFrameSection').style.display = 'none';
-                _setBeamLength('PM_LITE');
+                _setBeamLength('PM_NORMAL');
                 // IIDXの判定表示をリセット
                 const _gd = document.getElementById('greatDisplay');
                 if (_gd) { _gd.style.transition = 'none'; _gd.style.opacity = '0'; }
@@ -3559,6 +3559,7 @@ class BMSViewer {
             document.getElementById('autoPlayModeBtn').classList.toggle('on', !isPlay);
             document.getElementById('playModeBtn').classList.toggle('on',  isPlay);
             if (isPlay) { this.combo = 0; }
+            else { this._resetPlayCounters(); } // AUTO切替時: judgedフラグリセット＋カウント再計算
         };
         document.getElementById('autoPlayModeBtn').addEventListener('click', () => _setPlayMode(false));
         document.getElementById('playModeBtn').addEventListener('click',     () => _setPlayMode(true));
@@ -5513,7 +5514,8 @@ class BMSViewer {
 
     // ── 判定適用（カウント・コンボ・表示） ──────────────────────
     // isEmptyPoor=true: 空POOR（BADと同じ-100）、false: 見逃しPOOR（-300）
-    _applyJudgment(judgment, dl, isEmptyPoor = false) {
+    // isMiss=true: 見逃しPOOR（ボタン未押し）→ PMキービーム出さない
+    _applyJudgment(judgment, dl, isEmptyPoor = false, isMiss = false) {
         const key = { PGREAT:'_pgCount', GREAT:'_grCount', GOOD:'_gdCount', BAD:'_bdCount', POOR:'_prCount' }[judgment];
         if (key) this[key]++;
         const idMap = { PGREAT:'pgCount', GREAT:'grCount', GOOD:'gdCount', BAD:'bdCount', POOR:'prCount' };
@@ -5537,7 +5539,7 @@ class BMSViewer {
         }
         // エフェクト
         if (judgment !== 'POOR' && dl !== undefined) this._triggerExplosion(dl);
-        if (this.currentSide === 'PM' && dl !== undefined) this._triggerBomb(dl, judgment);
+        if (this.currentSide === 'PM' && dl !== undefined && !isMiss) this._triggerBomb(dl, judgment);
 
         this._showPlayJudgment(judgment, dl);
     }
@@ -5774,14 +5776,14 @@ class BMSViewer {
                     e.judged = true;
                     // LNの場合は終点もスキップ
                     if (e._tailEvent) e._tailEvent.judged = true;
-                    this._applyJudgment('POOR', e.dl);
+                    this._applyJudgment('POOR', e.dl, false, true); // isMiss=true
                 }
             } else {
                 // LN終点: 押し続けてBAD早押し窓を超えたらPOOR
                 if (refPx < curPx - BAD_E) {
                     e.judged = true;
                     this._heldLN.delete(e.dl);
-                    this._applyJudgment('POOR', e.dl);
+                    this._applyJudgment('POOR', e.dl, false, true); // isMiss=true
                 }
             }
         }

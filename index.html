@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.820</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.821</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2002,7 +2002,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     </div>
 
     <div class="play-area">
-        <video id="bgaVideo" muted loop playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;"></video>
+        <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
         <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
         <div class="loading" id="loading" style="display:none;">読み込み中...</div>
         <div class="great-positioner">
@@ -2684,7 +2684,7 @@ class BMSViewer {
         }
 
         // BGA動画を音楽時間に同期して再生
-        const vid = document.getElementById('bgaVideo');
+        const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
         if (vid && vid.src && vid.style.display !== 'none') {
             const startSec = this.audioStartSec;
             if (vid.readyState >= 1) {
@@ -2708,7 +2708,7 @@ class BMSViewer {
             } catch(e) { /* 既に停止済みは無視 */ }
         }
         // BGA動画も停止
-        const vid = document.getElementById('bgaVideo');
+        const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
         if (vid && !vid.paused) vid.pause();
     }
 
@@ -2951,6 +2951,7 @@ class BMSViewer {
     _loadBgaVideo(videoFileMap) {
         const vid = document.getElementById('bgaVideo');
         if (!vid) return;
+        this._bgaVideoEl = vid; // キャッシュ
 
         // 前回の Blob URL を解放
         if (this._bgaVideoBlobUrl) {
@@ -4982,19 +4983,19 @@ class BMSViewer {
             (this._elElapsed || document.getElementById('statusElapsed')).textContent = mm + ':' + ss;
         }
 
-        // BGA動画ドリフト補正（5秒ごと）
-        const vid = document.getElementById('bgaVideo');
-        if (vid && vid.src && vid.style.display !== 'none' && !vid.paused && this.audioPlayStart > 0) {
+        // BGA動画ドリフト補正（10秒ごと・1秒以上のズレのみ補正）
+        const vid = this._bgaVideoEl;
+        if (vid && vid.src && !vid.paused && this.audioPlayStart > 0) {
             if (!this._bgaDriftCheck) this._bgaDriftCheck = 0;
             this._bgaDriftCheck += dt;
-            if (this._bgaDriftCheck >= 5) {
+            if (this._bgaDriftCheck >= 10) {
                 this._bgaDriftCheck = 0;
                 const elapsed = Math.max(0, now / 1000 - this.audioPlayStart) * this.realSpeed;
                 const musicSec = this.audioStartSec + elapsed;
                 const dur = vid.duration;
                 if (dur > 0) {
                     const expected = musicSec % dur;
-                    if (Math.abs(vid.currentTime - expected) > 0.2) {
+                    if (Math.abs(vid.currentTime - expected) > 1.0) {
                         vid.currentTime = expected;
                     }
                 }

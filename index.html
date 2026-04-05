@@ -1642,7 +1642,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.808</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.810</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -1671,6 +1671,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"   id="gaugeHardBtn">HARD</button>
                 <button class="fx-btn"   id="gaugeExHardBtn">EX HARD</button>
                 <button class="fx-btn"   id="gaugeDanBtn">段位認定</button>
+                <button class="fx-btn"   id="gaugePmNormalBtn">pmノーマル</button>
+                <button class="fx-btn"   id="gaugePmHardBtn">pm辛ゲージ</button>
+                <button class="fx-btn"   id="gaugePmEasyBtn">pmイージー</button>
             </div>
             <!-- GROOVE GAUGE 初期値 -->
             <div class="detail-section" style="flex-direction:column; align-items:flex-start; gap:4px;">
@@ -2363,6 +2366,8 @@ class BMSViewer {
         this._gaugeValue = 1100; // 内部値 0〜5000（100%=5000、初期値22%）
         this._grInc   = 0;       // GREAT/PGREAT 1ノーツあたり増加量（ノーツ数確定後に計算）
         this._gdInc   = 0;       // GOOD 増加量
+        this._pmGrInc = 2;       // PMゲージ PG/GR増加量（ノーツ数確定後に計算）
+        this._pmGdInc = 1;       // PMゲージ GOOD増加量
         this._heldLN  = new Map(); // dl → { tailEvent } 保持中LN管理
         this._gpPrevButtons = new Map(); // gamepadIndex_buttonIndex → pressed
         this._gpIidxType = 'OFF';       // 'OFF'|'PREMIUM'|'PS2'
@@ -3593,20 +3598,38 @@ class BMSViewer {
         // GROOVE GAUGE タイプ選択
         const _gaugeTypeMap = {
             NORMAL:'gaugeNormalBtn', EASY:'gaugeEasyBtn',
-            HARD:'gaugeHardBtn', EXHARD:'gaugeExHardBtn', DAN:'gaugeDanBtn'
+            HARD:'gaugeHardBtn', EXHARD:'gaugeExHardBtn', DAN:'gaugeDanBtn',
+            PM_NORMAL:'gaugePmNormalBtn', PM_HARD:'gaugePmHardBtn', PM_EASY:'gaugePmEasyBtn'
         };
+        const _isPmGaugeType = (t) => t === 'PM_NORMAL' || t === 'PM_HARD' || t === 'PM_EASY';
         const _setGaugeType = (type) => {
             this._gaugeType = type;
             for (const [t, id] of Object.entries(_gaugeTypeMap))
                 document.getElementById(id).classList.toggle('on', t === type);
-            // HARD/EXHARD/DAN はスライダー下限を0%に、デフォルト100%
-            const isHeavy = type === 'HARD' || type === 'EXHARD' || type === 'DAN';
             const slider = document.getElementById('gaugeInitSlider');
-            slider.min = isHeavy ? '0' : '2';
-            _setGaugeInit(isHeavy ? 100 : 22);
-            // 現在のゲージ表示カラーだけ更新（値は変えない）
-            const displayPct = Math.floor(this._gaugeValue / 100) * 2;
-            this._updateGrooveGauge(displayPct);
+            if (_isPmGaugeType(type)) {
+                // PMゲージ: 初期値256固定（25%）、スライダー無効
+                slider.min = '2'; slider.disabled = true;
+                this._gaugeInitPct = 25;
+                slider.value = 25;
+                document.getElementById('gaugeInitVal').textContent = 25;
+                this._gaugeValue = 256;
+                this._updateGrooveGauge(25);
+            } else {
+                slider.disabled = false;
+                const isHeavy = type === 'HARD' || type === 'EXHARD' || type === 'DAN';
+                slider.min = isHeavy ? '0' : '2';
+                // PMゲージから切り替えた場合は_gaugeValueスケールが違うのでリセット
+                const waspm = _isPmGaugeType(this._prevGaugeType || '');
+                if (waspm) {
+                    _setGaugeInit(isHeavy ? 100 : 22); // 明示的リセット
+                } else {
+                    _setGaugeInit(isHeavy ? 100 : 22);
+                    const displayPct = Math.floor(this._gaugeValue / 100) * 2;
+                    this._updateGrooveGauge(displayPct);
+                }
+            }
+            this._prevGaugeType = type;
         };
         for (const [type, id] of Object.entries(_gaugeTypeMap))
             document.getElementById(id).addEventListener('click', () => _setGaugeType(type));
@@ -4780,6 +4803,8 @@ class BMSViewer {
         const _gN = Math.max(1, this.noteEvents.filter(e => !e.isAutoBgm && !e.isEnd).length);
         this._grInc = Math.floor(80000 / (_gN * 2 + 1400));
         this._gdInc = Math.floor(this._grInc / 2);
+        this._pmGrInc = Math.max(2, Math.floor(3072 / _gN)); // 最低2（辛ゲージ避け）
+        this._pmGdInc = Math.floor(this._pmGrInc / 2);
 
         this._refreshLoopUI(false);
     }
@@ -5516,8 +5541,14 @@ class BMSViewer {
         const gc = document.getElementById('greatCombo');
         if (gc) gc.textContent = 0;
         // ゲージ初期値にリセット
-        this._gaugeValue = this._gaugeInitPct * 50;
-        this._updateGrooveGauge(this._gaugeInitPct);
+        const _isPmG = this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY';
+        if (_isPmG) {
+            this._gaugeValue = 256;
+            this._updateGrooveGauge(25);
+        } else {
+            this._gaugeValue = this._gaugeInitPct * 50;
+            this._updateGrooveGauge(this._gaugeInitPct);
+        }
         // judgedフラグをリセットし、現在位置より前のノーツを判定済みにマーク
         if (this.noteEvents) {
             this.noteEvents.forEach(e => { e.judged = false; });
@@ -5550,12 +5581,19 @@ class BMSViewer {
         this.combo    = count;
 
         // ゲージ: count回PGREAT適用をO(1)で計算
-        const GAUGE_MAX = 5000;
-        const initVal   = this._gaugeInitPct * 50;
-        const gaugeMin  = (this._gaugeType === 'NORMAL' || this._gaugeType === 'EASY') ? 100 : 0;
-        const pgDelta   = (this._gaugeType === 'HARD' || this._gaugeType === 'EXHARD' || this._gaugeType === 'DAN')
-                          ? 8 : this._grInc;
-        this._gaugeValue = Math.max(gaugeMin, Math.min(GAUGE_MAX, initVal + count * pgDelta));
+        const _isPmG2 = this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY';
+        if (_isPmG2) {
+            const PM_MAX = 1024, PM_MIN = 10;
+            const pmDelta = this._gaugeType === 'PM_HARD' ? 1 : this._pmGrInc;
+            this._gaugeValue = Math.max(PM_MIN, Math.min(PM_MAX, 256 + count * pmDelta));
+        } else {
+            const GAUGE_MAX = 5000;
+            const initVal   = this._gaugeInitPct * 50;
+            const gaugeMin  = (this._gaugeType === 'NORMAL' || this._gaugeType === 'EASY') ? 100 : 0;
+            const pgDelta   = (this._gaugeType === 'HARD' || this._gaugeType === 'EXHARD' || this._gaugeType === 'DAN')
+                              ? 8 : this._grInc;
+            this._gaugeValue = Math.max(gaugeMin, Math.min(GAUGE_MAX, initVal + count * pgDelta));
+        }
 
         // 表示更新
         const idMap = { pgCount: count, grCount: 0, gdCount: 0, bdCount: 0, prCount: 0, scoreDisplay: count * 2 };
@@ -5565,7 +5603,11 @@ class BMSViewer {
         }
         const gc = document.getElementById('greatCombo');
         if (gc) gc.textContent = count;
-        this._updateGrooveGauge(Math.floor(this._gaugeValue / 100) * 2);
+        if (_isPmG2) {
+            this._updateGrooveGauge(Math.max(1, Math.min(100, Math.round(this._gaugeValue / 1024 * 100))));
+        } else {
+            this._updateGrooveGauge(Math.floor(this._gaugeValue / 100) * 2);
+        }
     }
 
     // ── 判定適用（カウント・コンボ・表示） ──────────────────────
@@ -5602,6 +5644,32 @@ class BMSViewer {
 
     // ── グルーブゲージ増減 ────────────────────────────────────
     _applyGauge(judgment, isEmptyPoor = false) {
+        // PMゲージ（1024段階）は別処理
+        if (this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY') {
+            const PM_MAX = 1024, PM_MIN = 10;
+            const isPmPG = judgment === 'PGREAT' || judgment === 'GREAT';
+            let pmDelta = 0;
+            if (this._gaugeType === 'PM_HARD') {
+                if      (isPmPG || judgment === 'GOOD') pmDelta =  1;
+                else if (judgment === 'BAD')            pmDelta = -17;
+                else if (judgment === 'POOR')           pmDelta = -51;
+            } else if (this._gaugeType === 'PM_EASY') {
+                if      (isPmPG)              pmDelta =  this._pmGrInc;
+                else if (judgment === 'GOOD') pmDelta =  this._pmGdInc;
+                else if (judgment === 'BAD')  pmDelta = -8;
+                else if (judgment === 'POOR') pmDelta = -25;
+            } else { // PM_NORMAL
+                if      (isPmPG)              pmDelta =  this._pmGrInc;
+                else if (judgment === 'GOOD') pmDelta =  this._pmGdInc;
+                else if (judgment === 'BAD')  pmDelta = -17;
+                else if (judgment === 'POOR') pmDelta = -51;
+            }
+            this._gaugeValue = Math.max(PM_MIN, Math.min(PM_MAX, this._gaugeValue + pmDelta));
+            const pct = Math.max(1, Math.min(100, Math.round(this._gaugeValue / PM_MAX * 100)));
+            this._updateGrooveGauge(pct);
+            return;
+        }
+
         const GAUGE_MAX = 5000;
         const cur = this._gaugeValue;
         let delta = 0;
@@ -6106,8 +6174,14 @@ class BMSViewer {
         // バーは常に幅100%。グラデーションのtransparentで「空」部分を表現する
         // （width%で境界を計算するとブラウザの独立丸めでサブピクセルずれが発生するため）
         bar.style.width = '100%';
-        if (label) label.textContent = Math.floor(clamped) + '%';
-        if (stat)  stat.textContent  = Math.floor(clamped);
+        const _isPmG3 = this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY';
+        if (_isPmG3) {
+            if (label) label.textContent = this._gaugeValue; // 1024段階の生の値
+            if (stat)  stat.textContent  = this._gaugeValue;
+        } else {
+            if (label) label.textContent = Math.floor(clamped) + '%';
+            if (stat)  stat.textContent  = Math.floor(clamped);
+        }
 
         // ゲージタイプ別カラー
         const track = bar.parentElement;
@@ -6123,19 +6197,22 @@ class BMSViewer {
                 : 'transparent';
         };
 
-        // 2色ゲージ (NORMAL/EASY): 80%が緑/赤の境界（固定値で指定→サブピクセルずれなし）
-        const _setTwo = (green, darkGreen, darkRed) => {
-            if (clamped > 80) {
+        // 2色ゲージ: threshold%が低色/高色の境界
+        const _setTwo = (low, darkLow, darkHi, hiColor = '#ff2200', threshold = 80) => {
+            if (clamped > threshold) {
                 bar.style.background =
-                    `linear-gradient(to right, ${green} 80%, #ff2200 80%, #ff2200 ${clamped}%, transparent ${clamped}%)`;
+                    `linear-gradient(to right, ${low} ${threshold}%, ${hiColor} ${threshold}%, ${hiColor} ${clamped}%, transparent ${clamped}%)`;
             } else {
                 bar.style.background = clamped > 0
-                    ? `linear-gradient(to right, ${green} ${clamped}%, transparent ${clamped}%)`
+                    ? `linear-gradient(to right, ${low} ${clamped}%, transparent ${clamped}%)`
                     : 'transparent';
             }
             if (track) track.style.background =
-                `linear-gradient(to right, ${darkGreen} 80%, ${darkRed} 80%)`;
+                `linear-gradient(to right, ${darkLow} ${threshold}%, ${darkHi} ${threshold}%)`;
         };
+
+        // PMゲージのクリア境界: 726/1024 ≈ 70.9%
+        const PM_CLR = 70.9;
 
         switch (this._gaugeType || 'NORMAL') {
             case 'EASY':
@@ -6154,6 +6231,18 @@ class BMSViewer {
                 labelColor = '#ff8800';
                 _setSingle('#ff8800');
                 if (track) track.style.background = '#331a00'; break;
+            case 'PM_NORMAL':
+                labelColor = clamped > PM_CLR ? '#ff8800' : '#4488ff';
+                _setTwo('#4488ff', '#001133', '#332000', '#ff8800', PM_CLR);
+                break;
+            case 'PM_HARD':
+                labelColor = clamped > PM_CLR ? '#cc5500' : '#2244cc';
+                _setTwo('#2244cc', '#000a22', '#221500', '#cc5500', PM_CLR);
+                break;
+            case 'PM_EASY':
+                labelColor = clamped > PM_CLR ? '#ffaa44' : '#88bbff';
+                _setTwo('#88bbff', '#001a44', '#331800', '#ffaa44', PM_CLR);
+                break;
             default: // NORMAL
                 labelColor = clamped >= 80 ? '#ff2200' : '#00dd66';
                 _setTwo('#00dd66', '#003318', '#330800');

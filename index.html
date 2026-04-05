@@ -214,7 +214,7 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:400px; }
+        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:200px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
@@ -1078,21 +1078,11 @@
         .notes-pm-pop-face .note.pm-green::before,
         .notes-pm-pop-face .note.pm-blue::before,
         .notes-pm-pop-face .note.pm-red::before,
-        .notes-pm-pop-lite .note.pm-white::before,
-        .notes-pm-pop-lite .note.pm-yellow::before,
-        .notes-pm-pop-lite .note.pm-green::before,
-        .notes-pm-pop-lite .note.pm-blue::before,
-        .notes-pm-pop-lite .note.pm-red::before,
         .charge-pm-pop-face .ln-note-end.pm-white::before,
         .charge-pm-pop-face .ln-note-end.pm-yellow::before,
         .charge-pm-pop-face .ln-note-end.pm-green::before,
         .charge-pm-pop-face .ln-note-end.pm-blue::before,
-        .charge-pm-pop-face .ln-note-end.pm-red::before,
-        .charge-pm-pop-lite .ln-note-end.pm-white::before,
-        .charge-pm-pop-lite .ln-note-end.pm-yellow::before,
-        .charge-pm-pop-lite .ln-note-end.pm-green::before,
-        .charge-pm-pop-lite .ln-note-end.pm-blue::before,
-        .charge-pm-pop-lite .ln-note-end.pm-red::before {
+        .charge-pm-pop-face .ln-note-end.pm-red::before {
             content:''; position:absolute;
             width:4px; height:4px; border-radius:50%;
             background:radial-gradient(circle at 68% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
@@ -1104,21 +1094,11 @@
         .notes-pm-pop-face .note.pm-green::after,
         .notes-pm-pop-face .note.pm-blue::after,
         .notes-pm-pop-face .note.pm-red::after,
-        .notes-pm-pop-lite .note.pm-white::after,
-        .notes-pm-pop-lite .note.pm-yellow::after,
-        .notes-pm-pop-lite .note.pm-green::after,
-        .notes-pm-pop-lite .note.pm-blue::after,
-        .notes-pm-pop-lite .note.pm-red::after,
         .charge-pm-pop-face .ln-note-end.pm-white::after,
         .charge-pm-pop-face .ln-note-end.pm-yellow::after,
         .charge-pm-pop-face .ln-note-end.pm-green::after,
         .charge-pm-pop-face .ln-note-end.pm-blue::after,
-        .charge-pm-pop-face .ln-note-end.pm-red::after,
-        .charge-pm-pop-lite .ln-note-end.pm-white::after,
-        .charge-pm-pop-lite .ln-note-end.pm-yellow::after,
-        .charge-pm-pop-lite .ln-note-end.pm-green::after,
-        .charge-pm-pop-lite .ln-note-end.pm-blue::after,
-        .charge-pm-pop-lite .ln-note-end.pm-red::after {
+        .charge-pm-pop-face .ln-note-end.pm-red::after {
             content:''; position:absolute;
             width:4px; height:4px; border-radius:50%;
             background:radial-gradient(circle at 32% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
@@ -1236,15 +1216,14 @@
             background: linear-gradient(to bottom, #ff00aa 0%, #ffffff 100%);
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 2px #000);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
             white-space: nowrap; line-height: 1;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
         }
         .pm-judge-combo {
             font-size: 26px; font-weight: 800;
             color: #ffffff;
-            text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
-                         1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.9), -1px -1px 2px rgba(0,0,0,0.9);
             white-space: nowrap; line-height: 1; text-align: center;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
             font-variant-numeric: tabular-nums;
@@ -1773,7 +1752,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section" id="pmBeamLengthSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
                 <span class="detail-label">キービームの長さ</span>
                 <div class="vol-row">
-                    <input class="vol-slider" type="range" id="pmBeamLengthSlider" min="0" max="1000" value="400">
+                    <input class="vol-slider" type="range" id="pmBeamLengthSlider" min="0" max="1000" value="200">
                     <span class="vol-val" id="pmBeamLengthVal">400</span>
                     <span style="font-size:11px; color:#888;">px</span>
                 </div>
@@ -3984,6 +3963,16 @@ class BMSViewer {
         this._elSeekFill  = document.getElementById('seekFill');
         this._elSeekThumb = document.getElementById('seekThumb');
         this._elSeekLoop  = document.getElementById('seekLoopRange');
+        this._elPmJudge = {
+            L: document.getElementById('pmJudge_L'),
+            C: document.getElementById('pmJudge_C'),
+            R: document.getElementById('pmJudge_R'),
+        };
+        this._elPmJudgeCombo = {
+            L: document.getElementById('pmJudgeCombo_L'),
+            C: document.getElementById('pmJudgeCombo_C'),
+            R: document.getElementById('pmJudgeCombo_R'),
+        };
     }
 
     /* ============================================================ RS 処理 */
@@ -5789,8 +5778,7 @@ class BMSViewer {
             const el = this.explosionElements[dl];
             if (!el) return;
             el.classList.remove('explode-lite');
-            void el.offsetWidth;
-            el.classList.add('explode-lite');
+            requestAnimationFrame(() => el.classList.add('explode-lite'));
             return;
         }
         // ボムA: クローン方式（拡散リングあり）
@@ -5910,7 +5898,7 @@ class BMSViewer {
         const colorCls   = { GREAT:'pm-jl-great', GOOD:'pm-jl-good', BAD:'pm-jl-bad', POOR:'pm-jl-bad' };
         const allColorCls = Object.values(colorCls);
 
-        const el = document.getElementById(`pmJudge_${pos}`);
+        const el = (this._elPmJudge && this._elPmJudge[pos]) || document.getElementById(`pmJudge_${pos}`);
         if (!el) return;
 
         const labelEl = el.querySelector('.pm-judge-label');
@@ -5923,16 +5911,18 @@ class BMSViewer {
         if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
         el.style.transition = 'none';
         el.style.opacity = '0.8';
-        el.getBoundingClientRect();
-        el.style.transition = 'opacity 0.5s ease';
-        el.style.opacity = '0';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            el.style.transition = 'opacity 0.5s ease';
+            el.style.opacity = '0';
+        }));
 
+        const pjc = this._elPmJudgeCombo;
         for (const p of ['L', 'C', 'R']) {
-            const ce = document.getElementById(`pmJudgeCombo_${p}`);
+            const ce = (pjc && pjc[p]) || document.getElementById(`pmJudgeCombo_${p}`);
             if (ce) ce.style.visibility = (showCombo && p === pos) ? 'visible' : 'hidden';
         }
         if (showCombo) {
-            const ce = document.getElementById(`pmJudgeCombo_${pos}`);
+            const ce = (pjc && pjc[pos]) || document.getElementById(`pmJudgeCombo_${pos}`);
             if (ce) ce.textContent = this.combo;
         }
     }
@@ -5948,25 +5938,28 @@ class BMSViewer {
         else if (positions.has('R')) comboPos = 'R';
 
         // 各ポジションで COOL!! を表示（opacity 0.8 で即出現 → 0.5s でフェードアウト）
+        const pje = this._elPmJudge;
         for (const pos of ['L', 'C', 'R']) {
             if (!positions.has(pos)) continue;
-            const el = document.getElementById(`pmJudge_${pos}`);
+            const el = (pje && pje[pos]) || document.getElementById(`pmJudge_${pos}`);
             if (!el) continue;
             if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
             el.style.transition = 'none';
             el.style.opacity = '0.8';
-            el.getBoundingClientRect(); // reflow: transition 適用前に opacity を確定
-            el.style.transition = 'opacity 0.5s ease';
-            el.style.opacity = '0';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                el.style.transition = 'opacity 0.5s ease';
+                el.style.opacity = '0';
+            }));
         }
 
         // コンボ: 最新ポジションにのみ表示（他は即座に非表示）
         if (comboPos) {
+            const pjc = this._elPmJudgeCombo;
             for (const pos of ['L', 'C', 'R']) {
-                const ce = document.getElementById(`pmJudgeCombo_${pos}`);
+                const ce = (pjc && pjc[pos]) || document.getElementById(`pmJudgeCombo_${pos}`);
                 if (ce) ce.style.visibility = pos === comboPos ? 'visible' : 'hidden';
             }
-            const activeCombo = document.getElementById(`pmJudgeCombo_${comboPos}`);
+            const activeCombo = (pjc && pjc[comboPos]) || document.getElementById(`pmJudgeCombo_${comboPos}`);
             if (activeCombo) activeCombo.textContent = this.combo;
             this._pmComboPos = comboPos;
         }

@@ -1672,7 +1672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.821</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.822</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3000,6 +3000,20 @@ class BMSViewer {
         document.querySelector('.play-area').classList.add('bga-active');
         // 透過率を反映
         if (this._applyBgaOpacity) this._applyBgaOpacity(parseInt(document.getElementById('bgaOpacitySlider').value));
+        // 動画表示中はFPSを30に自動調整（既に設定済みでない場合）
+        if (this.bgaEnabled && this._targetFps !== 30) {
+            this._bgaSavedFps = this._targetFps;
+            this._targetFps = 30;
+            const _fpsIds = { 30:'fps30Btn', 60:'fps60Btn', 120:'fps120Btn', 144:'fps144Btn', 0:'fpsUnlimitedBtn' };
+            Object.entries(_fpsIds).forEach(([f, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('on', Number(f) === 30);
+            });
+        }
+        // 動画が止まった時のリカバリ
+        vid.onwaiting = vid.onstalled = () => {
+            if (this.isPlaying && this.bgaEnabled) setTimeout(() => { vid.play().catch(() => {}); }, 200);
+        };
     }
 
     _loadBgaImages(imageFileMap) {
@@ -3704,10 +3718,24 @@ class BMSViewer {
             this.bgaEnabled = show;
             document.getElementById('bgaOnBtn').classList.toggle('on',  show);
             document.getElementById('bgaOffBtn').classList.toggle('on', !show);
-            const vid = document.getElementById('bgaVideo');
+            const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
             if (vid) vid.style.display = show ? 'block' : 'none';
             if (show && this.isPlaying && vid && vid.src) vid.play().catch(() => {});
             else if (!show && vid) vid.pause();
+            // BGA動画表示中はFPSを30に下げ、非表示で元に戻す
+            if (vid && vid.src) {
+                if (show) {
+                    if (this._targetFps !== 30) {
+                        this._bgaSavedFps = this._targetFps;
+                        _setFps(30);
+                    }
+                } else {
+                    if (this._bgaSavedFps !== undefined) {
+                        _setFps(this._bgaSavedFps);
+                        this._bgaSavedFps = undefined;
+                    }
+                }
+            }
             const img = document.getElementById('bgaImage');
             if (img && this._bgaImageBlobUrls && Object.keys(this._bgaImageBlobUrls).length) {
                 img.style.display = show ? 'block' : 'none';

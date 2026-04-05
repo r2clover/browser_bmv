@@ -1952,10 +1952,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">描画FPS</span>
                 <button class="fx-btn"    id="fps30Btn">30</button>
-                <button class="fx-btn"    id="fps60Btn">60</button>
+                <button class="fx-btn on" id="fps60Btn">60</button>
                 <button class="fx-btn"    id="fps120Btn">120</button>
                 <button class="fx-btn"    id="fps144Btn">144</button>
-                <button class="fx-btn on" id="fpsUnlimitedBtn">無制限</button>
+                <button class="fx-btn"    id="fpsUnlimitedBtn">無制限</button>
             </div>
             </div><!-- /detail-body -->
         </div>
@@ -2379,7 +2379,7 @@ class BMSViewer {
         this._pjBlinkTimer = null;
         this._pjFadeTimer  = null;
         this._pjCycleTimer = null;
-        this._targetFps       = 0;      // 描画FPS: 30/60/120/144/0(無制限)
+        this._targetFps       = 60;     // 描画FPS: 30/60/120/144/0(無制限)
         this._lastFrameRender = 0;      // FPSスロットル用
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
         this.lnHeadPin        = false; // LN モードB: ヘッドをJLに固定
@@ -3978,6 +3978,12 @@ class BMSViewer {
         };
         window.addEventListener('beforeunload', _forceStopOnClose);
         window.addEventListener('pagehide',     _forceStopOnClose);
+
+        // 頻繁にアクセスされる静的 DOM 要素をキャッシュ（毎フレーム getElementById を回避）
+        this._elElapsed   = document.getElementById('statusElapsed');
+        this._elSeekFill  = document.getElementById('seekFill');
+        this._elSeekThumb = document.getElementById('seekThumb');
+        this._elSeekLoop  = document.getElementById('seekLoopRange');
     }
 
     /* ============================================================ RS 処理 */
@@ -4432,6 +4438,7 @@ class BMSViewer {
         const jl = document.createElement('div');
         jl.id = 'mainJudgmentLine';
         c.appendChild(jl);
+        this._elJudgLine = jl; // 毎フレーム getElementById を回避するためキャッシュ
     }
 
     /* ============================================================ ノート・バーライン・BPMマーカー描画 */
@@ -4484,7 +4491,7 @@ class BMSViewer {
     }
 
     renderNotes() {
-        this.noteElements.forEach(el=>el.remove()); this.noteElements=[];
+        this.noteElements.forEach(el=>el.remove()); this.noteElements=[]; this.lnElements=[];
         if (!this.bmsData) return;
         const container=document.getElementById('lanesContainer');
         const lanes=document.querySelectorAll('.lane');
@@ -4625,7 +4632,7 @@ class BMSViewer {
             el.appendChild(dimMask);
             el._dimMask = dimMask;
             el._dl = dl;
-            lanes[dl].appendChild(el); this.noteElements.push(el);
+            lanes[dl].appendChild(el); this.noteElements.push(el); this.lnElements.push(el);
         });
 
         // ── MSS 描画: セグメントをグループ化して1本の帯として描画 ──
@@ -4684,7 +4691,7 @@ class BMSViewer {
                 el.appendChild(mec);
                 el._headNote = mns; el._headCap = msc;
                 el._dl = dl;
-                lanes[dl].appendChild(el); this.noteElements.push(el);
+                lanes[dl].appendChild(el); this.noteElements.push(el); this.lnElements.push(el);
                 // 中間ノーツの区切りライン（lane 内の絶対位置に配置）
                 for (const px of dividerPxs) {
                     const div = document.createElement('div'); div.className='mss-divider';
@@ -4845,7 +4852,11 @@ class BMSViewer {
         this._detectPassed(prevPx, this.currentPixelPos);
         if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
-        this._updatePositions();
+        // シークバーは3フレームに1回更新（≈20Hz）で十分
+        if (!this._sbTick) this._sbTick = 0;
+        const _doSeek = (++this._sbTick >= 3);
+        if (_doSeek) this._sbTick = 0;
+        this._updatePositions(_doSeek);
         this._updateBgaImage();
         // 拍連動グロー更新
         this._updateJLGlow();
@@ -4871,7 +4882,7 @@ class BMSViewer {
             const elapsedSec = Math.max(0, (performance.now() / 1000 - this.audioPlayStart) * this.realSpeed + this.audioStartSec);
             const mm = Math.floor(elapsedSec / 60);
             const ss = Math.floor(elapsedSec % 60).toString().padStart(2, '0');
-            document.getElementById('statusElapsed').textContent = mm + ':' + ss;
+            (this._elElapsed || document.getElementById('statusElapsed')).textContent = mm + ':' + ss;
         }
 
         // BGA動画ドリフト補正（5秒ごと）
@@ -4894,14 +4905,12 @@ class BMSViewer {
         }
 
         // LN発光筒アニメーション: チャージノーツAのみ 8フレームごとにframe1/frame2を切替
-        if (this.chargeStyle === 'A') {
+        if (this.chargeStyle === 'A' && this.lnElements && this.lnElements.length) {
             this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
             if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
                 const isF2 = this._lnAnimFrameCount === 8;
-                for (const el of this.noteElements) {
-                    if (el.classList.contains('note-ln')) {
-                        el.classList.toggle('ln-anim-f2', isF2);
-                    }
+                for (const el of this.lnElements) {
+                    el.classList.toggle('ln-anim-f2', isF2);
                 }
             }
         }
@@ -4911,7 +4920,7 @@ class BMSViewer {
 
     /* ── 判定ライン 拍連動グロー ── */
     _updateJLGlow() {
-        const jl = document.getElementById('mainJudgmentLine');
+        const jl = this._elJudgLine;
         if (!jl) return;
         // PMモードはグロー非表示
         if (this.currentSide === 'PM') {
@@ -6031,11 +6040,11 @@ class BMSViewer {
     _updateSeekBar() {
         if (!this.bmsData || this.totalPx <= 0) return;
         const pct = Math.min(1, this.currentPixelPos / this.totalPx) * 100;
-        document.getElementById('seekFill').style.width = pct + '%';
-        document.getElementById('seekThumb').style.left = pct + '%';
+        (this._elSeekFill  || document.getElementById('seekFill')).style.width = pct + '%';
+        (this._elSeekThumb || document.getElementById('seekThumb')).style.left = pct + '%';
         // seekLabelLeft/Right は削除済み（Phase1レイアウト変更）
         // ループ区間オーバーレイ
-        const lr = document.getElementById('seekLoopRange');
+        const lr = this._elSeekLoop || document.getElementById('seekLoopRange');
         if (this.loopEnabled && this.barStartPx.length) {
             const sp = (this.barStartPx[this.loopStart] || 0) / this.totalPx * 100;
             const ep = (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || 0) / this.totalPx * 100;
@@ -6069,7 +6078,7 @@ class BMSViewer {
         if (this.isPlaying) this._startAudio();
     }
 
-    _updatePositions() {
+    _updatePositions(updateSeek = true) {
         const cur=this.currentPixelPos;
         this.noteElements.forEach(el => {
             // LN/BSS は上端(_pixelEndPos)まで表示されるので上端で判定
@@ -6085,6 +6094,8 @@ class BMSViewer {
                 }
                 return;
             }
+            // プレイエリアは 400px: 下端が上方に 420px 以上ある要素は画面外（overflow:hidden でクリップ済み）
+            if (el._pixelPos - cur > 420) return;
             el._offscreen = false;
             el.style.bottom = (el._pixelPos - cur) + 'px';
             // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
@@ -6109,7 +6120,7 @@ class BMSViewer {
                 }
             }
         });
-        this._updateSeekBar();
+        if (updateSeek) this._updateSeekBar();
     }
 
     /* ============================================================ ヘッダUI */

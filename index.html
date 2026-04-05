@@ -1164,6 +1164,14 @@
         .charge-pm-pop .cn-pm-green-start-cap,  .charge-pm-pop .cn-pm-green-end-cap,
         .charge-pm-pop .cn-pm-blue-start-cap,   .charge-pm-pop .cn-pm-blue-end-cap,
         .charge-pm-pop .cn-pm-red-start-cap,    .charge-pm-pop .cn-pm-red-end-cap { display:none !important; }
+        /* ── PM ポップ君風 LN チューブ（判定中発光筒）── */
+        .charge-pm-pop-face .note-ln.ln-pm-white  { background:linear-gradient(to right,rgba(60,60,60,1.0) 0%,rgba(140,140,140,1.0) 35%,rgba(240,240,240,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(240,240,240,1.0) 53%,rgba(140,140,140,1.0) 65%,rgba(60,60,60,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-yellow { background:linear-gradient(to right,rgba(80,55,0,1.0) 0%,rgba(150,110,0,1.0) 35%,rgba(230,180,40,1.0) 47%,rgba(255,220,80,1.0) 50%,rgba(230,180,40,1.0) 53%,rgba(150,110,0,1.0) 65%,rgba(80,55,0,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-green  { background:linear-gradient(to right,rgba(0,50,0,1.0) 0%,rgba(20,120,20,1.0) 35%,rgba(60,220,60,1.0) 47%,rgba(80,255,80,1.0) 50%,rgba(60,220,60,1.0) 53%,rgba(20,120,20,1.0) 65%,rgba(0,50,0,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-blue   { background:linear-gradient(to right,rgba(0,15,60,1.0) 0%,rgba(20,60,150,1.0) 35%,rgba(60,130,230,1.0) 47%,rgba(80,160,255,1.0) 50%,rgba(60,130,230,1.0) 53%,rgba(20,60,150,1.0) 65%,rgba(0,15,60,1.0) 100%); }
+        .charge-pm-pop-face .note-ln.ln-pm-red    { background:linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(150,20,20,1.0) 35%,rgba(230,60,60,1.0) 47%,rgba(255,80,80,1.0) 50%,rgba(230,60,60,1.0) 53%,rgba(150,20,20,1.0) 65%,rgba(60,0,0,1.0) 100%); }
+        /* ── PM ポップ君風 判定前発光筒（暗幕を均一暗色に）── */
+        .charge-pm-pop-face .ln-dim-mask { background:rgba(0,0,0,0.60); }
         /* ── PM ポップ君風ライト ノーツ ── */
         .notes-pm-pop-lite .note.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-white,
@@ -1205,6 +1213,8 @@
         .charge-pm-pop-lite .cn-pm-green-start-cap,  .charge-pm-pop-lite .cn-pm-green-end-cap,
         .charge-pm-pop-lite .cn-pm-blue-start-cap,   .charge-pm-pop-lite .cn-pm-blue-end-cap,
         .charge-pm-pop-lite .cn-pm-red-start-cap,    .charge-pm-pop-lite .cn-pm-red-end-cap { display:none !important; }
+        /* ── PM ポップ君風ライト 判定前発光筒（暗幕を均一暗色に）── */
+        .charge-pm-pop-lite .ln-dim-mask { background:rgba(0,0,0,0.60); }
 
         /* ── JUDGE SIMPLE（グラデ・発光・点滅なし） ── */
         #greatDisplay.judge-simple .great-label,
@@ -1575,7 +1585,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <button class="sud-btn" id="sudBtn">SUD+</button>
             <button class="sud-btn" id="sudUpBtn" title="カバーを上へ">↑</button>
             <button class="sud-btn" id="sudDownBtn" title="カバーを下へ">↓</button>
-            <span id="sudWhiteNum" style="display:none; margin-left:6px; font-size:11px; color:#ffffff; font-family:monospace; min-width:3ch; text-align:right;">000</span>
         </div>
 
         <!-- 2行目: SPEED 頭緑 | HS | GC | RS -->
@@ -1652,7 +1661,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.811</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.813</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2040,7 +2049,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="status-row">
                 Total:<span id="totalNotes">0</span>
                 &nbsp;BPM:<span id="bpmDisplay">0</span>
-                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span>
+                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span><span id="sudWhiteNum" style="display:none; margin-left:4px; font-size:11px; color:#ffffff; font-family:monospace; min-width:3ch; text-align:right;"></span>
                 &nbsp;<span id="statusElapsed" style="color:#ccc;">0:00</span>
                 &nbsp;小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span>
                 <span id="loopStatus"></span>

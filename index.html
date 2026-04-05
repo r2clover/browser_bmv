@@ -862,7 +862,17 @@
                 rgba(210, 55, 145, 0.28) 55%,
                 transparent 100%);
         }
-        /* ── PM キービーム (pmライト): ソリッドカラー・軽量 ── */
+        /* ── PM ビーム判定色クラス (pmノーマル: グラデーション) ── */
+        .lane-bomb.pm-j-pgreat { background: linear-gradient(to top, rgba(255,80,170,0.90) 0%, rgba(255,80,170,0.60) 20%, rgba(210,55,145,0.28) 55%, transparent 100%); }
+        .lane-bomb.pm-j-great  { background: linear-gradient(to top, rgba(255,220,0,0.90)  0%, rgba(255,220,0,0.60)  20%, rgba(200,175,0,0.28)  55%, transparent 100%); }
+        .lane-bomb.pm-j-good   { background: linear-gradient(to top, rgba(220,20,60,0.90)  0%, rgba(220,20,60,0.60)  20%, rgba(175,15,45,0.28)  55%, transparent 100%); }
+        .lane-bomb.pm-j-bad    { background: linear-gradient(to top, rgba(68,136,255,0.90) 0%, rgba(68,136,255,0.60) 20%, rgba(50,100,220,0.28)  55%, transparent 100%); }
+        /* ── PM ビーム判定色クラス (pmライト: ソリッドカラー) ── */
+        .beam-pm-lite .lane-bomb.pm-j-pgreat { background: rgba(255,80,170,0.75); }
+        .beam-pm-lite .lane-bomb.pm-j-great  { background: rgba(255,220,0,0.75); }
+        .beam-pm-lite .lane-bomb.pm-j-good   { background: rgba(220,20,60,0.75); }
+        .beam-pm-lite .lane-bomb.pm-j-bad    { background: rgba(68,136,255,0.75); }
+        /* ── PM キービーム (pmライト): 初期デフォルト色 ── */
         .beam-pm-lite .lane-bomb.pm-white,
         .beam-pm-lite .lane-bomb.pm-green,
         .beam-pm-lite .lane-bomb.pm-red,
@@ -5766,32 +5776,16 @@ class BMSViewer {
         if (this.beamEnabled) {
             const el = this.bombElements[dl];
             if (el) {
-                // PMモード: 判定結果に応じてビーム色を変える
+                // PMモード: 判定色クラスを切り替え（inline style変更は行わない→GPU再アップロード回避）
                 if (this.currentSide === 'PM' && judgment) {
-                    if (this.keyBeamLength === 'PM_LITE') {
-                        // pmライト: ソリッドカラー（グラデーションなし）
-                        const _PMLC = {
-                            PGREAT: 'rgba(255,80,170,0.75)',
-                            GREAT:  'rgba(255,220,0,0.75)',
-                            GOOD:   'rgba(220,20,60,0.75)',
-                            BAD:    'rgba(68,136,255,0.75)',
-                            POOR:   'rgba(68,136,255,0.75)',
-                        };
-                        el.style.background = _PMLC[judgment] || _PMLC.PGREAT;
-                    } else {
-                        // pmノーマル: グラデーション
-                        const _PMC = {
-                            PGREAT: ['rgba(255,80,170,0.90)', 'rgba(255,80,170,0.60)', 'rgba(210,55,145,0.28)'],
-                            GREAT:  ['rgba(255,220,0,0.90)',  'rgba(255,220,0,0.60)',  'rgba(200,175,0,0.28)'],
-                            GOOD:   ['rgba(220,20,60,0.90)',  'rgba(220,20,60,0.60)',  'rgba(175,15,45,0.28)'],
-                            BAD:    ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
-                            POOR:   ['rgba(68,136,255,0.90)', 'rgba(68,136,255,0.60)', 'rgba(50,100,220,0.28)'],
-                        };
-                        const c = _PMC[judgment] || _PMC.PGREAT;
-                        el.style.background = `linear-gradient(to top, ${c[0]} 0%, ${c[1]} 20%, ${c[2]} 55%, transparent 100%)`;
+                    const _PM_JCLS = { PGREAT:'pm-j-pgreat', GREAT:'pm-j-great', GOOD:'pm-j-good', BAD:'pm-j-bad', POOR:'pm-j-bad' };
+                    const newCls = _PM_JCLS[judgment] || 'pm-j-pgreat';
+                    if (!el.classList.contains(newCls)) {
+                        el.classList.remove('pm-j-pgreat','pm-j-great','pm-j-good','pm-j-bad');
+                        el.classList.add(newCls);
                     }
                 } else {
-                    el.style.background = '';
+                    el.classList.remove('pm-j-pgreat','pm-j-great','pm-j-good','pm-j-bad');
                 }
                 el.getAnimations().forEach(a => a.cancel());
                 el.animate(

@@ -1151,6 +1151,12 @@
         .note-ln.ln-pm-green  { background:linear-gradient(to right,rgba(0,50,0,1.0) 0%,rgba(20,120,20,1.0) 35%,rgba(60,220,60,1.0) 47%,rgba(80,255,80,1.0) 50%,rgba(60,220,60,1.0) 53%,rgba(20,120,20,1.0) 65%,rgba(0,50,0,1.0) 100%); }
         .note-ln.ln-pm-blue   { background:linear-gradient(to right,rgba(0,15,60,1.0) 0%,rgba(20,60,150,1.0) 35%,rgba(60,130,230,1.0) 47%,rgba(80,160,255,1.0) 50%,rgba(60,130,230,1.0) 53%,rgba(20,60,150,1.0) 65%,rgba(0,15,60,1.0) 100%); }
         .note-ln.ln-pm-red    { background:linear-gradient(to right,rgba(60,0,0,1.0) 0%,rgba(150,20,20,1.0) 35%,rgba(230,60,60,1.0) 47%,rgba(255,80,80,1.0) 50%,rgba(230,60,60,1.0) 53%,rgba(150,20,20,1.0) 65%,rgba(60,0,0,1.0) 100%); }
+        /* PM LN チューブの ::before/::after を非表示（IIDXチューブ用装飾をPMに適用しない）*/
+        .note-ln.ln-pm-white::before,  .note-ln.ln-pm-white::after,
+        .note-ln.ln-pm-yellow::before, .note-ln.ln-pm-yellow::after,
+        .note-ln.ln-pm-green::before,  .note-ln.ln-pm-green::after,
+        .note-ln.ln-pm-blue::before,   .note-ln.ln-pm-blue::after,
+        .note-ln.ln-pm-red::before,    .note-ln.ln-pm-red::after { content: none; }
         /* ── PM キャップ（白）── */
         .cn-pm-white-start-cap { position:absolute;left:0;right:0;bottom:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(15,15,15,1.0) 0%,rgba(80,80,80,1.0) 10%,rgba(160,160,160,1.0) 30%,rgba(230,230,230,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(230,230,230,1.0) 53%,rgba(160,160,160,1.0) 70%,rgba(80,80,80,1.0) 90%,rgba(15,15,15,1.0) 100%); }
         .cn-pm-white-end-cap   { position:absolute;left:0;right:0;top:var(--note-height);height:8px;z-index:15;pointer-events:none; background:linear-gradient(to top,rgba(0,0,0,0.00) 0px,rgba(0,0,0,0.00) 3px,rgba(0,0,0,0.30) 4px,rgba(0,0,0,0.70) 6px,rgba(0,0,0,0.70) 7px,rgba(0,0,0,0.40) 7px,rgba(0,0,0,0.40) 8px),linear-gradient(to right,rgba(15,15,15,1.0) 0%,rgba(80,80,80,1.0) 10%,rgba(160,160,160,1.0) 30%,rgba(230,230,230,1.0) 47%,rgba(255,255,255,1.0) 50%,rgba(230,230,230,1.0) 53%,rgba(160,160,160,1.0) 70%,rgba(80,80,80,1.0) 90%,rgba(15,15,15,1.0) 100%); }
@@ -1215,12 +1221,12 @@
         .notes-pm-pop-lite .ln-note-start.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
         .notes-pm-pop-lite .ln-note-start.pm-red   { height:18px !important; border-radius:12px !important; transform:translateY(50%) !important; }
-        /* LN 終点: 上半分・ストライプなし */
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; border-radius:12px 12px 0 0 !important; background:#ddd !important;    transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; border-radius:12px 12px 0 0 !important; background:#fafa02 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; border-radius:12px 12px 0 0 !important; background:#04c000 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; border-radius:12px 12px 0 0 !important; background:#0065f7 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; border-radius:12px 12px 0 0 !important; background:#ff5555 !important; transform:none !important; }
+        /* LN 終点: 上半分（ノーツ上半分の見た目 = 色67%+白ストライプ33%） */
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#ddd 67%,rgba(255,255,255,0.85) 67%) !important;    transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#fafa02 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#04c000 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#0065f7 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#ff5555 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
         /* LN チューブ: 判定中はノーツ色より少し明るい色 */
         .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#eeeeee; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#ffff66; }
@@ -1242,11 +1248,11 @@
             height:9px !important; border-radius:12px 12px 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
-        .charge-pm-pop-lite .ln-note-end.pm-white  { background:#ddd !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-yellow { background:#fafa02 !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-green  { background:#04c000 !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-blue   { background:#0065f7 !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-red    { background:#ff5555 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-white  { background:linear-gradient(to bottom,#ddd 67%,rgba(255,255,255,0.85) 67%) !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-yellow { background:linear-gradient(to bottom,#fafa02 67%,rgba(255,255,255,0.85) 67%) !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-green  { background:linear-gradient(to bottom,#04c000 67%,rgba(255,255,255,0.85) 67%) !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-blue   { background:linear-gradient(to bottom,#0065f7 67%,rgba(255,255,255,0.85) 67%) !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-red    { background:linear-gradient(to bottom,#ff5555 67%,rgba(255,255,255,0.85) 67%) !important; }
         /* ── PM ポップ君風ライト 判定前発光筒（ノーツ色と同じ）── */
         .charge-pm-pop-lite .note-ln.ln-pm-white  .ln-dim-mask { background:#ddd; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow .ln-dim-mask { background:#fafa02; }

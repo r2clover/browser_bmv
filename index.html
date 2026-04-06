@@ -1463,6 +1463,10 @@
         }
         .groove-gauge-spacer { min-width:34px; }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
+        .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
+        .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; transition:opacity 0.25s ease-out; letter-spacing:0.5px; }
+        .fs-gauge-disp.fs-fast { color:#4af; }
+        .fs-gauge-disp.fs-slow { color:#f44; }
         /* ステータスバー（2行） */
         .status-bar {
             padding:2px 8px 3px; font-size:10px; color:#aaa;
@@ -2019,7 +2023,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.856</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.862</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2225,6 +2229,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="loop-btn" id="judgeHeightPlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
             </div>
+            <!-- FAST/SLOW -->
+            <div class="detail-section" id="fastSlowSection">
+                <span class="detail-label">FAST/SLOW</span>
+                <button class="fx-btn" id="fastSlowBtn">OFF</button>
+            </div>
+            <!-- 判定タイミング自動調整 -->
+            <div class="detail-section" id="autoTimingSection">
+                <span class="detail-label">判定自動調整</span>
+                <button class="fx-btn" id="autoTimingBtn">OFF</button>
+                <span id="autoTimingOffsetVal" style="font-size:11px; color:#aaa; margin-left:6px;">±0.0ms</span>
+            </div>
 <!-- WAV ON/OFF スイッチ -->
             <div class="detail-section">
                 <span class="detail-label">WAV</span>
@@ -2402,7 +2417,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="play-footer">
         <!-- グルーブゲージ -->
         <div class="groove-gauge-area">
-            <span class="groove-gauge-spacer"></span>
+            <div class="fs-gauge-wrap"><span id="fastSlowDisplay" class="fs-gauge-disp"></span></div>
             <div class="groove-gauge-track">
                 <div class="groove-gauge-bar" id="grooveGaugeBar"></div>
             </div>
@@ -2410,18 +2425,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         <!-- ステータスバー 2行 -->
         <div class="status-bar" id="statusBar" style="display:none;">
-            <!-- 行1: スコア・ゲージ・判定カウント -->
+            <!-- 行1: ゲージ・判定カウント -->
             <div class="status-row">
-                SCORE:<span id="scoreDisplay">0</span>
-                &nbsp;PG:<span id="pgCount">0</span>
+                <span id="fsSLStatus" style="display:none;">FS:<span id="fsCount">0</span>&nbsp;SL:<span id="slCount">0</span>&nbsp;</span>PG:<span id="pgCount">0</span>
                 &nbsp;GR:<span id="grCount">0</span>
                 &nbsp;GD:<span id="gdCount">0</span>
                 &nbsp;BD:<span id="bdCount">0</span>
                 &nbsp;PR:<span id="prCount">0</span>
             </div>
-            <!-- 行2: 従来ステータス情報 -->
+            <!-- 行2: スコア・BPM・TIME・小節 -->
             <div class="status-row">
-                <span>Total:<span id="totalNotes">0</span></span>
+                <span style="display:none;">Total:<span id="totalNotes">0</span></span>
+                <span>SCORE:<span id="scoreDisplay">0</span></span>
                 <span>BPM:<span id="bpmDisplay">0</span></span>
                 <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
                 <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
@@ -2760,6 +2775,12 @@ class BMSViewer {
         this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
         this._bdCount = 0; this._prCount = 0;
         this._score   = 0;
+        this._fsCount = 0; this._slCount = 0;
+        this.fastSlowEnabled = false;
+        this._fsTmer = null;
+        this.autoTimingEnabled  = false;
+        this._autoTimingOffset  = 0;   // ms: 正=早打ち傾向 → 補正で遅らせる
+        this._timingHistory     = [];  // 直近20打のrawDeltaMs
         this._gaugeType   = 'NORMAL'; // 'NORMAL'|'EASY'|'HARD'|'EXHARD'|'DAN'
         this._gaugeInitPct = 22;  // 初期値（%、2%単位）
         this._gaugeValue = 1100; // 内部値 0〜5000（100%=5000、初期値22%）
@@ -4225,6 +4246,35 @@ class BMSViewer {
         mkWavSwitch('wavBgm1Btn', 'wavBgm1Enabled');
         mkWavSwitch('wavBgm2Btn', 'wavBgm2Enabled');
         mkWavSwitch('wavKeyBtn',  'wavKeyEnabled');
+
+        // FAST/SLOW トグル
+        {
+            const btn = document.getElementById('fastSlowBtn');
+            if (btn) btn.addEventListener('click', () => {
+                this.fastSlowEnabled = !this.fastSlowEnabled;
+                btn.textContent = this.fastSlowEnabled ? 'ON' : 'OFF';
+                btn.classList.toggle('on', this.fastSlowEnabled);
+                const fsStatus = document.getElementById('fsSLStatus');
+                if (fsStatus) fsStatus.style.display = this.fastSlowEnabled ? '' : 'none';
+            });
+        }
+
+        // 判定タイミング自動調整トグル
+        {
+            const btn = document.getElementById('autoTimingBtn');
+            if (btn) btn.addEventListener('click', () => {
+                this.autoTimingEnabled = !this.autoTimingEnabled;
+                btn.textContent = this.autoTimingEnabled ? 'ON' : 'OFF';
+                btn.classList.toggle('on', this.autoTimingEnabled);
+                if (!this.autoTimingEnabled) {
+                    // OFFにしたらオフセット・履歴リセット
+                    this._autoTimingOffset = 0;
+                    this._timingHistory = [];
+                    const el = document.getElementById('autoTimingOffsetVal');
+                    if (el) { el.textContent = '±0.0ms'; el.style.color = '#aaa'; }
+                }
+            });
+        }
 
         // 詳細オプション オーバーレイ
         {
@@ -6050,8 +6100,12 @@ class BMSViewer {
         this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
         this._bdCount = 0; this._prCount = 0;
         this._score   = 0;
+        this._fsCount = 0; this._slCount = 0;
+        this._autoTimingOffset = 0; this._timingHistory = [];
         this.combo    = 0;
-        const ids = { pgCount:0, grCount:0, gdCount:0, bdCount:0, prCount:0, scoreDisplay:0 };
+        const ids = { pgCount:0, grCount:0, gdCount:0, bdCount:0, prCount:0, scoreDisplay:0, fsCount:0, slCount:0 };
+        const atEl = document.getElementById('autoTimingOffsetVal');
+        if (atEl) atEl.textContent = '±0.0ms';
         for (const [id, val] of Object.entries(ids)) {
             const el = document.getElementById(id);
             if (el) el.textContent = val;
@@ -6129,6 +6183,42 @@ class BMSViewer {
     }
 
     // ── 判定適用（カウント・コンボ・表示） ──────────────────────
+    _showFastSlow(deltaMs, judgment) {
+        if (!this.fastSlowEnabled) return;
+        if (judgment === 'PGREAT') return;
+        const isFast = deltaMs > 0;
+        const label = isFast ? 'FAST' : 'SLOW';
+        if (isFast) this._fsCount++; else this._slCount++;
+        const fcEl = document.getElementById('fsCount');
+        const scEl = document.getElementById('slCount');
+        if (fcEl) fcEl.textContent = this._fsCount;
+        if (scEl) scEl.textContent = this._slCount;
+        const disp = document.getElementById('fastSlowDisplay');
+        if (!disp) return;
+        disp.textContent = label;
+        disp.className = 'fs-gauge-disp ' + (isFast ? 'fs-fast' : 'fs-slow');
+        disp.style.opacity = '1';
+        if (this._fsTmer) clearTimeout(this._fsTmer);
+        this._fsTmer = setTimeout(() => { disp.style.opacity = '0'; }, 600);
+    }
+
+    // 自動タイミング調整: rawDeltaMs（補正前）を履歴に積んでオフセットを更新
+    _updateAutoTiming(rawDeltaMs) {
+        this._timingHistory.push(rawDeltaMs);
+        if (this._timingHistory.length > 20) this._timingHistory.shift();
+        if (this._timingHistory.length < 5) return;
+        const mean = this._timingHistory.reduce((s, v) => s + v, 0) / this._timingHistory.length;
+        // オフセットを平均値へ30%/打ずつ滑らかに追従、±20ms上限
+        this._autoTimingOffset += (mean - this._autoTimingOffset) * 0.3;
+        this._autoTimingOffset  = Math.max(-20, Math.min(20, this._autoTimingOffset));
+        const el = document.getElementById('autoTimingOffsetVal');
+        if (el) {
+            const v = this._autoTimingOffset;
+            el.textContent = (v >= 0 ? '+' : '') + v.toFixed(1) + 'ms';
+            el.style.color = Math.abs(v) < 1 ? '#aaa' : (v > 0 ? '#4af' : '#f44');
+        }
+    }
+
     // isEmptyPoor=true: 空POOR（BADと同じ-100）、false: 見逃しPOOR（-300）
     // isMiss=true: 見逃しPOOR（ボタン未押し）→ PMキービーム出さない
     _applyJudgment(judgment, dl, isEmptyPoor = false, isMiss = false) {
@@ -6345,11 +6435,14 @@ class BMSViewer {
             // WAV再生
             if (best.wavId && this.wavBuffers[best.wavId]) this._playKeyWav(best.wavId);
             // 判定
-            const refPx  = best.adjPxVisual ?? best.px;
-            const deltaMs = (refPx - curPx) / pxPerMs;
+            const refPx      = best.adjPxVisual ?? best.px;
+            const rawDeltaMs = (refPx - curPx) / pxPerMs;
+            const deltaMs    = rawDeltaMs - (this.autoTimingEnabled ? this._autoTimingOffset : 0);
             const judgment = this._calcJudgment(deltaMs);
             best.judged = true;
             this._applyJudgment(judgment, dl);
+            this._showFastSlow(deltaMs, judgment);
+            if (this.autoTimingEnabled && judgment !== 'POOR') this._updateAutoTiming(rawDeltaMs);
             // LN保持開始
             if (best.isLN && best._tailEvent) {
                 const isGoodPlus = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
@@ -6403,10 +6496,13 @@ class BMSViewer {
             this._applyJudgment('POOR', dl);
         } else if (delta >= -BAD_E) {
             // 窓内 → 通常判定
-            const deltaMs  = delta / pxPerMs;
+            const rawDeltaMs = delta / pxPerMs;
+            const deltaMs    = rawDeltaMs - (this.autoTimingEnabled ? this._autoTimingOffset : 0);
             const judgment = this._calcJudgment(deltaMs);
             tailEv.judged  = true;
             this._applyJudgment(judgment, dl);
+            this._showFastSlow(deltaMs, judgment);
+            if (this.autoTimingEnabled && judgment !== 'POOR') this._updateAutoTiming(rawDeltaMs);
         }
         // それより遅い離しは _checkMissedNotes で処理済み
     }
@@ -6659,6 +6755,9 @@ class BMSViewer {
             if (!positions.has(pos)) continue;
             const el = (pje && pje[pos]) || document.getElementById(`pmJudge_${pos}`);
             if (!el) continue;
+            // ラベルテキストとカラークラスをリセット（PLAY MODE残留テキストを上書き）
+            const lbl = el.querySelector('.pm-judge-label');
+            if (lbl) { lbl.textContent = 'COOL!!'; lbl.classList.remove('pm-jl-great', 'pm-jl-good', 'pm-jl-bad'); }
             if (this._pmJudgeFadeTimer[pos]) { clearTimeout(this._pmJudgeFadeTimer[pos]); this._pmJudgeFadeTimer[pos] = null; }
             el.style.transition = 'none';
             el.style.opacity = '0.8';

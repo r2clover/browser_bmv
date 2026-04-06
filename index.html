@@ -1125,13 +1125,13 @@
         .charge-pm-pop-face .ln-note-end.pm-green::before,  .charge-pm-pop-face .ln-note-end.pm-green::after,
         .charge-pm-pop-face .ln-note-end.pm-blue::before,   .charge-pm-pop-face .ln-note-end.pm-blue::after,
         .charge-pm-pop-face .ln-note-end.pm-red::before,    .charge-pm-pop-face .ln-note-end.pm-red::after { content:none !important; }
-        /* ── pm_pop-face 終点ノーツ: 上側のみ・白枠なし（notesStyleに関係なく適用）── */
+        /* ── pm_pop-face 終点ノーツ: 発光筒の上に配置・白枠なし（notesStyleに関係なく適用）── */
         .charge-pm-pop-face .ln-note-end.pm-white,
         .charge-pm-pop-face .ln-note-end.pm-yellow,
         .charge-pm-pop-face .ln-note-end.pm-green,
         .charge-pm-pop-face .ln-note-end.pm-blue,
         .charge-pm-pop-face .ln-note-end.pm-red {
-            height:9px !important; border-radius:12px 12px 0 0 !important;
+            height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
         .charge-pm-pop-face .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
@@ -1221,12 +1221,12 @@
         .notes-pm-pop-lite .ln-note-start.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
         .notes-pm-pop-lite .ln-note-start.pm-red   { height:18px !important; border-radius:12px !important; transform:translateY(50%) !important; }
-        /* LN 終点: 上半分（ノーツ上半分の見た目 = 色67%+白ストライプ33%） */
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#ddd 67%,rgba(255,255,255,0.85) 67%) !important;    transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#fafa02 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#04c000 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#0065f7 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; border-radius:12px 12px 0 0 !important; background:linear-gradient(to bottom,#ff5555 67%,rgba(255,255,255,0.85) 67%) !important; transform:none !important; }
+        /* LN 終点: 上半分・ストライプなし */
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#ddd !important;    transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#fafa02 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#04c000 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#0065f7 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#ff5555 !important; transform:none !important; }
         /* LN チューブ: 判定中はノーツ色より少し明るい色 */
         .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#eeeeee; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#ffff66; }
@@ -1239,20 +1239,20 @@
         .charge-pm-pop-lite .cn-pm-green-start-cap,  .charge-pm-pop-lite .cn-pm-green-end-cap,
         .charge-pm-pop-lite .cn-pm-blue-start-cap,   .charge-pm-pop-lite .cn-pm-blue-end-cap,
         .charge-pm-pop-lite .cn-pm-red-start-cap,    .charge-pm-pop-lite .cn-pm-red-end-cap { display:none !important; }
-        /* ── pm_pop-lite 終点ノーツ: 上側のみ・白枠なし（notesStyleに関係なく適用）── */
+        /* ── pm_pop-lite 終点ノーツ: 発光筒の上に配置・ストライプなし（notesStyleに関係なく適用）── */
         .charge-pm-pop-lite .ln-note-end.pm-white,
         .charge-pm-pop-lite .ln-note-end.pm-yellow,
         .charge-pm-pop-lite .ln-note-end.pm-green,
         .charge-pm-pop-lite .ln-note-end.pm-blue,
         .charge-pm-pop-lite .ln-note-end.pm-red {
-            height:9px !important; border-radius:12px 12px 0 0 !important;
+            height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
-        .charge-pm-pop-lite .ln-note-end.pm-white  { background:linear-gradient(to bottom,#ddd 67%,rgba(255,255,255,0.85) 67%) !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-yellow { background:linear-gradient(to bottom,#fafa02 67%,rgba(255,255,255,0.85) 67%) !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-green  { background:linear-gradient(to bottom,#04c000 67%,rgba(255,255,255,0.85) 67%) !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-blue   { background:linear-gradient(to bottom,#0065f7 67%,rgba(255,255,255,0.85) 67%) !important; }
-        .charge-pm-pop-lite .ln-note-end.pm-red    { background:linear-gradient(to bottom,#ff5555 67%,rgba(255,255,255,0.85) 67%) !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-white  { background:#ddd !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-yellow { background:#fafa02 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-green  { background:#04c000 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-blue   { background:#0065f7 !important; }
+        .charge-pm-pop-lite .ln-note-end.pm-red    { background:#ff5555 !important; }
         /* ── PM ポップ君風ライト 判定前発光筒（ノーツ色と同じ）── */
         .charge-pm-pop-lite .note-ln.ln-pm-white  .ln-dim-mask { background:#ddd; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow .ln-dim-mask { background:#fafa02; }

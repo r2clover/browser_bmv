@@ -1733,7 +1733,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.847</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.848</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5118,7 +5118,11 @@ class BMSViewer {
         }
         if (_posT   !== this._lastPosText)   { document.getElementById('positionDisplay').textContent = _posT;   this._lastPosText   = _posT;   }
         if (_bpmT   !== this._lastBpmText)   { document.getElementById('bpmDisplay').textContent      = _bpmT;   this._lastBpmText   = _bpmT;   }
-        if (_greenT !== this._lastGreenText) { document.getElementById('statusGreenNum').textContent  = _greenT; this._lastGreenText = _greenT; }
+        if (_greenT !== this._lastGreenText) {
+            document.getElementById('statusGreenNum').textContent = _greenT;
+            (this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'))).textContent = _greenT;
+            this._lastGreenText = _greenT;
+        }
         // ステータスバー: 経過時間
         if (this.audioPlayStart > 0) {
             const elapsedSec = Math.max(0, (performance.now() / 1000 - this.audioPlayStart) * this.realSpeed + this.audioStartSec);

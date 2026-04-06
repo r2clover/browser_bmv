@@ -996,6 +996,13 @@
             border-radius:1px; pointer-events:none; z-index:1;
         }
         .fx-eq-wrap input { width:100%; }
+        .fx-subdiv-wrap { display:flex; gap:3px; flex-wrap:wrap; }
+        .fx-subdiv-btn {
+            padding:1px 7px; border-radius:3px;
+            border:1px solid #445; background:#1a1a1a; color:#666;
+            font-size:9px; font-weight:bold; cursor:pointer; min-height:20px;
+        }
+        .fx-subdiv-btn.on { border-color:#4af; background:#001833; color:#4af; }
         /* ── リッチノーツ（軽量版） ── */
         .note {
             position:absolute; width:calc(100% - 2px); left:1px;
@@ -1782,6 +1789,45 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <div class="fx-popup-body">
                 <div class="fx-sec-title">EFFECT</div>
+                <!-- Gate -->
+                <div class="fx-block">
+                    <div class="fx-block-hdr">
+                        <button class="fx-toggle" id="fxGateBtn">OFF</button>
+                        <span class="fx-name">GATE</span>
+                    </div>
+                    <div class="fx-row">
+                        <span class="fx-lbl">Interval</span>
+                        <div class="fx-subdiv-wrap">
+                            <button class="fx-subdiv-btn" data-fx="gate" data-div="2">1/8</button>
+                            <button class="fx-subdiv-btn" data-fx="gate" data-div="3">1/12</button>
+                            <button class="fx-subdiv-btn on" data-fx="gate" data-div="4">1/16</button>
+                            <button class="fx-subdiv-btn" data-fx="gate" data-div="6">1/24</button>
+                            <button class="fx-subdiv-btn" data-fx="gate" data-div="8">1/32</button>
+                        </div>
+                    </div>
+                    <div class="fx-row">
+                        <span class="fx-lbl">Duty Cycle</span>
+                        <input type="range" class="fx-range" id="fxGateDuty" min="10" max="90" value="50">
+                        <span class="fx-val" id="fxGateDutyVal">50%</span>
+                    </div>
+                </div>
+                <!-- Repeater -->
+                <div class="fx-block">
+                    <div class="fx-block-hdr">
+                        <button class="fx-toggle" id="fxRepBtn">OFF</button>
+                        <span class="fx-name">REPEATER</span>
+                    </div>
+                    <div class="fx-row">
+                        <span class="fx-lbl">Interval</span>
+                        <div class="fx-subdiv-wrap">
+                            <button class="fx-subdiv-btn" data-fx="rep" data-div="2">1/8</button>
+                            <button class="fx-subdiv-btn" data-fx="rep" data-div="3">1/12</button>
+                            <button class="fx-subdiv-btn on" data-fx="rep" data-div="4">1/16</button>
+                            <button class="fx-subdiv-btn" data-fx="rep" data-div="6">1/24</button>
+                            <button class="fx-subdiv-btn" data-fx="rep" data-div="8">1/32</button>
+                        </div>
+                    </div>
+                </div>
                 <!-- LPF -->
                 <div class="fx-block">
                     <div class="fx-block-hdr">
@@ -1973,7 +2019,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.854</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.856</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2651,9 +2697,11 @@ class BMSViewer {
         this.pitchSC          = 0;
         this.pitchKey         = 0;
         this._audioCtx = null;
-        this._fxChainInput = null;  // エフェクトチェーン入力ノード
-        this._fx = null;            // エフェクトノード群
-        this._fxSettings = null;    // エフェクト設定（_buildFxPopupHandlers で初期化）
+        this._fxChainInput = null;       // エフェクトチェーン入力ノード
+        this._fx = null;                 // エフェクトノード群
+        this._fxSettings = null;         // エフェクト設定（_buildFxPopupHandlers で初期化）
+        this._gateSchedulerTimer = null; // ゲートBPM同期スケジューラー
+        this._gateNextTime = 0;          // 次のゲートスケジュール時刻
         this.laneCount       = 8;   // PM mode: 9
         this.noteElements    = [];
         this.isPlaying       = false;
@@ -7004,12 +7052,47 @@ class BMSViewer {
     }
 
     /* ============================================================ AUDIO EFFECTS CHAIN */
+    _getFxBpm() {
+        if (!this.bmsData) return 120;
+        return Math.max(1, this._bpmAt(this.currentPixelPos)) || 120;
+    }
+
+    _startGateScheduler() {
+        this._stopGateScheduler();
+        if (!this._audioCtx) return;
+        this._gateNextTime = this._audioCtx.currentTime;
+        this._gateSchedulerTimer = setInterval(() => {
+            if (!this._audioCtx || !this._fx || !this._fxSettings.gate.enabled) return;
+            const bpm = this._getFxBpm();
+            const intervalSec = Math.max(0.02, 60 / Math.max(1, bpm) / this._fxSettings.gate.subdiv);
+            const duty = this._fxSettings.gate.duty / 100;
+            const now  = this._audioCtx.currentTime;
+            // 遅延していたらリセット
+            if (this._gateNextTime < now - intervalSec) this._gateNextTime = now;
+            while (this._gateNextTime < now + 0.15) {
+                this._fx.gate.gain.gain.setValueAtTime(1.0,   this._gateNextTime);
+                this._fx.gate.gain.gain.setValueAtTime(0.001, this._gateNextTime + intervalSec * duty);
+                this._gateNextTime += intervalSec;
+            }
+        }, 20);
+    }
+
+    _stopGateScheduler() {
+        if (this._gateSchedulerTimer) { clearInterval(this._gateSchedulerTimer); this._gateSchedulerTimer = null; }
+        if (this._fx && this._audioCtx) {
+            this._fx.gate.gain.gain.cancelScheduledValues(this._audioCtx.currentTime);
+            this._fx.gate.gain.gain.setTargetAtTime(1.0, this._audioCtx.currentTime, 0.01);
+        }
+    }
+
     _initFxChain() {
         if (this._fxChainInput) return; // already initialized
         const ctx = this._audioCtx;
         // Ensure settings exist (fallback if called before _buildFxPopupHandlers)
         if (!this._fxSettings) {
             this._fxSettings = {
+                gate:    {enabled:false,subdiv:4,duty:50},
+                repeater:{enabled:false,subdiv:4},
                 lpf:{enabled:false,freq:77,q:5}, hpf:{enabled:false,freq:39,q:5},
                 bpf:{enabled:false,freq:57,q:5},
                 flanger:{enabled:false,rate:5,depth:50,fb:50,mix:50},
@@ -7092,8 +7175,10 @@ class BMSViewer {
         // Reverb (Schroeder: 4 comb + 2 allpass)
         const rvIn = ctx.createGain();
         const rvSum= ctx.createGain(); rvSum.gain.value=0.25;
-        const fbV  = 0.7 + s.reverb.room/100*0.28;
-        const dmpHz= 22050 * Math.pow(0.1, s.reverb.damp/100);
+        // fb: 0.60-0.90 (0.98まで上げると特定周波数が発振するため上限を0.90に制限)
+        const fbV  = 0.6 + s.reverb.room/100*0.30;
+        // damp: 常に最大8kHz以下でフィルタ（0%でも高周波発振を防ぐ）
+        const dmpHz= Math.min(8000, 22050 * Math.pow(0.1, s.reverb.damp/100));
         const rvCombs = [0.0297,0.0371,0.0411,0.0437].map(t => {
             const d=ctx.createDelay(0.5); d.delayTime.value=t;
             const fb=ctx.createGain(); fb.gain.value=fbV;
@@ -7118,9 +7203,30 @@ class BMSViewer {
         eqHigh.type='highshelf'; eqHigh.frequency.value=6000; eqHigh.gain.value=s.eqHigh.enabled?s.eqHigh.gain:0;
         fx.eq = {low:eqLow, mid:eqMid, high:eqHigh};
 
-        // Connect chain: input → lpf → hpf → bpf → flanger → phaser → echo → reverb → eq → destination
+        // Gate (BPM同期ゲート: GainNodeをスケジューラーで0/1に制御)
+        const gateGain = ctx.createGain(); gateGain.gain.value = 1.0;
+        fx.gate = { gain: gateGain };
+
+        // Repeater (BPM同期リピーター: DelayNodeバッファをフィードバックループで再生)
+        const repIn  = ctx.createGain();
+        const repOut = ctx.createGain();
+        const repDry = ctx.createGain(); repDry.gain.value = 1.0; // OFF: 素通し
+        const repSrc = ctx.createGain(); repSrc.gain.value = 1.0; // OFF: delayバッファを更新
+        const repDefaultSec = Math.max(0.01, 60 / 120 / (s.repeater ? s.repeater.subdiv : 4));
+        const repDelay = ctx.createDelay(2.0); repDelay.delayTime.value = repDefaultSec;
+        const repFb  = ctx.createGain(); repFb.gain.value = 0.0;  // ON: ループ
+        const repWet = ctx.createGain(); repWet.gain.value = 0.0; // ON: 出力
+        repIn.connect(repDry); repDry.connect(repOut);
+        repIn.connect(repSrc); repSrc.connect(repDelay);
+        repDelay.connect(repFb); repFb.connect(repDelay); // フィードバックループ
+        repDelay.connect(repWet); repWet.connect(repOut);
+        fx.repeater = { input:repIn, output:repOut, dry:repDry, src:repSrc, delay:repDelay, fb:repFb, wet:repWet };
+
+        // Connect chain: input → gate → repeater → lpf → hpf → bpf → flanger → phaser → echo → reverb → eq → destination
         this._fxChainInput = ctx.createGain();
-        let node = this._fxChainInput;
+        this._fxChainInput.connect(gateGain);
+        gateGain.connect(repIn);
+        let node = repOut;
         for (const slot of [fx.lpf.slot, fx.hpf.slot, fx.bpf.slot,
                              fx.flanger.slot, fx.phaser.slot, fx.echo.slot, fx.reverb.slot]) {
             node.connect(slot.input); node = slot.output;
@@ -7140,6 +7246,8 @@ class BMSViewer {
 
     _buildFxPopupHandlers() {
         this._fxSettings = {
+            gate:    {enabled:false, subdiv:4, duty:50},
+            repeater:{enabled:false, subdiv:4},
             lpf:     {enabled:false, freq:77, q:5},
             hpf:     {enabled:false, freq:39, q:5},
             bpf:     {enabled:false, freq:57, q:5},
@@ -7198,6 +7306,70 @@ class BMSViewer {
                 if (this._fx) applyFn(v);
             });
         };
+
+        // ─── Gate ──────────────────────────────────────────────────────
+        document.getElementById('fxGateBtn').addEventListener('click', e => {
+            const s = this._fxSettings.gate;
+            s.enabled = !s.enabled;
+            e.currentTarget.textContent = s.enabled ? 'ON' : 'OFF';
+            e.currentTarget.classList.toggle('on', s.enabled);
+            if (s.enabled) { if (this._audioCtx) this._startGateScheduler(); }
+            else { this._stopGateScheduler(); }
+        });
+        document.getElementById('fxGateDuty').addEventListener('input', e => {
+            this._fxSettings.gate.duty = parseInt(e.target.value);
+            document.getElementById('fxGateDutyVal').textContent = e.target.value + '%';
+        });
+        document.querySelectorAll('[data-fx="gate"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this._fxSettings.gate.subdiv = parseInt(btn.dataset.div);
+                document.querySelectorAll('[data-fx="gate"]').forEach(b => b.classList.remove('on'));
+                btn.classList.add('on');
+                // スケジューラーのタイミングをリセット（次の間隔から新しいsubdivが適用される）
+                if (this._audioCtx) this._gateNextTime = this._audioCtx.currentTime;
+            });
+        });
+
+        // ─── Repeater ──────────────────────────────────────────────────
+        document.getElementById('fxRepBtn').addEventListener('click', e => {
+            const s = this._fxSettings.repeater;
+            s.enabled = !s.enabled;
+            e.currentTarget.textContent = s.enabled ? 'ON' : 'OFF';
+            e.currentTarget.classList.toggle('on', s.enabled);
+            if (!this._fx) return;
+            const t = this._audioCtx.currentTime;
+            const tc = 0.015;
+            if (s.enabled) {
+                // BPMから現在のインターバルを算出してdelayTimeを設定
+                const bpm = this._getFxBpm();
+                const sec = Math.max(0.01, 60 / Math.max(1, bpm) / s.subdiv);
+                this._fx.repeater.delay.delayTime.setValueAtTime(sec, t);
+                // Loop mode: dry/src OFF、feedback/wet ON
+                this._fx.repeater.dry.gain.setTargetAtTime(0,     t, tc);
+                this._fx.repeater.src.gain.setTargetAtTime(0,     t, tc);
+                this._fx.repeater.fb.gain.setTargetAtTime( 0.998, t, tc);
+                this._fx.repeater.wet.gain.setTargetAtTime(1,     t, tc);
+            } else {
+                // Pass-through mode: dry/src ON、feedback/wet OFF
+                this._fx.repeater.dry.gain.setTargetAtTime(1, t, tc);
+                this._fx.repeater.src.gain.setTargetAtTime(1, t, tc);
+                this._fx.repeater.fb.gain.setTargetAtTime( 0, t, tc);
+                this._fx.repeater.wet.gain.setTargetAtTime(0, t, tc);
+            }
+        });
+        document.querySelectorAll('[data-fx="rep"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this._fxSettings.repeater.subdiv = parseInt(btn.dataset.div);
+                document.querySelectorAll('[data-fx="rep"]').forEach(b => b.classList.remove('on'));
+                btn.classList.add('on');
+                // ループ中でなければdelayTimeを更新（バッファを新間隔で保持）
+                if (this._fx && !this._fxSettings.repeater.enabled && this._audioCtx) {
+                    const bpm = this._getFxBpm();
+                    const sec = Math.max(0.01, 60 / Math.max(1, bpm) / this._fxSettings.repeater.subdiv);
+                    this._fx.repeater.delay.delayTime.setTargetAtTime(sec, this._audioCtx.currentTime, 0.02);
+                }
+            });
+        });
 
         // ─── LPF ───────────────────────────────────────────────────────
         mkToggle('fxLpfBtn','lpf',
@@ -7273,9 +7445,9 @@ class BMSViewer {
             ()=>ramp(this._fx.reverb.slot.wet.gain, 0)
         );
         mkSlider('fxReverbRoom','fxReverbRoomVal','reverb','room', fPct,
-            v=>{ const fb=0.7+v/100*0.28; this._fx.reverb.combs.forEach(c=>ramp(c.fb.gain, fb)); });
+            v=>{ const fb=0.6+v/100*0.30; this._fx.reverb.combs.forEach(c=>ramp(c.fb.gain, fb)); });
         mkSlider('fxReverbDamp','fxReverbDampVal','reverb','damp', fPct,
-            v=>{ const hz=22050*Math.pow(0.1,v/100); this._fx.reverb.combs.forEach(c=>ramp(c.dmp.frequency, hz)); });
+            v=>{ const hz=Math.min(8000,22050*Math.pow(0.1,v/100)); this._fx.reverb.combs.forEach(c=>ramp(c.dmp.frequency, hz)); });
         mkSlider('fxReverbMix','fxReverbMixVal','reverb','mix', fPct,
             v=>{ if(this._fxSettings.reverb.enabled) ramp(this._fx.reverb.slot.wet.gain, v/100); });
 

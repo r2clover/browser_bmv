@@ -1464,7 +1464,7 @@
         .groove-gauge-spacer { min-width:34px; }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
-        .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; transition:opacity 0.25s ease-out; letter-spacing:0.5px; }
+        .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; letter-spacing:0.5px; }
         .fs-gauge-disp.fs-fast { color:#4af; }
         .fs-gauge-disp.fs-slow { color:#f44; }
         /* ステータスバー（2行） */
@@ -1479,11 +1479,13 @@
         /* プレイ情報スパン固定幅 */
         #scoreDisplay   { display:inline-block; min-width:5em; text-align:right; color:#fff; }
         #gaugePctStat   { display:inline-block; min-width:3em; text-align:right; color:#00dd66; }
-        #pgCount        { display:inline-block; min-width:3em; text-align:right; color:#ff69b4; }
-        #grCount        { display:inline-block; min-width:3em; text-align:right; color:#ffee00; }
-        #gdCount        { display:inline-block; min-width:3em; text-align:right; color:#dc143c; }
-        #bdCount        { display:inline-block; min-width:3em; text-align:right; color:#4488ff; }
-        #prCount        { display:inline-block; min-width:3em; text-align:right; color:#aaaaaa; }
+        #fsCount        { display:inline-block; min-width:2.8em; text-align:right; color:#4af; }
+        #slCount        { display:inline-block; min-width:2.8em; text-align:right; color:#f44; }
+        #pgCount        { display:inline-block; min-width:2.8em; text-align:right; color:#ff69b4; }
+        #grCount        { display:inline-block; min-width:2.8em; text-align:right; color:#ffee00; }
+        #gdCount        { display:inline-block; min-width:2.8em; text-align:right; color:#dc143c; }
+        #bdCount        { display:inline-block; min-width:2.8em; text-align:right; color:#4488ff; }
+        #prCount        { display:inline-block; min-width:2.8em; text-align:right; color:#aaaaaa; }
         /* 既存JS参照用スパン（非表示） */
         #totalNotes      { display:inline-block; min-width:3em; text-align:right; }
         #bpmDisplay      { display:inline-block; min-width:3em; text-align:right; }
@@ -2023,7 +2025,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.862</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.863</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2232,12 +2234,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- FAST/SLOW -->
             <div class="detail-section" id="fastSlowSection">
                 <span class="detail-label">FAST/SLOW</span>
-                <button class="fx-btn" id="fastSlowBtn">OFF</button>
+                <button class="fx-btn on" id="fastSlowBtn">ON</button>
             </div>
             <!-- 判定タイミング自動調整 -->
             <div class="detail-section" id="autoTimingSection">
                 <span class="detail-label">判定自動調整</span>
-                <button class="fx-btn" id="autoTimingBtn">OFF</button>
+                <button class="fx-btn on" id="autoTimingBtn">ON</button>
                 <span id="autoTimingOffsetVal" style="font-size:11px; color:#aaa; margin-left:6px;">±0.0ms</span>
             </div>
 <!-- WAV ON/OFF スイッチ -->
@@ -2427,11 +2429,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="status-bar" id="statusBar" style="display:none;">
             <!-- 行1: ゲージ・判定カウント -->
             <div class="status-row">
-                <span id="fsSLStatus" style="display:none;">FS:<span id="fsCount">0</span>&nbsp;SL:<span id="slCount">0</span>&nbsp;</span>PG:<span id="pgCount">0</span>
-                &nbsp;GR:<span id="grCount">0</span>
-                &nbsp;GD:<span id="gdCount">0</span>
-                &nbsp;BD:<span id="bdCount">0</span>
-                &nbsp;PR:<span id="prCount">0</span>
+                <span id="fsSLStatus"><span style="color:#4af;">FS</span><span id="fsCount">0</span>&nbsp;<span style="color:#f44;">SL</span><span id="slCount">0</span>&nbsp;</span><span style="color:#ff69b4;">PG</span><span id="pgCount">0</span>
+                &nbsp;<span style="color:#ffee00;">GR</span><span id="grCount">0</span>
+                &nbsp;<span style="color:#dc143c;">GD</span><span id="gdCount">0</span>
+                &nbsp;<span style="color:#4488ff;">BD</span><span id="bdCount">0</span>
+                &nbsp;<span style="color:#aaaaaa;">PR</span><span id="prCount">0</span>
             </div>
             <!-- 行2: スコア・BPM・TIME・小節 -->
             <div class="status-row">
@@ -2776,9 +2778,9 @@ class BMSViewer {
         this._bdCount = 0; this._prCount = 0;
         this._score   = 0;
         this._fsCount = 0; this._slCount = 0;
-        this.fastSlowEnabled = false;
+        this.fastSlowEnabled = true;
         this._fsTmer = null;
-        this.autoTimingEnabled  = false;
+        this.autoTimingEnabled  = true;
         this._autoTimingOffset  = 0;   // ms: 正=早打ち傾向 → 補正で遅らせる
         this._timingHistory     = [];  // 直近20打のrawDeltaMs
         this._gaugeType   = 'NORMAL'; // 'NORMAL'|'EASY'|'HARD'|'EXHARD'|'DAN'
@@ -4254,8 +4256,6 @@ class BMSViewer {
                 this.fastSlowEnabled = !this.fastSlowEnabled;
                 btn.textContent = this.fastSlowEnabled ? 'ON' : 'OFF';
                 btn.classList.toggle('on', this.fastSlowEnabled);
-                const fsStatus = document.getElementById('fsSLStatus');
-                if (fsStatus) fsStatus.style.display = this.fastSlowEnabled ? '' : 'none';
             });
         }
 
@@ -6199,7 +6199,7 @@ class BMSViewer {
         disp.className = 'fs-gauge-disp ' + (isFast ? 'fs-fast' : 'fs-slow');
         disp.style.opacity = '1';
         if (this._fsTmer) clearTimeout(this._fsTmer);
-        this._fsTmer = setTimeout(() => { disp.style.opacity = '0'; }, 600);
+        this._fsTmer = setTimeout(() => { disp.style.opacity = '0'; }, 400);
     }
 
     // 自動タイミング調整: rawDeltaMs（補正前）を履歴に積んでオフセットを更新

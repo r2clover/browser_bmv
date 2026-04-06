@@ -21,7 +21,8 @@
         }
         #appScaler { position:fixed; inset:0; background:#000; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; }
         .container { display:flex; flex-direction:column; position:relative; width:390px; height:640px; overflow:hidden; transform-origin:top center; transform:scale(var(--app-scale,1)); flex-shrink:0; }
-        .header { background:#1a1a1a; padding:8px 12px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
+        .header { background:#1a1a1a; padding:8px 12px 6px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
+        .ctrl-footer { flex-shrink:0; background:#1a1a1a; border-top:2px solid #333; padding:6px 12px 8px; }
         .song-title { font-size:14px; font-weight:bold; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
         .song-title.loaded { cursor:pointer; }
         .song-title.loaded:active { opacity:0.7; }
@@ -1730,47 +1731,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <button class="sud-btn" id="sudDownBtn" title="カバーを下へ">↓</button>
         </div>
 
-        <!-- 2行目: SPEED 頭緑 | HS | GC | RS -->
-        <div class="controls" style="margin-bottom:5px;">
-            <!-- SPEED ラベル + 頭緑（手入力・HS計算の基準） -->
-            <span class="hs-label" style="white-space:nowrap;">SPEED</span>
-            <div class="green-box">
-                <button class="green-pm-btn" id="greenMinus">－</button>
-                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="260">
-                <button class="green-pm-btn" id="greenPlus">＋</button>
-            </div>
-
-            <!-- ハイスピード（自動計算・表示のみ） -->
-            <div class="hs-control">
-                <span class="hs-label">HS</span>
-                <span class="hs-value" id="hsValue">—</span>
-            </div>
-
-            <!-- 皿チョン：現緑の値を頭緑に反映してHS再計算 -->
-            <button class="saracho-btn" id="sarachoBtn">GC</button>
-            <button class="rs-btn" id="rsBtn">RS</button>
-        </div>
-
-        <!-- オプション行: LANE / R / M / 1P2P -->
-        <div class="loop-row">
-            <!-- レーン入れ替え -->
-            <div class="swap-control">
-                <span class="swap-label">LANE</span>
-                <input class="swap-input" id="swapInput"
-                       type="text" inputmode="numeric"
-                       maxlength="9" value="1234567"
-                       placeholder="1234567">
-            </div>
-            <!-- Random / Mirror ボタン -->
-            <button class="rm-btn random" id="randomBtn">R</button>
-            <button class="rm-btn mirror" id="mirrorBtn">M</button>
-            <!-- S-RANDOM / H-RANDOM ボタン -->
-            <button class="rm-btn" id="sRandomBtn">S</button>
-            <button class="rm-btn" id="hRandomBtn">H</button>
-            <!-- クォンタイズ -->
-            <button class="rm-btn" id="quantize16Btn">Q16</button>
-            <button class="rm-btn" id="quantize8Btn">Q8</button>
-        </div>
         <div class="error" id="error"></div>
     </div>
 
@@ -2025,7 +1985,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.864</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.867</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2055,6 +2015,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="gpIidxOffBtn">OFF</button>
                 <button class="fx-btn"   id="gpPremiumBtn">ENTRY/PREMIUM</button>
                 <button class="fx-btn"   id="gpPs2Btn">PS2</button>
+                <button class="fx-btn"   id="gpPhoenixBtn">PHOENIX WAN</button>
+            </div>
+            <!-- コントローラーモニター -->
+            <div class="detail-section" id="gpMonitorSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
+                <span class="detail-label">コントローラー確認</span>
+                <div id="gpMonitorBody" style="font-size:10px; color:#aaa; line-height:1.7; font-family:monospace; width:100%;"></div>
             </div>
             <!-- GROOVE GAUGE タイプ選択 -->
             <div class="detail-section nowrap">
@@ -2426,7 +2392,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
         </div>
         <!-- ステータスバー 2行 -->
-        <div class="status-bar" id="statusBar" style="display:none;">
+        <div class="status-bar" id="statusBar">
             <!-- 行1: ゲージ・判定カウント -->
             <div class="status-row">
                 <span id="fsSLStatus"><span style="color:#4af;">F</span><span id="fsCount">0</span>&nbsp;<span style="color:#f44;">S</span><span id="slCount">0</span>&nbsp;</span><span style="color:#ff69b4;">PG</span><span id="pgCount">0</span>
@@ -2463,6 +2429,41 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="seek-loop-range" id="seekLoopRange"></div>
                 <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- コントロールフッター: SPEED + LANE -->
+    <div class="ctrl-footer">
+        <!-- SPEED 行 -->
+        <div class="controls" style="margin-bottom:5px;">
+            <span class="hs-label" style="white-space:nowrap;">SPEED</span>
+            <div class="green-box">
+                <button class="green-pm-btn" id="greenMinus">－</button>
+                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="260">
+                <button class="green-pm-btn" id="greenPlus">＋</button>
+            </div>
+            <div class="hs-control">
+                <span class="hs-label">HS</span>
+                <span class="hs-value" id="hsValue">—</span>
+            </div>
+            <button class="saracho-btn" id="sarachoBtn">GC</button>
+            <button class="rs-btn" id="rsBtn">RS</button>
+        </div>
+        <!-- LANE 行 -->
+        <div class="loop-row">
+            <div class="swap-control">
+                <span class="swap-label">LANE</span>
+                <input class="swap-input" id="swapInput"
+                       type="text" inputmode="numeric"
+                       maxlength="9" value="1234567"
+                       placeholder="1234567">
+            </div>
+            <button class="rm-btn random" id="randomBtn">R</button>
+            <button class="rm-btn mirror" id="mirrorBtn">M</button>
+            <button class="rm-btn" id="sRandomBtn">S</button>
+            <button class="rm-btn" id="hRandomBtn">H</button>
+            <button class="rm-btn" id="quantize16Btn">Q16</button>
+            <button class="rm-btn" id="quantize8Btn">Q8</button>
         </div>
     </div>
 </div>
@@ -3323,7 +3324,6 @@ class BMSViewer {
         this._updateUI();
         this._refreshLoopUI(false);
         document.getElementById('loading').style.display  ='none';
-        document.getElementById('statusBar').style.display='block';
         const _pb = document.getElementById('playBtn');
         _pb.disabled = false;
         _pb.style.opacity = '';
@@ -4077,7 +4077,7 @@ class BMSViewer {
         document.getElementById('playModeBtn').addEventListener('click',     () => _setPlayMode(true));
 
         // IIDX コントローラータイプ選択
-        const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn' };
+        const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn', PHOENIX_WAN:'gpPhoenixBtn' };
         const _setGpIidx = (type) => {
             this._gpIidxType = type;
             for (const [t, id] of Object.entries(_gpIidxIds))
@@ -4085,6 +4085,9 @@ class BMSViewer {
             // タイプ変更時に状態をリセット
             this._gpPrevButtons = new Map();
             this._gpPrevAxes    = new Map();
+            // OFFのときモニター非表示
+            const mon = document.getElementById('gpMonitorSection');
+            if (mon) mon.style.display = type === 'OFF' ? 'none' : '';
         };
         for (const [type, id] of Object.entries(_gpIidxIds))
             document.getElementById(id).addEventListener('click', () => _setGpIidx(type));
@@ -5953,7 +5956,24 @@ class BMSViewer {
             } else {
                 this._pollIidxPad(gp);
             }
+            // コントローラーモニター更新（60fpsで毎フレーム更新すると重いので10フレームごと）
+            this._gpMonitorFrame = ((this._gpMonitorFrame || 0) + 1) % 10;
+            if (this._gpMonitorFrame === 0) this._updateGpMonitor(gp);
         }
+    }
+
+    _updateGpMonitor(gp) {
+        const el = document.getElementById('gpMonitorBody');
+        if (!el || document.getElementById('gpMonitorSection').style.display === 'none') return;
+        const btns = Array.from(gp.buttons).map((b, i) =>
+            `<span style="color:${b.pressed ? '#0f9' : '#555'}">B${i}${b.pressed ? '■' : '□'}</span>`
+        ).join(' ');
+        const axes = Array.from(gp.axes).map((v, i) =>
+            `<span>A${i}:<span style="color:#fa0;">${v.toFixed(3)}</span></span>`
+        ).join(' ');
+        el.innerHTML = `<div style="color:#88f;margin-bottom:2px;">${gp.id.substring(0,48)}</div>`
+            + `<div style="margin-bottom:2px;">${btns}</div>`
+            + `<div>${axes}</div>`;
     }
 
     // ── IIDX コントローラーポーリング ────────────────────────────
@@ -5977,6 +5997,12 @@ class BMSViewer {
             for (let i = 0; i < 7; i++) _btn(i, i + 1);
             this._pollScratch(gp, 0, toDl(0));
 
+        } else if (this._gpIidxType === 'PHOENIX_WAN') {
+            // PHOENIX WAN (INFINITASモード): buttons[0-6]=Key1-7, axis[0]=皿
+            // 高解像度エンコーダー（~1024CPR）のため tick を細かく設定
+            for (let i = 0; i < 7; i++) _btn(i, i + 1);
+            this._pollScratch(gp, 0, toDl(0), 0.00196);
+
         } else if (this._gpIidxType === 'PS2') {
             // PS2: button配列が異なる
             // [btnIdx, baseDl]
@@ -5996,12 +6022,11 @@ class BMSViewer {
 
     // ── アナログ軸の差分をtick整数に変換（beatoraja computeAnalogDiff 準拠）
     // ラップアラウンド（±1.0 折り返し）を補正してtick単位の整数を返す
-    _computeAnalogDiff(oldVal, newVal) {
-        const TICK = 0.009;
+    _computeAnalogDiff(oldVal, newVal, tick = 0.009) {
         let diff = newVal - oldVal;
-        if      (diff >  1.0) diff -= (2 + TICK / 2);
-        else if (diff < -1.0) diff += (2 + TICK / 2);
-        diff /= TICK;
+        if      (diff >  1.0) diff -= (2 + tick / 2);
+        else if (diff < -1.0) diff += (2 + tick / 2);
+        diff /= tick;
         return diff >= 0 ? Math.ceil(diff) : Math.floor(diff);
     }
 
@@ -6010,7 +6035,7 @@ class BMSViewer {
     //   - 2tick 累積で ON（ノイズ除去）
     //   - threshold*2 フレーム変化なしで OFF（デフォルト200フレーム≒3.3秒@60fps）
     //   - ラップアラウンドは _computeAnalogDiff で吸収
-    _pollScratch(gp, axisIdx, dl) {
+    _pollScratch(gp, axisIdx, dl, tick = 0.009) {
         const THRESHOLD = 100; // beatoraja デフォルト閾値（ON後タイムアウト = 200f）
         const axKey   = `${gp.index}_ax${axisIdx}`;
         const scrKey  = `${gp.index}_scr${axisIdx}`;
@@ -6033,7 +6058,7 @@ class BMSViewer {
         let   active  = this._gpPrevButtons.get(scrKey) || false;
 
         if (cur !== prev) {
-            const ticks = Math.abs(this._computeAnalogDiff(prev, cur));
+            const ticks = Math.abs(this._computeAnalogDiff(prev, cur, tick));
             if (!active) {
                 // 非アクティブ中: tick累積 → 2tick以上でON
                 if (tickAcc === 0 || counter <= THRESHOLD) tickAcc += ticks;

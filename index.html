@@ -1985,7 +1985,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.871</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.872</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5335,6 +5335,7 @@ class BMSViewer {
             });
         }
         this.noteEvents.sort((a,b) => a.px - b.px);
+        this._bgmNoteEvents = this.noteEvents.filter(e => e.isAutoBgm); // PLAYモードPass2用キャッシュ
         // adjPxSound / adjPxVisual（オフセット補正後トリガー位置）を計算
         this._recomputeAdjPx();
         // combo を現在位置に同期
@@ -5793,8 +5794,9 @@ class BMSViewer {
         // ── Pass 2: 音声再生 ──────────────────────────────────────────────
         // プレイモードでは isAutoBgm（BGM・DP自動再生）のみ発音
         let _clapSC = false, _clapKey = false;
-        for (let i = 0; i < events.length; i++) {
-            const e = events[i];
+        const _pass2Ev = (this.isPlayMode && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
+        for (let i = 0; i < _pass2Ev.length; i++) {
+            const e = _pass2Ev[i];
             if (this.isPlayMode && !e.isAutoBgm) continue; // プレイモード: キー音はスキップ
             const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
             if (_ePx2 <= prevPx) continue;
@@ -6540,6 +6542,7 @@ class BMSViewer {
         const BAD_E   = 165 * pxPerMs;
 
         for (const e of this.noteEvents) {
+            if (e.px > curPx) break; // noteEventsはpx昇順ソート済み。curPx超えたら以降は判定不要
             if (e.isAutoBgm || e.judged) continue;
             const refPx = e.adjPxVisual ?? e.px;
 
@@ -7272,7 +7275,9 @@ class BMSViewer {
         const flFb= ctx.createGain(); flFb.gain.value=s.flanger.fb/100;
         const flLFO=ctx.createOscillator(); flLFO.type='sine'; flLFO.frequency.value=slRate(s.flanger.rate);
         const flLG =ctx.createGain(); flLG.gain.value=s.flanger.depth/100*0.008;
-        flLFO.connect(flLG); flLG.connect(flD.delayTime); flD.connect(flFb); flFb.connect(flD);
+        flLFO.connect(flLG);
+        if (s.flanger.enabled) flLG.connect(flD.delayTime); // 無効時はLFO変調を接続しない
+        flD.connect(flFb); flFb.connect(flD);
         flLFO.start();
         fx.flanger = {delay:flD, fb:flFb, lfo:flLFO, lfoGain:flLG, slot:makeDW(flD, flD)};
         if (s.flanger.enabled) fx.flanger.slot.wet.gain.value=s.flanger.mix/100;
@@ -7284,7 +7289,9 @@ class BMSViewer {
         for (let i=0;i<5;i++) phSt[i].connect(phSt[i+1]);
         const phLFO=ctx.createOscillator(); phLFO.type='sine'; phLFO.frequency.value=slRate(s.phaser.rate);
         const phLG =ctx.createGain(); phLG.gain.value=s.phaser.depth/100*900;
-        phLFO.connect(phLG); phSt.forEach(st=>phLG.connect(st.frequency)); phLFO.start();
+        phLFO.connect(phLG);
+        if (s.phaser.enabled) phSt.forEach(st=>phLG.connect(st.frequency)); // 無効時はLFO変調を接続しない
+        phLFO.start();
         fx.phaser = {stages:phSt, lfo:phLFO, lfoGain:phLG, slot:makeDW(phSt[0], phSt[5])};
         if (s.phaser.enabled) fx.phaser.slot.wet.gain.value=s.phaser.mix/100;
 
@@ -7527,8 +7534,8 @@ class BMSViewer {
 
         // ─── Flanger ───────────────────────────────────────────────────
         mkToggle('fxFlangerBtn','flanger',
-            ()=>ramp(this._fx.flanger.slot.wet.gain, this._fxSettings.flanger.mix/100),
-            ()=>ramp(this._fx.flanger.slot.wet.gain, 0)
+            ()=>{ this._fx.flanger.lfoGain.connect(this._fx.flanger.delay.delayTime); ramp(this._fx.flanger.slot.wet.gain, this._fxSettings.flanger.mix/100); },
+            ()=>{ try{this._fx.flanger.lfoGain.disconnect(this._fx.flanger.delay.delayTime);}catch(e){} ramp(this._fx.flanger.slot.wet.gain, 0); }
         );
         mkSlider('fxFlangerRate','fxFlangerRateVal','flanger','rate', fRt,
             v=>ramp(this._fx.flanger.lfo.frequency, slRate(v)));
@@ -7541,8 +7548,8 @@ class BMSViewer {
 
         // ─── Phaser ────────────────────────────────────────────────────
         mkToggle('fxPhaserBtn','phaser',
-            ()=>ramp(this._fx.phaser.slot.wet.gain, this._fxSettings.phaser.mix/100),
-            ()=>ramp(this._fx.phaser.slot.wet.gain, 0)
+            ()=>{ this._fx.phaser.stages.forEach(st=>this._fx.phaser.lfoGain.connect(st.frequency)); ramp(this._fx.phaser.slot.wet.gain, this._fxSettings.phaser.mix/100); },
+            ()=>{ this._fx.phaser.stages.forEach(st=>{ try{this._fx.phaser.lfoGain.disconnect(st.frequency);}catch(e){} }); ramp(this._fx.phaser.slot.wet.gain, 0); }
         );
         mkSlider('fxPhaserRate','fxPhaserRateVal','phaser','rate', fRt,
             v=>ramp(this._fx.phaser.lfo.frequency, slRate(v)));

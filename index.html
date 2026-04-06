@@ -1973,7 +1973,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.853</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.854</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7125,7 +7125,15 @@ class BMSViewer {
                              fx.flanger.slot, fx.phaser.slot, fx.echo.slot, fx.reverb.slot]) {
             node.connect(slot.input); node = slot.output;
         }
-        node.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh); eqHigh.connect(ctx.destination);
+        // Master limiter (常時ON・安全装置 — ユーザーが切れない)
+        const limiter = ctx.createDynamicsCompressor();
+        limiter.threshold.value = -3;    // -3dBFS 以上を制限
+        limiter.knee.value      = 0;     // ハードニー（即時制限）
+        limiter.ratio.value     = 20;    // 20:1（ブリックウォール相当）
+        limiter.attack.value    = 0.001; // 1ms 超高速反応
+        limiter.release.value   = 0.1;  // 100ms リリース
+        node.connect(eqLow); eqLow.connect(eqMid); eqMid.connect(eqHigh);
+        eqHigh.connect(limiter); limiter.connect(ctx.destination);
 
         this._fx = fx;
     }

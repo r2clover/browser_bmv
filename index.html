@@ -1985,7 +1985,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.875</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.876</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3290,12 +3290,19 @@ class BMSViewer {
             document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
             if (this._updateStylesForMode) this._updateStylesForMode('PM');
         }
-        // #PLAYER 1 またはDP BMS (#PLAYER 3 with DP channels) を検出したら自動でIIDX(1P)モードへ
-        if ((parser.playerNum === 1 || (parser.playerNum === 3 && !parser.isPMS) || this.bmsData.isDPChart) && this.currentSide !== '1P') {
+        // DP BMS (#PLAYER 3 with DP channels) を検出したら自動でIIDX(1P)モードへ
+        if (((parser.playerNum === 3 && !parser.isPMS) || this.bmsData.isDPChart) && this.currentSide !== '1P') {
             this.currentSide = '1P';
             this.laneCount   = 8;
             document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='1P'));
             if (this._updateStylesForMode) this._updateStylesForMode('1P');
+        }
+        // 7鍵 BMS/BME (#PLAYER 1) を検出したら自動で2Pモードへ
+        if (parser.playerNum === 1 && !this.bmsData.isDPChart && this.currentSide !== '2P') {
+            this.currentSide = '2P';
+            this.laneCount   = 8;
+            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='2P'));
+            if (this._updateStylesForMode) this._updateStylesForMode('2P');
         }
         if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
 

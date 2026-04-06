@@ -1733,7 +1733,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.850</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.851</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5104,9 +5104,11 @@ class BMSViewer {
         this._updateJLGlow();
         const _posT   = this._px2bar(this.currentPixelPos);
         const _bpmT   = Math.round(bpm);
-        const _greenRaw = Math.round(175300 / (bpm * this.hiSpeed));
-        // カバー緑数字: BPM変化に追従する実際の可視緑数字
-        // Mode A/C はHS にvisEff/effH が組み込み済みのため rawGreen*visEff/effH で可視緑が得られる
+        // RS オン時はスクロール速度が曲頭BPM固定なので緑数字も曲頭BPMで計算
+        const _bpmForGreen = (this.regulSpeed && this._rsK)
+            ? this._bpmAtBar(0) * this.realSpeed : bpm;
+        const _greenRaw = Math.round(175300 / (_bpmForGreen * this.hiSpeed));
+        // カバー緑数字: 可視緑数字（Mode A/C はHSにvisEff/effH組み込み済み）
         let _greenT = _greenRaw;
         if (this.sudEnabled) {
             const _effH   = 400;
@@ -5334,7 +5336,9 @@ class BMSViewer {
             if (!this.bmsData || this.hiSpeed <= 0) {
                 cg.textContent = this.targetGreenNum || 260;
             } else {
-                const _bpm = this._bpmAt(this.currentPixelPos);
+                const _bpm = (this.regulSpeed && this._rsK)
+                    ? this._bpmAtBar(0) * this.realSpeed
+                    : this._bpmAt(this.currentPixelPos);
                 const _raw = Math.round(175300 / (_bpm * this.hiSpeed));
                 const _effH = 400;
                 const _vis  = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));

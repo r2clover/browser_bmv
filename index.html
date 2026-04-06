@@ -1404,7 +1404,8 @@
             font-variant-numeric:tabular-nums; display:flex; flex-direction:column; gap:0;
         }
         .status-row {
-            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.5;
+            display:flex; justify-content:space-between; align-items:center;
+            white-space:nowrap; overflow:hidden; line-height:1.5;
         }
         /* プレイ情報スパン固定幅 */
         #scoreDisplay   { display:inline-block; min-width:5em; text-align:right; color:#fff; }
@@ -1547,15 +1548,15 @@
             display:flex; pointer-events:none;
         }
         #sudCoverVal {
-            width:50%; text-align:right; padding-right:6px;
+            width:50%; text-align:right; padding-right:24px;
             color:#ffffff; font-family:'Courier New',monospace;
-            font-size:13px; font-weight:bold;
+            font-size:17px; font-weight:bold;
             text-shadow:0 1px 3px rgba(0,0,0,0.9);
         }
         #sudCoverGreen {
-            width:50%; text-align:left; padding-left:6px;
+            width:50%; text-align:left; padding-left:24px;
             color:#00e84c; font-family:'Courier New',monospace;
-            font-size:13px; font-weight:bold;
+            font-size:17px; font-weight:bold;
             text-shadow:0 1px 3px rgba(0,0,0,0.9);
         }
         .sud-btn {
@@ -1732,7 +1733,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.840</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.847</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2130,12 +2131,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <!-- 行2: 従来ステータス情報 -->
             <div class="status-row">
-                Total:<span id="totalNotes">0</span>
-                &nbsp;BPM:<span id="bpmDisplay">0</span>
-                &nbsp;<span style="color:#00ff88;">緑:<span id="statusGreenNum">—</span></span>
-                &nbsp;<span style="color:#ffffff;">SUD+:<span id="sudWhiteNum">OFF</span></span>
-                &nbsp;<span id="statusElapsed" style="color:#ccc;">0:00</span>
-                &nbsp;小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span>
+                <span>Total:<span id="totalNotes">0</span></span>
+                <span>BPM:<span id="bpmDisplay">0</span></span>
+                <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
+                <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
+                <span style="color:#ccc;"><span style="color:#ccc;">TIME</span><span id="statusElapsed">0:00</span></span>
+                <span>小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span></span>
                 <span id="loopStatus"></span>
             </div>
         </div>
@@ -5313,15 +5314,19 @@ class BMSViewer {
         if (!lc || !pa) { cover.style.display = 'none'; return; }
         const lcRect = lc.getBoundingClientRect();
         const paRect = pa.getBoundingClientRect();
+        // getBoundingClientRect はビューポート座標（CSS transform スケール後）を返すため
+        // デザイン座標（スケール前）に戻してから CSS に設定する
+        const containerEl = document.querySelector('.container');
+        const scale = containerEl ? containerEl.getBoundingClientRect().width / containerEl.offsetWidth : 1;
         cover.style.display = 'block';
-        cover.style.top     = (lcRect.top  - paRect.top  ) + 'px';
-        cover.style.left    = (lcRect.left - paRect.left + 1) + 'px';
-        cover.style.width   = (lcRect.width - 2) + 'px';
-        cover.style.height  = this.sudCoverPx + 'px';
+        cover.style.top    = (lcRect.top  - paRect.top ) / scale + 'px';
+        cover.style.left   = (lcRect.left - paRect.left) / scale + 1 + 'px';
+        cover.style.width  = lcRect.width / scale - 2 + 'px';
+        cover.style.height = this.sudCoverPx + 'px';
         const wn = document.getElementById('sudWhiteNum');
         if (wn) wn.textContent = String(this.sudCoverPx).padStart(3, '0');
         const cv = document.getElementById('sudCoverVal');
-        if (cv) cv.textContent = this.sudCoverPx;
+        if (cv) cv.textContent = Math.round(this.sudCoverPx / 400 * 1000);
         if (!this.bmsData) {
             const cg = document.getElementById('sudCoverGreen');
             if (cg) cg.textContent = this.targetGreenNum || 260;

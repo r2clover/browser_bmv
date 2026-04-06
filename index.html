@@ -1093,6 +1093,11 @@
         .notes-pm-pop-face .note.pm-green::before,
         .notes-pm-pop-face .note.pm-blue::before,
         .notes-pm-pop-face .note.pm-red::before,
+        .charge-pm-pop-face .ln-note-start.pm-white::before,
+        .charge-pm-pop-face .ln-note-start.pm-yellow::before,
+        .charge-pm-pop-face .ln-note-start.pm-green::before,
+        .charge-pm-pop-face .ln-note-start.pm-blue::before,
+        .charge-pm-pop-face .ln-note-start.pm-red::before,
         .charge-pm-pop-face .ln-note-end.pm-white::before,
         .charge-pm-pop-face .ln-note-end.pm-yellow::before,
         .charge-pm-pop-face .ln-note-end.pm-green::before,
@@ -1109,6 +1114,11 @@
         .notes-pm-pop-face .note.pm-green::after,
         .notes-pm-pop-face .note.pm-blue::after,
         .notes-pm-pop-face .note.pm-red::after,
+        .charge-pm-pop-face .ln-note-start.pm-white::after,
+        .charge-pm-pop-face .ln-note-start.pm-yellow::after,
+        .charge-pm-pop-face .ln-note-start.pm-green::after,
+        .charge-pm-pop-face .ln-note-start.pm-blue::after,
+        .charge-pm-pop-face .ln-note-start.pm-red::after,
         .charge-pm-pop-face .ln-note-end.pm-white::after,
         .charge-pm-pop-face .ln-note-end.pm-yellow::after,
         .charge-pm-pop-face .ln-note-end.pm-green::after,
@@ -1532,6 +1542,22 @@
             bottom:-3px; left:0; right:0; height:4px;
             background:linear-gradient(to right,#888,#ddd 20%,#fff 50%,#ddd 80%,#888);
         }
+        .sud-cover-info {
+            position:absolute; bottom:6px; left:0; right:0;
+            display:flex; pointer-events:none;
+        }
+        #sudCoverVal {
+            width:50%; text-align:center;
+            color:#ffffff; font-family:'Courier New',monospace;
+            font-size:13px; font-weight:bold;
+            text-shadow:0 1px 3px rgba(0,0,0,0.9);
+        }
+        #sudCoverGreen {
+            width:50%; text-align:center;
+            color:#00e84c; font-family:'Courier New',monospace;
+            font-size:13px; font-weight:bold;
+            text-shadow:0 1px 3px rgba(0,0,0,0.9);
+        }
         .sud-btn {
             padding:0 6px; border-radius:4px;
             border:1px solid #335566; background:#0a1a22;
@@ -1706,7 +1732,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.835</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.837</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2073,7 +2099,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="pm-judge-combo" id="pmJudgeCombo_R">0</span>
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
-        <div id="sudCover" class="sud-cover"></div>
+        <div id="sudCover" class="sud-cover">
+            <div class="sud-cover-info">
+                <span id="sudCoverVal"></span>
+                <span id="sudCoverGreen"></span>
+            </div>
+        </div>
     </div>
 
     <!-- play-footer: グルーブゲージ + ステータスバー -->
@@ -4210,24 +4241,26 @@ class BMSViewer {
     /* 現緑 = 175300 / (currentBPM × HS)  ← リアルタイム更新 */
     _updateRealGreen() {
         const el = document.getElementById('statusGreenNum');
-        if (!this.bmsData || this.hiSpeed <= 0) { if(el) el.textContent='—'; return; }
+        const cg = document.getElementById('sudCoverGreen');
+        if (!this.bmsData || this.hiSpeed <= 0) {
+            if (el) el.textContent = '—';
+            if (cg) cg.textContent = '';
+            return;
+        }
         const bpm   = this._bpmAt(this.currentPixelPos);
         const green = Math.round(175300 / (bpm * this.hiSpeed));
+        let greenVal = green;
         if (this.sudEnabled) {
-            const effH   = 400; // SUD+有効ゾーン（0px基準）
+            const effH   = 400;
             const visEff = Math.max(0, Math.min(effH, 400 - this.sudCoverPx));
             if (this.sudMode === 'A' || this.sudMode === 'C') {
-                // モードA/C: SUD+位置に関係なく目標緑数字をそのまま表示
-                if (el) el.textContent = Math.round(this.targetGreenNum || green);
-                return;
-            }
-            if (this.sudMode === 'B') {
-                // モードB: 可視有効ゾーンに応じた緑数字
-                if(el) el.textContent = visEff >= effH ? green : Math.round(green * (visEff / effH));
-                return;
+                greenVal = Math.round(this.targetGreenNum || green);
+            } else if (this.sudMode === 'B') {
+                greenVal = visEff >= effH ? green : Math.round(green * (visEff / effH));
             }
         }
-        if(el) el.textContent = green;
+        if (el) el.textContent = greenVal;
+        if (cg) cg.textContent = greenVal;
     }
 
     /* HS = 175300 / (headerBPM × RS × 緑数字)  ← 緑数字固定・HS自動決定 */
@@ -5286,9 +5319,9 @@ class BMSViewer {
         cover.style.width   = (lcRect.width - 2) + 'px';
         cover.style.height  = this.sudCoverPx + 'px';
         const wn = document.getElementById('sudWhiteNum');
-        if (wn) {
-            wn.textContent = String(this.sudCoverPx).padStart(3, '0');
-        }
+        if (wn) wn.textContent = String(this.sudCoverPx).padStart(3, '0');
+        const cv = document.getElementById('sudCoverVal');
+        if (cv) cv.textContent = this.sudCoverPx;
     }
 
     _setSudCoverPx(px, rebuild = true) {

@@ -1985,7 +1985,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.872</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.873</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2439,7 +2439,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="hs-label" style="white-space:nowrap;">SPEED</span>
             <div class="green-box">
                 <button class="green-pm-btn" id="greenMinus">－</button>
-                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="260">
+                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="225">
                 <button class="green-pm-btn" id="greenPlus">＋</button>
             </div>
             <div class="hs-control">
@@ -2756,7 +2756,7 @@ class BMSViewer {
         this.loopEnd         = 0;
         this.loopEnabled     = false;
         this.laneSwapReverse = null;
-        this.targetGreenNum  = 260;
+        this.targetGreenNum  = 225;
         this.combo           = 0;
         this.judgementEnabled = true;  // 判定表示(GREAT/コンボ) ON/OFF
         this.judgeOffsetSound  = 0;     // 判定タイミング（音）(ms) -300〜+300
@@ -3306,7 +3306,7 @@ class BMSViewer {
         this.currentPixelPos=0; this.loopEnabled=false;
         {
             const gnEl=document.getElementById('greenInput');
-            const gn=(gnEl?parseFloat(gnEl.value):0)||250;
+            const gn=(gnEl?parseFloat(gnEl.value):0)||225;
             const bpm=(this.bmsData.headers.bpm||130)*this.realSpeed;
             this.targetGreenNum = gn;
             this.hiSpeed = this._calcAdjustedHS(bpm, gn);
@@ -3558,7 +3558,7 @@ class BMSViewer {
         // 頭緑 ± ボタン
         const _greenStep = (delta) => {
             const el = document.getElementById('greenInput');
-            const v  = parseFloat(el.value) || 250;
+            const v  = parseFloat(el.value) || 225;
             const nv = Math.max(1, v + delta);
             el.value = nv;
             this._applyGreenNum(nv);
@@ -4606,7 +4606,7 @@ class BMSViewer {
         const cg = document.getElementById('sudCoverGreen');
         if (!this.bmsData || this.hiSpeed <= 0) {
             if (el) el.textContent = '—';
-            if (cg) cg.textContent = this.targetGreenNum || 260;
+            if (cg) cg.textContent = this.targetGreenNum || 225;
             return;
         }
         const bpm   = this._bpmAt(this.currentPixelPos);
@@ -5650,7 +5650,7 @@ class BMSViewer {
         if (!this.bmsData) return;
         const baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
         const gnEl = document.getElementById('greenInput');
-        const gn   = this.targetGreenNum || parseFloat(gnEl ? gnEl.value : '250') || 250;
+        const gn   = this.targetGreenNum || parseFloat(gnEl ? gnEl.value : '225') || 225;
         this.hiSpeed = this._calcAdjustedHS(baseBpm, gn);
         document.getElementById('hsValue').textContent = '×' + this.hiSpeed.toFixed(2);
         const posFrac    = this._px2posFrac(this.currentPixelPos);
@@ -5696,7 +5696,7 @@ class BMSViewer {
         const cg = this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'));
         if (cg) {
             if (!this.bmsData || this.hiSpeed <= 0) {
-                cg.textContent = this.targetGreenNum || 260;
+                cg.textContent = this.targetGreenNum || 225;
             } else {
                 const _bpm = (this.regulSpeed && this._rsK)
                     ? this._bpmAtBar(0) * this.realSpeed

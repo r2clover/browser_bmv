@@ -21,13 +21,13 @@
         }
         #appScaler { position:fixed; inset:0; background:#000; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; }
         .container { display:flex; flex-direction:column; position:relative; width:390px; height:640px; overflow:hidden; transform-origin:top center; transform:scale(var(--app-scale,1)); flex-shrink:0; }
-        .header { background:#1a1a1a; padding:8px 12px 6px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
+        .header { background:#1a1a1a; padding:5px 12px 4px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
         .ctrl-footer { flex-shrink:0; background:#1a1a1a; border-top:2px solid #333; padding:6px 12px 8px; }
-        .song-title { font-size:14px; font-weight:bold; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
+        .song-title { font-size:12px; font-weight:bold; margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
         .song-title.loaded { cursor:pointer; }
         .song-title.loaded:active { opacity:0.7; }
         .song-meta  {
-            font-size:11px; color:#999; margin-bottom:6px;
+            font-size:10px; color:#999; margin-bottom:3px;
             white-space:nowrap; overflow:hidden;
         }
         .song-meta.scrolling {
@@ -38,8 +38,8 @@
             50%, 68% { transform: translateX(var(--slide-dist, 0px)); }
             90%,100% { transform: translateX(0); }
         }
-        .controls   { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:5px; }
-        .btn { padding:3px 8px; border:none; border-radius:4px; background:#2196F3; color:#fff; font-size:11px; cursor:pointer; touch-action:manipulation; min-height:26px; }
+        .controls   { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-bottom:3px; }
+        .btn { padding:2px 7px; border:none; border-radius:4px; background:#2196F3; color:#fff; font-size:10px; cursor:pointer; touch-action:manipulation; min-height:24px; }
         .btn:active { opacity:.7; }
         .btn-success  { background:#4CAF50; }
         .btn-secondary{ background:#555; }
@@ -136,7 +136,7 @@
         .rm-btn.active { background:#e8a020; color:#fff; }
         .rm-btn.on     { background:#d04080; color:#fff; }
         .side-switch { display:flex; gap:4px; }
-        .side-btn { padding:3px 8px; border:none; background:#333; color:#999; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; min-height:26px; }
+        .side-btn { padding:2px 7px; border:none; background:#333; color:#999; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer; min-height:24px; }
         .side-btn.active { border-color:#2196F3; background:#2196F3; color:#fff; }
         .metro-btn { padding:5px 8px; border:none; background:#333; color:#999; border-radius:4px; font-size:12px; cursor:pointer; min-height:32px; }
         .metro-btn.active { background:#4caf50; color:#fff; }
@@ -215,11 +215,11 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:1; min-height:0; position:relative; overflow:hidden; isolation:isolate; max-height:400px; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:500px; }
+        .play-area { flex:none; height:400px; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:500px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
-        .lanes-container { position:absolute; top:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
+        .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
         .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
@@ -1636,7 +1636,7 @@
             border:1px solid #335566; background:#0a1a22;
             color:#5599bb; font-size:10px; font-weight:bold;
             cursor:pointer; touch-action:manipulation;
-            min-height:26px; box-sizing:border-box; white-space:nowrap;
+            min-height:24px; box-sizing:border-box; white-space:nowrap;
         }
         .sud-btn.on { border-color:#00aaff; background:#001a2a; color:#00ccff; }
         .sud-btn:active { background:#002233; }
@@ -1707,7 +1707,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <div class="container">
     <div class="header">
         <div class="song-title" id="songTitle">BMSファイルを読み込んでください</div>
-        <div class="song-meta"  id="songMeta"></div>
+        <div class="song-meta"  id="songMeta">zipファイルの読み込みに対応しています。</div>
 
         <!-- 1行目: 開く | 再生 | RS -->
         <div class="controls">
@@ -1985,7 +1985,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.867</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.871</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

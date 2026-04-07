@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.888</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.890</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5657,6 +5657,10 @@ class BMSViewer {
                 this.currentPixelPos = sp + (this.currentPixelPos - ep) % span;
                 this._syncCombo();
                 this._resetPlayCounters();
+                // S/H-RANDOM: ループごとに新しいランダム配置を生成
+                if (this.sRandomActive || this.hRandomActive) {
+                    this._buildNoteRandomMap(this.hRandomActive);
+                }
                 if (this.isPlaying) this._startAudio();
             }
         } else {
@@ -6295,58 +6299,90 @@ class BMSViewer {
     }
 
     // ── アナログ皿（ターンテーブル）検出 ─────────────────────────
-    // beatoraja AnalogScratchAlgorithm Version2 に準拠
     //   - 2tick 累積で ON（ノイズ除去）
-    //   - threshold*2 フレーム変化なしで OFF（デフォルト200フレーム≒3.3秒@60fps）
+    //   - 方向別に状態を管理（正転/逆転を個別追跡）
+    //   - TIMEOUT_MS 変化なしで方向状態を解除
+    //   - 逆方向検出時は即座に現在方向を解除し逆方向を有効化
     //   - ラップアラウンドは _computeAnalogDiff で吸収
     _pollScratch(gp, axisIdx, dl, tick = 0.009) {
-        const THRESHOLD = 100; // beatoraja デフォルト閾値（ON後タイムアウト = 200f）
+        const TIMEOUT_MS = 120; // 方向状態維持タイムアウト (ms)
         const axKey   = `${gp.index}_ax${axisIdx}`;
-        const scrKey  = `${gp.index}_scr${axisIdx}`;
-        const cntKey  = `${gp.index}_cnt${axisIdx}`;
+        const posKey  = `${gp.index}_scr${axisIdx}_pos`; // 正転アクティブ
+        const negKey  = `${gp.index}_scr${axisIdx}_neg`; // 逆転アクティブ
         const tckKey  = `${gp.index}_tck${axisIdx}`;
+        const timeKey = `${gp.index}_time${axisIdx}`;
 
         const cur = gp.axes[axisIdx] ?? 0;
+        const now = performance.now();
 
         // 初回フレーム: 前回値を初期化して終了
         if (!this._gpPrevAxes.has(axKey)) {
             this._gpPrevAxes.set(axKey, cur);
-            this._gpPrevAxes.set(cntKey, 1);
             this._gpPrevAxes.set(tckKey, 0);
+            this._gpPrevAxes.set(timeKey, now);
             return;
         }
 
-        const prev    = this._gpPrevAxes.get(axKey);
-        let   counter = this._gpPrevAxes.get(cntKey);
-        let   tickAcc = this._gpPrevAxes.get(tckKey);
-        let   active  = this._gpPrevButtons.get(scrKey) || false;
+        const prev      = this._gpPrevAxes.get(axKey);
+        let   tickAcc   = this._gpPrevAxes.get(tckKey);
+        let   lastTime  = this._gpPrevAxes.get(timeKey);
+        let   posActive = this._gpPrevButtons.get(posKey) || false;
+        let   negActive = this._gpPrevButtons.get(negKey) || false;
 
         if (cur !== prev) {
-            const ticks = Math.abs(this._computeAnalogDiff(prev, cur, tick));
-            if (!active) {
-                // 非アクティブ中: tick累積 → 2tick以上でON
-                if (tickAcc === 0 || counter <= THRESHOLD) tickAcc += ticks;
-                if (tickAcc >= 2) active = true;
+            const rawTicks = this._computeAnalogDiff(prev, cur, tick); // 符号あり
+            const isPos    = rawTicks >= 0;
+
+            // 逆方向がアクティブなら即座に解除 + tickAcc リセット
+            if (isPos ? negActive : posActive) {
+                if (isPos) negActive = false;
+                else       posActive = false;
+                tickAcc = 0;
             }
-            counter = 0;
+
+            // 現在方向が非アクティブなら tick 累積（2tick 以上でON、ノイズ除去）
+            let curActive = isPos ? posActive : negActive;
+            if (!curActive) {
+                tickAcc += Math.abs(rawTicks);
+                if (tickAcc >= 2) { curActive = true; tickAcc = 0; }
+            }
+            if (isPos) posActive = curActive;
+            else       negActive = curActive;
+
+            lastTime = now;
             this._gpPrevAxes.set(axKey, cur);
         }
 
-        // タイムアウト: THRESHOLD*2 フレーム変化なし → OFF
-        if (counter > THRESHOLD * 2 && active) {
-            active  = false;
-            tickAcc = 0;
-            counter = 0;
+        // タイムアウト: TIMEOUT_MS 変化なし → 全方向解除
+        if (now - lastTime > TIMEOUT_MS) {
+            posActive = false;
+            negActive = false;
+            tickAcc   = 0;
         }
 
-        counter++;
-        this._gpPrevAxes.set(cntKey, counter);
         this._gpPrevAxes.set(tckKey, tickAcc);
+        this._gpPrevAxes.set(timeKey, lastTime);
 
-        const wasActive = this._gpPrevButtons.get(scrKey) || false;
-        if  (active && !wasActive)  this._onLanePress(dl);
-        else if (!active && wasActive) this._onLaneRelease(dl);
-        this._gpPrevButtons.set(scrKey, active);
+        // イベント発火
+        const wasPos      = this._gpPrevButtons.get(posKey) || false;
+        const wasNeg      = this._gpPrevButtons.get(negKey) || false;
+        const wasActive   = wasPos || wasNeg;
+        const isActive    = posActive || negActive;
+        const dirSwitched = (wasPos && negActive && !posActive) ||
+                            (wasNeg && posActive && !negActive);
+
+        if (dirSwitched) {
+            // 方向転換: リリース→プレスで再トリガー
+            this._onLaneRelease(dl);
+            this._onLanePress(dl);
+        } else if (isActive && !wasActive) {
+            this._onLanePress(dl);
+        } else if (!isActive && wasActive) {
+            this._onLaneRelease(dl);
+        }
+
+        this._gpPrevButtons.set(posKey, posActive);
+        this._gpPrevButtons.set(negKey, negActive);
     }
 
     _keyCodeToDl(code) {

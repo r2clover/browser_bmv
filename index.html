@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.890</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.891</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3053,6 +3053,12 @@ class BMSViewer {
             this._keyGainNode.gain.value = Math.max(0, this.wavVolKey);
             this._keyGainNode.connect(this._fxChainInput || this._audioCtx.destination);
         }
+        // PLAY MODE 専用: FXチェーン・Limiterを完全バイパスして destination に直結
+        if (!this._keyDirectGain) {
+            this._keyDirectGain = this._audioCtx.createGain();
+            this._keyDirectGain.gain.value = Math.max(0, this.wavVolKey);
+            this._keyDirectGain.connect(this._audioCtx.destination);
+        }
     }
 
     _startAudio() {
@@ -3148,13 +3154,29 @@ class BMSViewer {
         if (!this.wavKeyEnabled) return;
         this._ensureAudioCtx();
         const buf = this.wavBuffers[wavId];
-        if (!buf || !this._audioCtx || !this._keyGainNode) return;
-        // 共有 GainNode に直接接続して GainNode 生成コストをゼロに
+        if (!buf || !this._audioCtx) return;
+        // PLAY MODE: FXチェーン・Limiterをバイパスして最低遅延で再生
+        // AUTO PLAY: 通常通り FXチェーン経由
+        const gainNode = (this.isPlayMode && this._keyDirectGain)
+            ? this._keyDirectGain : this._keyGainNode;
+        if (!gainNode) return;
         const src = this._audioCtx.createBufferSource();
         src.buffer = buf;
         src.playbackRate.value = Math.max(0.1, this.realSpeed);
-        src.connect(this._keyGainNode);
+        src.connect(gainNode);
         src.start(this._audioCtx.currentTime); // できる限り早く再生
+    }
+
+    // オーディオパイプラインを事前起動（PLAY MODE開始時のコールドスタート遅延を解消）
+    _preWarmAudio() {
+        this._ensureAudioCtx();
+        const ctx = this._audioCtx;
+        if (!ctx) return;
+        const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
     }
 
     /* ── WAVデコード (base-62対応・大文字小文字区別) ── */
@@ -4119,7 +4141,7 @@ class BMSViewer {
             this.isPlayMode = isPlay;
             document.getElementById('autoPlayModeBtn').classList.toggle('on', !isPlay);
             document.getElementById('playModeBtn').classList.toggle('on',  isPlay);
-            if (isPlay) { this.combo = 0; }
+            if (isPlay) { this.combo = 0; this._preWarmAudio(); }
             else { this._resetPlayCounters(); } // AUTO切替時: judgedフラグリセット＋カウント再計算
             _updateJustFrameVis();
         };
@@ -4403,7 +4425,7 @@ class BMSViewer {
         };
         mkVolWav('volWavBGM0','volWavBGM0Val', v=>{ this.wavVolBGM0=v; }); // 〜#00101
         mkVolWav('volWavBGM','volWavBGMVal',   v=>{ this.wavVolBGM=v;  }); // #00201〜
-        mkVolWav('volWavKey','volWavKeyVal',   v=>{ this.wavVolKey=v; if(this._keyGainNode) this._keyGainNode.gain.value=Math.max(0,v); });
+        mkVolWav('volWavKey','volWavKeyVal',   v=>{ this.wavVolKey=v; if(this._keyGainNode) this._keyGainNode.gain.value=Math.max(0,v); if(this._keyDirectGain) this._keyDirectGain.gain.value=Math.max(0,v); });
         // BMS選択モーダル キャンセル
         const _bmsOvl=()=>document.getElementById('bmsSelectOverlay');
         document.getElementById('bmsSelectCancel')?.addEventListener('click',()=>{ _bmsOvl().style.display='none'; });

@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.900</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.901</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5703,12 +5703,15 @@ class BMSViewer {
         }
 
         // ── ループ / 末端折り返し ─────────────────────────────
+        this._loopWrapInfo = null;
         if (this.loopEnabled) {
             const sp      = this.barStartPx[this.loopStart] || 0;
             const ep      = this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || sp;
             const startPx = (this.loopMode === 'halfbar') ? this._loopStartPx() : sp;
             const span    = ep - startPx;
             if (span > 0 && this.currentPixelPos >= ep) {
+                // 折り返し: prevPx→ep と startPx→新curPx の2段階で音声検出するため記録
+                this._loopWrapInfo = { prevEp: ep, newStart: startPx };
                 this.currentPixelPos = startPx + (this.currentPixelPos - ep) % span;
                 this._syncCombo();
                 this._resetPlayCounters();
@@ -5740,7 +5743,13 @@ class BMSViewer {
 
         const bpm = this._bpmAt(this.currentPixelPos);
         this._pollGamepad();
-        this._detectPassed(prevPx, this.currentPixelPos);
+        if (this._loopWrapInfo) {
+            // 折り返し: prevPx→ep までを先に処理してから、newStart→curPx を処理
+            this._detectPassed(prevPx, this._loopWrapInfo.prevEp);
+            this._detectPassed(this._loopWrapInfo.newStart - 0.001, this.currentPixelPos);
+        } else {
+            this._detectPassed(prevPx, this.currentPixelPos);
+        }
         if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
         // シークバーは3フレームに1回更新（≈20Hz）で十分

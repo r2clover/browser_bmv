@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.899</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.900</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7289,6 +7289,14 @@ class BMSViewer {
         const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
         const _smlsSpan = _smlsEp - _smlsSp;
         this.noteElements.forEach(el => {
+            // シームレス: ep 以降の本来の譜面は非表示にして退避
+            if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay) {
+                if (el._offscreen !== true) {
+                    el.style.translate = '0px 200px';
+                    el._offscreen = true;
+                }
+                return;
+            }
             // シームレス: ループ範囲内のノートが cur の後方にある場合、span 分先にシフトして表示
             let effPos = el._pixelPos;
             if (_smls && _smlsSpan > 0 && effPos >= _smlsSp && effPos < _smlsEp && effPos < cur - 100) {

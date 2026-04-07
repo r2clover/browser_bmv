@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.891</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.893</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5125,7 +5125,7 @@ class BMSViewer {
         const ep=this.barStartPx[Math.min(this.loopEnd,this.barStartPx.length-1)]||sp;
         document.querySelectorAll('.lane').forEach(lane => {
             const ov=document.createElement('div');
-            ov.className='loop-overlay'; ov.style.height=(ep-sp)+'px';
+            ov.className='loop-overlay'; ov.style.height=(ep-sp)+'px'; ov.style.bottom='0'; ov.style.translate='0px '+(-(sp-this.currentPixelPos))+'px';
             ov._pixelPos=sp; ov._isOverlay=true;
             lane.appendChild(ov); this.noteElements.push(ov);
         });
@@ -5351,7 +5351,7 @@ class BMSViewer {
             const el=document.createElement('div'); el.className='bar-line';
             if(b%4===0) el.classList.add('measure-start');
             el._pixelPos=px; el.dataset.barIndex=b;
-            el.style.bottom=(px-this.currentPixelPos)+'px';
+            el.style.bottom='0'; el.style.translate='0px '+(-(px-this.currentPixelPos))+'px';
             container.appendChild(el); this.noteElements.push(el);
         }
 
@@ -5359,7 +5359,7 @@ class BMSViewer {
         this.bpmEvents.forEach(ev => {
             const mk=document.createElement('div'); mk.className='bpm-marker';
             mk._pixelPos=ev.pixelPos;
-            mk.style.bottom=(ev.pixelPos-this.currentPixelPos)+'px';
+            mk.style.bottom='0'; mk.style.translate='0px '+(-(ev.pixelPos-this.currentPixelPos))+'px';
             if (this.bpmMode === 'OFF' || this.bpmMode === 'NUM') mk.style.display='none';
             container.appendChild(mk); this.noteElements.push(mk);
 
@@ -5367,7 +5367,7 @@ class BMSViewer {
             lbl.dataset.baseBpm = ev.baseBpm;
             lbl.textContent = Math.round(ev.baseBpm * this.realSpeed);
             lbl._pixelPos=ev.pixelPos;
-            lbl.style.bottom=(ev.pixelPos-this.currentPixelPos)+'px';
+            lbl.style.bottom='0'; lbl.style.translate='0px '+(-(ev.pixelPos-this.currentPixelPos))+'px';
             if (this.bpmMode === 'OFF') lbl.style.display='none';
             container.appendChild(lbl); this.noteElements.push(lbl);
         });
@@ -5424,7 +5424,7 @@ class BMSViewer {
                 else if([1,3,5,7].includes(swappedLane)) el.classList.add('white-key');
                 else el.classList.add('black-key');
             }
-            el._pixelPos=px; el.style.bottom=(px-this.currentPixelPos)+'px';
+            el._pixelPos=px; el.style.bottom='0'; el.style.translate='0px '+(-(px-this.currentPixelPos))+'px';
             lanes[dl].appendChild(el); this.noteElements.push(el);
         });
 
@@ -5449,7 +5449,7 @@ class BMSViewer {
             el.style.height = height + 'px';
             el._pixelPos    = startPx;
             el._pixelEndPos = endPx;
-            el.style.bottom = (startPx - this.currentPixelPos) + 'px';
+            el.style.bottom = '0'; el.style.translate='0px '+(-(startPx-this.currentPixelPos))+'px';
             // LN/BSS 始点・終点ノーツ + キャップ（統合）
             {
                 const isBss = this.currentSide !== 'PM' && (note.type === 'bss' || swappedLane === 0);
@@ -5519,7 +5519,7 @@ class BMSViewer {
                 el.style.height  = height + 'px';
                 el._pixelPos     = startPx;
                 el._pixelEndPos  = endPx;
-                el.style.bottom  = (startPx - this.currentPixelPos) + 'px';
+                el.style.bottom  = '0'; el.style.translate='0px '+(-(startPx-this.currentPixelPos))+'px';
                 // 判定ライン前/後 暗幕
                 const mDimMask = document.createElement('div');
                 mDimMask.className = 'ln-dim-mask';
@@ -5545,7 +5545,7 @@ class BMSViewer {
                 for (const px of dividerPxs) {
                     const div = document.createElement('div'); div.className='mss-divider';
                     div._pixelPos   = px;
-                    div.style.bottom = (px - this.currentPixelPos) + 'px';
+                    div.style.bottom = '0'; div.style.translate='0px '+(-(px-this.currentPixelPos))+'px';
                     lanes[dl].appendChild(div); this.noteElements.push(div);
                 }
             }
@@ -7268,27 +7268,28 @@ class BMSViewer {
             // LN/BSS は上端(_pixelEndPos)まで表示されるので上端で判定
             const topPos = el._pixelEndPos !== undefined ? el._pixelEndPos : el._pixelPos;
             if (topPos - cur < -150) {
-                // 画面外に確実に退避（LN/BSS は height 分も考慮してマイナス設定）
+                // 画面外に確実に退避: translate で viewport 下方に押し出す
                 if (el._offscreen !== true) {
-                    const hidePos = el._pixelEndPos !== undefined
-                        ? -(el._pixelEndPos - el._pixelPos + 100)  // LN/BSS: 高さ+余白分
-                        : -200;                                     // 通常ノート
-                    el.style.bottom = hidePos + 'px';
+                    const pushDown = el._pixelEndPos !== undefined
+                        ? (el._pixelEndPos - el._pixelPos + 100)  // LN/BSS: 高さ+余白分
+                        : 200;                                     // 通常ノート
+                    el.style.translate = '0px ' + pushDown + 'px';
                     el._offscreen = true;
                 }
                 return;
             }
             // プレイエリアは 400px: 下端が上方に 420px 以上ある要素は画面外（overflow:hidden でクリップ済み）
             if (el._pixelPos - cur > 420) {
-                // 一度画面内に入ったノートが後退シークで上方に出た場合、style.bottom をリセット
+                // 一度画面内に入ったノートが後退シークで上方に出た場合、translate をリセット
                 if (el._offscreen === false) {
-                    el.style.bottom = (el._pixelPos - cur) + 'px';
+                    el.style.translate = '0px ' + (-(el._pixelPos - cur)) + 'px';
                     el._offscreen = undefined;
                 }
                 return;
             }
             el._offscreen = false;
-            el.style.bottom = (el._pixelPos - cur) + 'px';
+            // translate のみ変更（Reflow不要・GPU合成のみで完結）
+            el.style.translate = '0px ' + (-(el._pixelPos - cur)) + 'px';
             // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
             if (el._dimMask) {
                 el._dimMask.style.display = cur >= el._pixelPos ? 'none' : '';
@@ -7305,10 +7306,10 @@ class BMSViewer {
                 const _pinHeld = this._heldLN ? this._heldLN.get(el._dl) : null;
                 const _pinOk = !this.isPlayMode || (_pinHeld && _pinHeld.pinEligible);
                 if (this.lnHeadPin && _pinOk && cur >= el._pixelPos && cur < el._pixelEndPos) {
-                    el._headNote.style.bottom = (cur - el._pixelPos) + 'px';
+                    el._headNote.style.translate = '0px ' + (-(cur - el._pixelPos)) + 'px';
                     el._headCap.style.display = 'none';
                 } else {
-                    el._headNote.style.bottom = '';
+                    el._headNote.style.translate = '';
                     el._headCap.style.display = '';
                 }
             }

@@ -1617,19 +1617,30 @@
         }
         .sud-cover-info {
             position:absolute; bottom:6px; left:0; right:0;
-            display:flex; pointer-events:none;
+            display:flex; align-items:flex-end; pointer-events:none;
+
         }
         #sudCoverVal {
-            width:50%; text-align:right; padding-right:24px;
+            width:50%; text-align:right; padding-right:36px;
             color:#ffffff; font-family:'Courier New',monospace;
             font-size:17px; font-weight:bold;
             text-shadow:0 1px 3px rgba(0,0,0,0.9);
         }
+        #sudCoverGreenWrap {
+            margin-left:36px; flex-shrink:0;
+            display:flex; flex-direction:column; align-items:center;
+        }
+        #sudCoverGreenRange {
+            color:#00e84c; font-family:'Courier New',monospace;
+            font-size:12px; font-weight:bold;
+            text-shadow:0 1px 3px rgba(0,0,0,0.9);
+            line-height:1.2; white-space:nowrap;
+        }
         #sudCoverGreen {
-            width:50%; text-align:left; padding-left:24px;
             color:#00e84c; font-family:'Courier New',monospace;
             font-size:17px; font-weight:bold;
             text-shadow:0 1px 3px rgba(0,0,0,0.9);
+            white-space:nowrap;
         }
         .sud-btn {
             padding:0 8px; border-radius:4px;
@@ -1985,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.876</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.884</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2083,6 +2094,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn" id="sudModeABtn">緑数字固定</button>
                 <button class="fx-btn" id="sudModeBBtn">HS固定</button>
                 <button class="fx-btn on" id="sudModeCBtn">IIDX(FS)準拠</button>
+            </div>
+            <!-- SUD+ 数字表示 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">数字表示</span>
+                <button class="fx-btn on" id="sudNumAlwaysBtn">常に表示</button>
+                <button class="fx-btn"    id="sudNumOnOpBtn">操作時のみ</button>
             </div>
             <!-- ノーツ描画 A/B/PM_POP/PM_BEAT_C -->
             <div class="detail-section">
@@ -2376,7 +2393,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div id="sudCover" class="sud-cover">
             <div class="sud-cover-info">
                 <span id="sudCoverVal"></span>
-                <span id="sudCoverGreen"></span>
+                <div id="sudCoverGreenWrap">
+                    <span id="sudCoverGreenRange"></span>
+                    <span id="sudCoverGreen"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -2816,10 +2836,12 @@ class BMSViewer {
         this.ringElements      = {};
         this.lastProcessedPx = 0;
         // SUD+
-        this.sudEnabled = false;
-        this.sudMode    = 'A';
-        this.sudCoverPx = 60;
-        this.sudBasePx   = 0;     // SUD+白数字の基準位置（px）
+        this.sudEnabled    = false;
+        this.sudMode       = 'A';
+        this.sudCoverPx    = 60;
+        this.sudBasePx     = 0;     // SUD+白数字の基準位置（px）
+        this.sudNumDisplay = 'always'; // 'always' | 'onop'
+        this._sudInfoTimer = null;
         // DOM差分更新キャッシュ
         this._lastPosText   = null;
         this._lastBpmText   = null;
@@ -3329,6 +3351,7 @@ class BMSViewer {
         }
         this.renderNotes();
         this._updateUI();
+        this._updateRealGreen();
         this._refreshLoopUI(false);
         document.getElementById('loading').style.display  ='none';
         const _pb = document.getElementById('playBtn');
@@ -3643,6 +3666,7 @@ class BMSViewer {
             this.sudEnabled = !this.sudEnabled;
             document.getElementById('sudBtn').classList.toggle('on', this.sudEnabled);
             this._sudUpdateCoverDOM();
+            if (this.sudEnabled) this._sudShowInfoTemp(); // SUD+ONにしたとき一時表示
             if (this.sudMode === 'C') {
                 // モードC: ON/OFFはHSそのまま、緑数字だけ更新
                 // ONにした瞬間: 現在の可視緑数字をtargetGreenNumとして記録
@@ -3695,6 +3719,24 @@ class BMSViewer {
             document.getElementById('sudModeABtn').classList.remove('on');
             document.getElementById('sudModeBBtn').classList.remove('on');
             if (this.sudEnabled) this._reapplyHS();
+        });
+
+        // SUD+ 数字表示モード
+        document.getElementById('sudNumAlwaysBtn').addEventListener('click', () => {
+            this.sudNumDisplay = 'always';
+            document.getElementById('sudNumAlwaysBtn').classList.add('on');
+            document.getElementById('sudNumOnOpBtn').classList.remove('on');
+            clearTimeout(this._sudInfoTimer);
+            const info = this._elCoverInfo || (this._elCoverInfo = document.querySelector('.sud-cover-info'));
+            if (info) info.style.opacity = '1';
+        });
+        document.getElementById('sudNumOnOpBtn').addEventListener('click', () => {
+            this.sudNumDisplay = 'onop';
+            document.getElementById('sudNumOnOpBtn').classList.add('on');
+            document.getElementById('sudNumAlwaysBtn').classList.remove('on');
+            clearTimeout(this._sudInfoTimer);
+            const info = this._elCoverInfo || (this._elCoverInfo = document.querySelector('.sud-cover-info'));
+            if (info) info.style.opacity = '0';
         });
 
         document.getElementById('lnModeABtn').addEventListener('click', () => {
@@ -4611,17 +4653,19 @@ class BMSViewer {
     _updateRealGreen() {
         const el = document.getElementById('statusGreenNum');
         const cg = document.getElementById('sudCoverGreen');
+        const cgr = document.getElementById('sudCoverGreenRange');
         if (!this.bmsData || this.hiSpeed <= 0) {
             if (el) el.textContent = '—';
             if (cg) cg.textContent = this.targetGreenNum || 225;
+            if (cgr) cgr.textContent = '';
             return;
         }
         const bpm   = this._bpmAt(this.currentPixelPos);
         const green = Math.round(175300 / (bpm * this.hiSpeed));
         let greenVal = green;
+        const effH   = 400;
+        const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx));
         if (this.sudEnabled) {
-            const effH   = 400;
-            const visEff = Math.max(0, Math.min(effH, 400 - this.sudCoverPx));
             if (this.sudMode === 'A' || this.sudMode === 'C') {
                 greenVal = Math.round(this.targetGreenNum || green);
             } else if (this.sudMode === 'B') {
@@ -4630,6 +4674,21 @@ class BMSViewer {
         }
         if (el) el.textContent = greenVal;
         if (cg) cg.textContent = greenVal;
+        // min/max BPM 緑数字レンジ
+        if (cgr) {
+            const _allBpms = [this.bmsData.headers.bpm || 130, ...(this.bmsData.bpmChanges || []).map(c => c.bpm)].filter(b => b > 0);
+            const _minBpm = Math.min(..._allBpms) * this.realSpeed;
+            const _maxBpm = Math.max(..._allBpms) * this.realSpeed;
+            if (_maxBpm > _minBpm + 0.01) {
+                const _rawMin = 175300 / (_maxBpm * this.hiSpeed);
+                const _rawMax = 175300 / (_minBpm * this.hiSpeed);
+                const _gMin = this.sudEnabled ? Math.round(_rawMin * visEff / effH) : Math.round(_rawMin);
+                const _gMax = this.sudEnabled ? Math.round(_rawMax * visEff / effH) : Math.round(_rawMax);
+                cgr.textContent = `${_gMin}-${_gMax}`;
+            } else {
+                cgr.textContent = '';
+            }
+        }
     }
 
     /* HS = 175300 / (headerBPM × RS × 緑数字)  ← 緑数字固定・HS自動決定 */
@@ -5701,9 +5760,11 @@ class BMSViewer {
         if (cv) cv.textContent = Math.round(this.sudCoverPx / 400 * 1000);
         // カバー内緑数字: BPM変化に追従する実際の可視緑数字
         const cg = this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'));
+        const cgr = this._elCoverGreenRange || (this._elCoverGreenRange = document.getElementById('sudCoverGreenRange'));
         if (cg) {
             if (!this.bmsData || this.hiSpeed <= 0) {
                 cg.textContent = this.targetGreenNum || 225;
+                if (cgr) cgr.textContent = '';
             } else {
                 const _bpm = (this.regulSpeed && this._rsK)
                     ? this._bpmAtBar(0) * this.realSpeed
@@ -5712,8 +5773,36 @@ class BMSViewer {
                 const _effH = 400;
                 const _vis  = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                 cg.textContent = this.sudEnabled ? Math.round(_raw * _vis / _effH) : _raw;
+
+                // min/max BPM 緑数字レンジ
+                if (cgr) {
+                    const _allBpms = [this.bmsData.headers.bpm || 130, ...(this.bmsData.bpmChanges || []).map(c => c.bpm)].filter(b => b > 0);
+                    const _minBpm = Math.min(..._allBpms) * this.realSpeed;
+                    const _maxBpm = Math.max(..._allBpms) * this.realSpeed;
+                    if (_maxBpm > _minBpm + 0.01) {
+                        const _rawMin = 175300 / (_maxBpm * this.hiSpeed); // 最高BPM→最小緑数字
+                        const _rawMax = 175300 / (_minBpm * this.hiSpeed); // 最低BPM→最大緑数字
+                        const _gMin = this.sudEnabled ? Math.round(_rawMin * _vis / _effH) : Math.round(_rawMin);
+                        const _gMax = this.sudEnabled ? Math.round(_rawMax * _vis / _effH) : Math.round(_rawMax);
+                        cgr.textContent = `${_gMin}-${_gMax}`;
+                    } else {
+                        cgr.textContent = '';
+                    }
+                }
             }
         }
+        // 数字表示モード: always なら常に visible に保つ
+        const _info = this._elCoverInfo || (this._elCoverInfo = document.querySelector('.sud-cover-info'));
+        if (_info && this.sudNumDisplay === 'always') _info.style.opacity = '1';
+    }
+
+    _sudShowInfoTemp() {
+        if (this.sudNumDisplay === 'always') return;
+        const info = this._elCoverInfo || (this._elCoverInfo = document.querySelector('.sud-cover-info'));
+        if (!info) return;
+        info.style.opacity = '1';
+        clearTimeout(this._sudInfoTimer);
+        this._sudInfoTimer = setTimeout(() => { info.style.opacity = '0'; }, 1000);
     }
 
     _setSudCoverPx(px, rebuild = true) {
@@ -5731,6 +5820,7 @@ class BMSViewer {
         const onMove = (y) => {
             const scale = Math.min(window.innerWidth / 390, window.innerHeight / 640);
             this._setSudCoverPx(startH + (y - startY) / scale, false);
+            this._sudShowInfoTemp(); // ドラッグ中は1秒タイマーをリセットし続ける
         };
         const onEnd  = () => {
             if (!dragging) return;
@@ -5749,6 +5839,7 @@ class BMSViewer {
         cover.addEventListener('mousedown', (e) => {
             if (!this.sudEnabled) return;
             dragging = true; startY = e.clientY; startH = this.sudCoverPx;
+            this._sudShowInfoTemp(); // タッチ開始
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup',   onMouseUp);
         });
@@ -5756,6 +5847,7 @@ class BMSViewer {
             if (!this.sudEnabled) return;
             dragging = true;
             startY = e.touches[0].clientY; startH = this.sudCoverPx;
+            this._sudShowInfoTemp(); // タッチ開始
             window.addEventListener('touchmove', onTouchMove, { passive: false });
             window.addEventListener('touchend',  onTouchEnd);
         }, { passive: true });

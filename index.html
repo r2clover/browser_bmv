@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.884</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.888</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2468,6 +2468,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <button class="saracho-btn" id="sarachoBtn">GC</button>
             <button class="rs-btn" id="rsBtn">RS</button>
+            <span id="footerGreenNum" style="margin-left:auto; font-size:10px; color:#00e84c; font-family:'Courier New',monospace; font-weight:bold; text-align:right; white-space:nowrap;">—</span>
         </div>
         <!-- LANE 行 -->
         <div class="loop-row">
@@ -4458,7 +4459,165 @@ class BMSViewer {
         });
 
         // 説明ボタン
-        const _helpLines = '<span class=\"help-h1\">【仕様】</span>\n・ブラウザで動作するBMSビューワーです\n・BMS/BME/ZIP形式に対応しています\n・ZIPの中に複数のBMSファイルが格納されている場合、選択画面が表示されます\n・シングルプレイ譜面のみ対応しています\n・再生可能な音源はWAVのみです\n・BGAは表示されません\n・譜面下部のシークバーで好きな地点から再生できます\n・デフォルトはWAV ON、ガイド音 OFF、メトロノーム OFFです\n\n<span class=\"help-sep\">---通常オプション---</span>\n<span class=\"help-h1\">【速度系オプション】</span>\n・PS：PLAY SPEED 曲そのものの速度を変更します\n・緑数字：曲開始時の緑数字を指定します\nこの数字をベースにハイスピードの倍率が決まります\nハイスピードの倍率を直接指定することはできません\n・リアルタイム緑数字（青緑）：BPMに連動して変化する曲現時点の緑数字です\n・GC：GEAR CHANGE いわゆる皿チョンです\n現在の緑数字を冒頭の緑数字に戻します\n・RS：REGUL-SPEED BPM変化しても冒頭の緑数字のスクロール速度を維持します\n\n<span class=\"help-h1\">【SUD+】</span>\n・SUD+ボタン：ONにすると上部にカバーが表示され、降ってくるノーツを隠します\n・数字：カバーの高さをピクセルで表示します。カバーをドラッグすると高さを調整できます\n・モードA（詳細オプション内）：SUD+のカバー高さをそのままに、ハイスピードを変更します（緑数字が変化します）\n・モードB（詳細オプション内）：緑数字を固定したまま、SUD+のカバー高さのみを変更します\n\n<span class=\"help-h1\">【配置系オプション】</span>\n・LANE：1〜7の数字を直接入力し、数字に対応したレーンのノーツを入れ替えます\n・R：RANDOM ONにするとLANE内の数字をランダムに入れ替えます\nOFFにすると1234567（正規）に戻ります\n・M：MIRROR ONにするとLANE内の数字を左右反転した譜面になります\n・S：S-RANDOM ONにするとノーツ単位で配置がランダムになります\n・H：H-RANDOM ONにするとノーツ単位で配置がランダムになりますが、連打にならないよう配置が調整されます\n\n<span class=\"help-sep\">---詳細オプション---</span>\n<span class=\"help-h1\">【表示系オプション】</span>\n・表示：各種エフェクトのON/OFFを切り替えます\n　- 判定：判定文字（GREAT/コンボ数）の表示をON/OFFします\n　- ビーム：ノーツ通過時のレーンビームエフェクトをON/OFFします\n　- ボムA：ノーツ通過時にフルエフェクトのボム（爆発円＋拡散リング）を表示します\n　- ボムB：ボムAより軽量化されたシンプルなボムを表示します（ボムAと同時ONにはなりません）\n　- BPM：BPM変化のタイミングを示すガイドラインを表示します\n・JUDGE：判定文字の見た目をJUST GREAT風か通常GREAT風に切り替えます\n・色/フレーム：JUSTモード時、判定文字の色が何フレームごとに切り替わるかを指定します\n　端末のリフレッシュレートに依存します（60Hzで1フレーム≒16.7ms）\n\n<span class=\"help-h1\">【クォンタイズ】</span>\n・一定のリズムより細かいノーツを指定したグリッドに吸い付かせる機能です\n・16分：16分音符グリッドにスナップします（32分・64分など16分より細かいリズムが対象）\n・8分：8分音符グリッドにスナップします（16分・32分など8分より細かいリズムが対象）\n・ボタンを再クリックするとクォンタイズがOFFになり元の譜面に戻ります\n・ビジュアルのみ：表示位置のみクォンタイズします。WAVは元のタイミングで再生されます\n・WAVも適用：表示位置とWAV再生タイミングの両方をクォンタイズします\n・BGMはビジュアル・WAVともにクォンタイズの対象外です\n・クォンタイズ後に同レーンでノーツが重なる場合はそのノーツの位置を変更しません\n\n<span class=\"help-h1\">【音系オプション】</span>\n<span class=\"help-h2\">《WAV》</span>\n・BGM1：0〜1小節目にアサインされたBGMのWAV再生をON/OFFします\n・BGM2：2小節目以降にアサインされたBGMのWAV再生をON/OFFします\n・KEY：キー音にアサインされたWAV再生をON/OFFします\n・WAV音量：BGM1、BGM2、KEYの音量をそれぞれ変更します\n\n<span class=\"help-h2\">《ガイド音》</span>\n・SC/KEYボタン：ONにするとノーツが判定ラインに重なったタイミングで音を鳴らします\nスクラッチとキーを個別にON/OFF設定します\n・SC/KEYバー：ガイド音の音量を変更します\n・SC/KEY音程：ガイド音の音程を変更します（±12）\n\n<span class=\"help-h2\">《メトロノーム》</span>\n・メトロノーム：ONにするとメトロノームサウンドが再生されます\n・音量：メトロノームの音量を変更します\n\n<span class=\"help-h2\">《判定オフセット》</span>\n・OFS：判定ラインのタイミングをms単位でずらします（-300〜+300ms）\nプラス方向で判定ラインが手前側（早め）、マイナス方向で奥側（遅め）になります\n・RESET：オフセットを0msに戻します\n\n<span class=\"help-h2\">《リピートオプション》</span>\n・REPEAT：ONにすると範囲指定した小節間でリピート再生します\n範囲指定：緑が開始点、赤が終了点です\n終了点には曲の最終小節が初期値として入力されます';
+        const _helpLines = `<span class="help-h1">【仕様】</span>
+・ブラウザで動作するBMSビューワーです
+・BMS / BME / PMS / ZIP 形式に対応しています
+・ZIPの中に複数のBMSファイルが格納されている場合、選択画面が表示されます
+・IIDX 7鍵（1P/2P/DP）・ポップンミュージック 9鍵（PM）に対応しています
+・再生可能な音源はWAVのみです（OGG等は再生されません）
+・BGA（動画・静止画）の表示に対応しています（詳細オプションで切り替え）
+・譜面下部のシークバーで任意の地点から再生できます
+・デフォルトはWAV ON、ガイド音 OFF、メトロノーム OFFです
+
+<span class="help-sep">--- メイン画面 ---</span>
+<span class="help-h1">【サイドボタン（1P / 2P / pm）】</span>
+・1P / 2P：IIDXの1P側・2P側の配置で譜面を表示します
+　7鍵BMS/BMEを読み込むと自動で2Pモードに切り替わります
+・pm：ポップンミュージック形式（9鍵）の譜面を表示します
+　PMSファイルを読み込むと自動でpmモードに切り替わります
+
+<span class="help-h1">【SUD+】</span>
+・SUD+ボタン：ONにすると上部にカバーが表示され、降ってくるノーツを隠します
+・↑↓ボタン：カバーを一定量上下に移動します
+・カバーをドラッグ：カバーの高さを直接調整できます
+・カバー内の白数字：現在のカバー高さ（ピクセル）
+・カバー内の緑数字：現在の可視緑数字（BPMに連動して変化）
+・BPM変化のある曲では緑数字の上に最低緑数字-最高緑数字の範囲を小さく表示します
+
+<span class="help-h1">【SPEED行（フッター）】</span>
+・緑数字入力欄：曲開始時の緑数字を指定します。この値をベースにHSが自動計算されます
+・HS：現在のハイスピード倍率（読み取り専用）
+・GC：GEAR CHANGE（いわゆる皿チョン）。現在のBPMで計算した緑数字を冒頭緑数字に戻します
+・RS：REGUL-SPEED。BPM変化に関わらず冒頭と同じスクロール速度を維持します
+・右端の緑数字（小）：現在のBPMから計算されたリアルタイムの緑数字です
+
+<span class="help-h1">【LANE行（フッター）】</span>
+・LANE：1〜7（pmは1〜9）の数字を直接入力し、対応するレーンのノーツを入れ替えます
+・R：RANDOM。LANEの数字をランダムに入れ替えます。再クリックで正規配置に戻ります
+・M：MIRROR。左右反転の配置になります
+・S：S-RANDOM。ノーツ単位でレーン配置をランダムに変更します
+・H：H-RANDOM。S-RANDOMに加え、連打にならないよう配置が調整されます
+・Q16：16分より細かいノーツを16分グリッドに吸い付かせます（再クリックでOFF）
+・Q8：8分より細かいノーツを8分グリッドに吸い付かせます（再クリックでOFF）
+
+<span class="help-sep">--- 詳細オプション ---</span>
+<span class="help-h1">【モード】</span>
+・AUTO PLAY：全ノーツが自動で処理される視聴モードです
+・PLAY MODE：キーボードまたはコントローラーでノーツを押してプレイするモードです
+　PLAY MODEではキー音はプレイヤーの入力時のみ鳴ります
+
+<span class="help-h1">【クォンタイズ再生】</span>
+・Q16/Q8でクォンタイズを適用している場合のWAV再生タイミングを選択します
+・元の譜面：表示はクォンタイズされますがWAVは元のタイミングで再生されます
+・クォンタイズ後：表示とWAV再生タイミングの両方をクォンタイズします
+・BGMはどちらの設定でもクォンタイズの対象外です
+
+<span class="help-h1">【コントローラー】（PLAY MODE・IIDXモード時のみ表示）</span>
+・OFF：キーボード入力のみ使用します
+・ENTRY/PREMIUM：beatmania IIDX ENTRY / PREMIUM モデルで接続します
+・PS2：PS2コントローラーアダプター経由で接続します
+・PHOENIX WAN：PHOENIX WAN を INFINITASモードで接続します
+・コントローラー確認：接続中のゲームパッドのボタン状態と軸の値を表示します
+
+<span class="help-h1">【GROOVE GAUGE】</span>
+・ゲージタイプを選択します（NORMAL / EASY / HARD / EX HARD / 段位認定）
+・pmモード時：pmノーマル / pm辛ゲージ / pmイージーから選択できます
+・初期ゲージ値：ゲージの開始値を変更できます（2〜100%）
+
+<span class="help-h1">【PLAY SPEED】</span>
+・曲そのものの速度を倍率で変更します（0.1〜10倍）
+・RSと組み合わせると任意のBPMで固定再生できます
+
+<span class="help-h1">【REPEAT】</span>
+・ONにすると指定した小節範囲をループ再生します
+・開始点（緑）と終了点（赤）の小節番号を入力します
+
+<span class="help-h1">【SUD+モード】</span>
+・緑数字固定：カバーを動かすとHSが自動調整され緑数字が常に一定に保たれます
+・HS固定：HS変更なし。カバーを動かすと見た目の緑数字が変化します
+・IIDX(FS)準拠：SUD+ONにした瞬間の緑数字をターゲットとして記録し、BPM変化時にHSを微調整して緑数字を維持します
+
+<span class="help-h1">【数字表示】</span>
+・常に表示：SUD+カバー内の白数字・緑数字を常時表示します
+・操作時のみ：カバーのタッチ、SUD+の移動、SUD+をONにした時に1秒間だけ表示します
+
+<span class="help-h1">【ノーツ / チャージノーツ】</span>
+・通常/軽量：IIDXモードのノーツ描画スタイルを選択します
+・ポップ君風 / ポップ君風ライト / BEAT POP / BEAT POPカラー：PMモード時のスタイルです
+
+<span class="help-h1">【チャージノーツ処理】</span>
+・判定ライン通過：チャージノーツの頭が判定ラインを通過した時点で処理します
+・判定ラインに残す：チャージノーツの頭を判定ラインの位置に固定して残します
+
+<span class="help-h1">【キービーム】</span>
+・ノーツ通過時のレーンビームの長さを SHORT / NORMAL / LONG から選択します
+・PMモード時は pmノーマル / pmライト を選択できます。pmライトは長さ変更不可です
+・OFF：ビームを非表示にします
+
+<span class="help-h1">【ボム】</span>
+・通常：ノーツ通過時に爆発エフェクト（円＋拡散リング）を表示します
+・軽量：よりシンプルなボムエフェクトを表示します
+・OFF：ボムエフェクトを非表示にします
+
+<span class="help-h1">【BPM】</span>
+・ライン表示：BPM変化のタイミングを横ラインと数字で表示します
+・数字のみ：ラインは表示せず数字のみ表示します
+・OFF：BPM変化表示を非表示にします
+
+<span class="help-h1">【BGA】</span>
+・表示/非表示：ZIPに含まれる動画・画像ファイルをBGAとして表示します
+・背景透過率：BGA映像の不透明度を調整します（0%で完全透明）
+
+<span class="help-h1">【判定文字】</span>
+・PGREAT：JUST GREAT風の演出（色変化アニメーション）で表示します
+・NORMAL：通常のGREAT風表示です
+・SIMPLE：シンプルな判定文字のみ表示します
+・OFF：判定文字を非表示にします
+・PGREAT点滅速度：PGREATモード時の色変化フレーム数を指定します（端末のリフレッシュレート依存）
+・判定文字サイズ：判定文字の大きさをpxで指定します
+・判定文字高さ：判定文字の表示位置（下からのpx）を指定します
+
+<span class="help-h1">【FAST/SLOW】（PLAY MODEのみ）</span>
+・ONにするとノーツを早押し(FAST)・遅押し(SLOW)した場合に画面左側に表示します
+・ステータスバーにFASTとSLOWの累計カウントも表示されます
+
+<span class="help-h1">【判定自動調整】（PLAY MODEのみ）</span>
+・ONにすると過去20打のFAST/SLOWの平均から判定タイミング（描画）を自動的に補正します
+・現在の補正量がmsで表示されます
+
+<span class="help-h2">《WAV》</span>
+・BGM1：0〜1小節目にアサインされたBGMのWAV再生をON/OFFします
+・BGM2：2小節目以降にアサインされたBGMのWAV再生をON/OFFします
+・KEY：キー音のWAV再生をON/OFFします（PLAY MODEではプレイヤー入力時のみ再生）
+・WAV BGM音量 / WAV キー音量：それぞれの音量を個別に調整します
+
+<span class="help-h2">《ガイド音》</span>
+・SC / KEY：ONにするとノーツが判定ラインを通過したタイミングでガイド音を鳴らします
+・音量：SC・KEY それぞれのガイド音音量を調整します
+・音程：ガイド音の音程を半音単位で変更します（±12）
+・AUTO PLAYのみ動作します
+
+<span class="help-h2">《メトロノーム》</span>
+・メトロノームボタン：ONにするとBPMに同期したメトロノーム音を再生します
+・音量：メトロノームの音量を調整します
+
+<span class="help-h2">《判定タイミング（音）》</span>
+・OFS：WAVの再生タイミングをms単位でずらします（-300〜+300ms）
+・プラス方向で早め（ノーツより前に音が鳴る）、マイナス方向で遅めになります
+・RESET：0msに戻します
+
+<span class="help-h2">《判定タイミング（描画）》</span>
+・OFS：ノーツの判定タイミングをms単位でずらします（-300〜+300ms）
+・プラス方向で早め、マイナス方向で遅めになります
+・RESET：0msに戻します
+
+<span class="help-h1">【描画FPS】</span>
+・アニメーションの更新レートを 30 / 60 / 120 / 144 / 無制限 から選択します
+・端末のリフレッシュレートに合わせて設定することを推奨します
+
+<span class="help-h1">【EFFECT / EQ】</span>
+・オーディオエフェクト（Flanger、Phaser、Echo、Reverb）と3バンドEQを設定します
+・各エフェクトは個別にON/OFFでき、パラメータを調整できます`;
         document.getElementById('helpBtn').addEventListener('click', () => {
             document.getElementById('helpBody').innerHTML = _helpLines;
             document.getElementById('helpOverlay').classList.add('open');
@@ -4651,13 +4810,15 @@ class BMSViewer {
 
     /* 現緑 = 175300 / (currentBPM × HS)  ← リアルタイム更新 */
     _updateRealGreen() {
-        const el = document.getElementById('statusGreenNum');
-        const cg = document.getElementById('sudCoverGreen');
+        const el  = document.getElementById('statusGreenNum');
+        const cg  = document.getElementById('sudCoverGreen');
         const cgr = document.getElementById('sudCoverGreenRange');
+        const fg  = this._elFooterGreen || (this._elFooterGreen = document.getElementById('footerGreenNum'));
         if (!this.bmsData || this.hiSpeed <= 0) {
             if (el) el.textContent = '—';
             if (cg) cg.textContent = this.targetGreenNum || 225;
             if (cgr) cgr.textContent = '';
+            if (fg) fg.textContent = '—';
             return;
         }
         const bpm   = this._bpmAt(this.currentPixelPos);
@@ -4674,6 +4835,7 @@ class BMSViewer {
         }
         if (el) el.textContent = greenVal;
         if (cg) cg.textContent = greenVal;
+        if (fg) fg.textContent = greenVal;
         // min/max BPM 緑数字レンジ
         if (cgr) {
             const _allBpms = [this.bmsData.headers.bpm || 130, ...(this.bmsData.bpmChanges || []).map(c => c.bpm)].filter(b => b > 0);
@@ -5548,6 +5710,7 @@ class BMSViewer {
         if (_greenT !== this._lastGreenText) {
             document.getElementById('statusGreenNum').textContent = _greenT;
             (this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'))).textContent = _greenT;
+            (this._elFooterGreen || (this._elFooterGreen = document.getElementById('footerGreenNum'))).textContent = _greenT;
             this._lastGreenText = _greenT;
         }
         // ステータスバー: 経過時間

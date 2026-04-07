@@ -735,14 +735,14 @@
             background:linear-gradient(to bottom,#FF6000 0%,#FE9C00 100%) !important;
             -webkit-background-clip:text !important; background-clip:text !important;
             -webkit-text-fill-color:transparent !important;
-            filter:drop-shadow(0 0 6px rgba(255,120,0,.6)) !important;
+            filter:none !important;
         }
         /* POOR: オレンジ */
         .play-judge-display.pj-poor .play-judge-label {
             background:linear-gradient(to bottom,#FF6000 0%,#FE9C00 100%) !important;
             -webkit-background-clip:text !important; background-clip:text !important;
             -webkit-text-fill-color:transparent !important;
-            filter:drop-shadow(0 0 6px rgba(255,120,0,.6)) !important;
+            filter:none !important;
         }
         /* PMモードサイズ */
         .pm-mode .play-judge-positioner { --pj-size:40px; }
@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.893</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.895</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2013,6 +2013,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">モード</span>
                 <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
                 <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
+                <button class="fx-btn"    id="playModeAutoWavBtn">WAVオート</button>
             </div>
             <!-- クォンタイズ再生モード -->
             <div class="detail-section nowrap">
@@ -2795,6 +2796,7 @@ class BMSViewer {
         this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
         this.bombMode         = 'B';     // ボム: A/B/OFF
         this.isPlayMode       = false;   // false=オートプレイ / true=プレイモード
+        this.isAutoWavMode    = false;   // true=PLAY MODE（キー音オート）: キー入力判定+WAV自動再生
         // プレイモード判定カウンター
         this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
         this._bdCount = 0; this._prCount = 0;
@@ -3155,9 +3157,9 @@ class BMSViewer {
         this._ensureAudioCtx();
         const buf = this.wavBuffers[wavId];
         if (!buf || !this._audioCtx) return;
-        // PLAY MODE: FXチェーン・Limiterをバイパスして最低遅延で再生
-        // AUTO PLAY: 通常通り FXチェーン経由
-        const gainNode = (this.isPlayMode && this._keyDirectGain)
+        // 通常PLAY MODE: FXチェーン・Limiterをバイパスして最低遅延で再生
+        // AUTO PLAY / WAVオートモード: 通常通り FXチェーン経由
+        const gainNode = (this.isPlayMode && !this.isAutoWavMode && this._keyDirectGain)
             ? this._keyDirectGain : this._keyGainNode;
         if (!gainNode) return;
         const src = this._audioCtx.createBufferSource();
@@ -4136,17 +4138,21 @@ class BMSViewer {
         document.getElementById('bombBBtn').addEventListener('click',   () => _setBombMode('B'));
         document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
 
-        // モード選択（AUTO PLAY / PLAY MODE）
-        const _setPlayMode = (isPlay) => {
-            this.isPlayMode = isPlay;
-            document.getElementById('autoPlayModeBtn').classList.toggle('on', !isPlay);
-            document.getElementById('playModeBtn').classList.toggle('on',  isPlay);
-            if (isPlay) { this.combo = 0; this._preWarmAudio(); }
+        // モード選択（AUTO PLAY / PLAY MODE / WAVオート）
+        // mode: 'auto' | 'play' | 'autoWav'
+        const _setPlayMode = (mode) => {
+            this.isPlayMode    = (mode !== 'auto');
+            this.isAutoWavMode = (mode === 'autoWav');
+            document.getElementById('autoPlayModeBtn').classList.toggle('on',    mode === 'auto');
+            document.getElementById('playModeBtn').classList.toggle('on',        mode === 'play');
+            document.getElementById('playModeAutoWavBtn').classList.toggle('on', mode === 'autoWav');
+            if (this.isPlayMode) { this.combo = 0; this._preWarmAudio(); }
             else { this._resetPlayCounters(); } // AUTO切替時: judgedフラグリセット＋カウント再計算
             _updateJustFrameVis();
         };
-        document.getElementById('autoPlayModeBtn').addEventListener('click', () => _setPlayMode(false));
-        document.getElementById('playModeBtn').addEventListener('click',     () => _setPlayMode(true));
+        document.getElementById('autoPlayModeBtn').addEventListener('click',    () => _setPlayMode('auto'));
+        document.getElementById('playModeBtn').addEventListener('click',        () => _setPlayMode('play'));
+        document.getElementById('playModeAutoWavBtn').addEventListener('click', () => _setPlayMode('autoWav'));
 
         // IIDX コントローラータイプ選択
         const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn', PHOENIX_WAN:'gpPhoenixBtn' };
@@ -6080,12 +6086,14 @@ class BMSViewer {
         }
 
         // ── Pass 2: 音声再生 ──────────────────────────────────────────────
-        // プレイモードでは isAutoBgm（BGM・DP自動再生）のみ発音
+        // 通常PLAYモードは isAutoBgm（BGM・DP）のみ発音（キー音はプレイヤー入力で再生）
+        // WAVオートモードは全音を自動再生（判定のみプレイヤー入力）
         let _clapSC = false, _clapKey = false;
-        const _pass2Ev = (this.isPlayMode && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
+        const _isNormalPlay = this.isPlayMode && !this.isAutoWavMode;
+        const _pass2Ev = (_isNormalPlay && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
         for (let i = 0; i < _pass2Ev.length; i++) {
             const e = _pass2Ev[i];
-            if (this.isPlayMode && !e.isAutoBgm) continue; // プレイモード: キー音はスキップ
+            if (_isNormalPlay && !e.isAutoBgm) continue; // 通常PLAYモード: キー音はスキップ
             const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
             if (_ePx2 <= prevPx) continue;
             if (_ePx2 > curPx)   break;
@@ -6779,8 +6787,8 @@ class BMSViewer {
         }
 
         if (best) {
-            // WAV再生
-            if (best.wavId && this.wavBuffers[best.wavId]) this._playKeyWav(best.wavId);
+            // WAV再生（WAVオートモードでは自動再生するためスキップ）
+            if (best.wavId && this.wavBuffers[best.wavId] && !this.isAutoWavMode) this._playKeyWav(best.wavId);
             // 判定
             const refPx      = best.adjPxVisual ?? best.px;
             const rawDeltaMs = (refPx - curPx) / pxPerMs;
@@ -6806,9 +6814,11 @@ class BMSViewer {
             }
             if (emptyPoor) this._applyJudgment('POOR', dl, true); // 空POOR
             else if (this.currentSide === 'PM') this._triggerBomb(dl, 'BAD'); // 判定なし空押し → BAD色ビーム
-            // WAVは近傍から
-            const wavId = this._findNearestWavId(dl);
-            if (wavId && this.wavBuffers[wavId]) this._playKeyWav(wavId);
+            // WAVは近傍から（WAVオートモードでは自動再生するためスキップ）
+            if (!this.isAutoWavMode) {
+                const wavId = this._findNearestWavId(dl);
+                if (wavId && this.wavBuffers[wavId]) this._playKeyWav(wavId);
+            }
         }
     }
 

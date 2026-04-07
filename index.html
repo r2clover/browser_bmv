@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.898</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.899</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2066,10 +2066,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- REPEAT -->
             <div class="detail-section">
                 <span class="detail-label">REPEAT</span>
-                <button class="loop-toggle" id="loopToggle">
-                    <span>🔁</span>
-                    <span id="loopToggleLabel">REPEAT OFF</span>
-                </button>
+                <button class="loop-toggle" id="loopToggle">🔁 REPEAT</button>
+                <button class="loop-toggle" id="loopSeamlessToggle">🔁 シームレス</button>
+                <button class="loop-toggle" id="loopHalfBarToggle">⏮ 半小節前</button>
                 <div class="loop-box" style="margin-top:6px;">
                     <div class="loop-section">
                         <button class="loop-btn loop-btn-start" id="loopStartMinus">－</button>
@@ -2772,6 +2771,7 @@ class BMSViewer {
         this.loopStart       = 0;
         this.loopEnd         = 0;
         this.loopEnabled     = false;
+        this.loopMode        = 'repeat'; // 'repeat'|'seamless'|'halfbar'
         this.laneSwapReverse = null;
         this.targetGreenNum  = 225;
         this.combo           = 0;
@@ -4737,11 +4737,19 @@ class BMSViewer {
 
 
 
-        document.getElementById('loopToggle').addEventListener('click', () => {
-            this.loopEnabled = !this.loopEnabled;
-            if (this.loopEnabled) this.currentPixelPos = this.barStartPx[this.loopStart]||0;
+        const _setLoopMode = (mode) => {
+            if (this.loopEnabled && this.loopMode === mode) {
+                this.loopEnabled = false;
+            } else {
+                this.loopEnabled = true;
+                this.loopMode = mode;
+                this.currentPixelPos = this._loopStartPx();
+            }
             this._refreshLoopUI(true);
-        });
+        };
+        document.getElementById('loopToggle').addEventListener('click',          () => _setLoopMode('repeat'));
+        document.getElementById('loopSeamlessToggle').addEventListener('click',  () => _setLoopMode('seamless'));
+        document.getElementById('loopHalfBarToggle').addEventListener('click',   () => _setLoopMode('halfbar'));
 
         // ── iOS バックグラウンド復帰対策 ──────────────────────────────
         // 画面ロック・他アプリ切替で AudioContext が suspended/interrupted になる問題
@@ -5103,6 +5111,15 @@ class BMSViewer {
     }
 
     /* ============================================================ ループ */
+    _loopStartPx() {
+        const sp = this.barStartPx[this.loopStart] || 0;
+        if (this.loopMode === 'halfbar' && this.loopStart > 0) {
+            const prevBar = this.loopStart - 1;
+            const halfPx = this._barLen(prevBar) * this.pixelsPerBar * 0.5;
+            return Math.max(0, sp - halfPx);
+        }
+        return sp;
+    }
     _clampLoop() {
         const max = this.maxBars||999;
         this.loopStart = Math.max(0, Math.min(this.loopStart, max-1));
@@ -5113,24 +5130,25 @@ class BMSViewer {
         document.getElementById('loopEndInput')  .value = this.loopEnd;
     }
     _applyLoopChange() {
-        if (this.loopEnabled) this.currentPixelPos = this.barStartPx[this.loopStart]||0;
+        if (this.loopEnabled) this.currentPixelPos = this._loopStartPx();
         this._refreshLoopUI(true);
     }
     _refreshLoopUI(updatePos=false) {
-        const toggle=document.getElementById('loopToggle');
-        const label =document.getElementById('loopToggleLabel');
-        if (this.loopEnabled) { toggle.classList.add('enabled');    label.textContent='REPEAT ON'; }
-        else                  { toggle.classList.remove('enabled'); label.textContent='REPEAT OFF'; }
+        const on = this.loopEnabled;
+        document.getElementById('loopToggle').classList.toggle('enabled',         on && this.loopMode === 'repeat');
+        document.getElementById('loopSeamlessToggle').classList.toggle('enabled', on && this.loopMode === 'seamless');
+        document.getElementById('loopHalfBarToggle').classList.toggle('enabled',  on && this.loopMode === 'halfbar');
         document.querySelectorAll('.bar-line').forEach(el => {
             const p=parseInt(el.dataset.barIndex);
-            el.classList.toggle('loop-start-line', p===this.loopStart);
-            el.classList.toggle('loop-end-line',   p===this.loopEnd);
+            el.classList.toggle('loop-start-line', on && p===this.loopStart);
+            el.classList.toggle('loop-end-line',   on && p===this.loopEnd);
         });
         this._rebuildOverlay();
         if (updatePos) this._updatePositions();
         this._updateSeekBar();
+        const _modeLabel = this.loopMode === 'seamless' ? 'シームレス' : this.loopMode === 'halfbar' ? '半小節前' : '';
         document.getElementById('loopStatus').textContent =
-            this.loopEnabled ? ` | 🔁 ${this.loopStart}〜${this.loopEnd}小節` : '';
+            on ? ` | 🔁 ${this.loopStart}〜${this.loopEnd}小節${_modeLabel ? ' ('+_modeLabel+')' : ''}` : '';
     }
     _rebuildOverlay() {
         this.noteElements = this.noteElements.filter(el => { if(el._isOverlay){el.remove();return false;} return true; });
@@ -5622,7 +5640,7 @@ class BMSViewer {
             this._stopAudio();                          // ★ WAV停止
             btn.textContent='再生'; btn.classList.replace('btn-secondary','btn-success');
         } else {
-            if(this.loopEnabled) this.currentPixelPos=this.barStartPx[this.loopStart]||0;
+            if(this.loopEnabled) this.currentPixelPos=this._loopStartPx();
             if (!this.isPlayMode) this._resetPlayCounters(); // AUTO: 再計算。PLAY: pause再開のためリセットしない
             this.isPlaying=true; btn.textContent='停止';
             btn.classList.replace('btn-success','btn-secondary');
@@ -5686,11 +5704,12 @@ class BMSViewer {
 
         // ── ループ / 末端折り返し ─────────────────────────────
         if (this.loopEnabled) {
-            const sp   = this.barStartPx[this.loopStart] || 0;
-            const ep   = this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || sp;
-            const span = ep - sp;
+            const sp      = this.barStartPx[this.loopStart] || 0;
+            const ep      = this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || sp;
+            const startPx = (this.loopMode === 'halfbar') ? this._loopStartPx() : sp;
+            const span    = ep - startPx;
             if (span > 0 && this.currentPixelPos >= ep) {
-                this.currentPixelPos = sp + (this.currentPixelPos - ep) % span;
+                this.currentPixelPos = startPx + (this.currentPixelPos - ep) % span;
                 this._syncCombo();
                 this._resetPlayCounters();
                 // S/H-RANDOM: ループごとに新しいランダム配置を生成
@@ -7264,9 +7283,21 @@ class BMSViewer {
 
     _updatePositions(updateSeek = true) {
         const cur=this.currentPixelPos;
+        // シームレスリピート: ループ内のノートをループ終点の先にも仮想表示
+        const _smls = this.loopMode === 'seamless' && this.loopEnabled && this.barStartPx.length > 0;
+        const _smlsSp = _smls ? (this.barStartPx[this.loopStart] || 0) : 0;
+        const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
+        const _smlsSpan = _smlsEp - _smlsSp;
         this.noteElements.forEach(el => {
+            // シームレス: ループ範囲内のノートが cur の後方にある場合、span 分先にシフトして表示
+            let effPos = el._pixelPos;
+            if (_smls && _smlsSpan > 0 && effPos >= _smlsSp && effPos < _smlsEp && effPos < cur - 100) {
+                const shifted = effPos + _smlsSpan;
+                if (shifted > cur) effPos = shifted;
+            }
+            const effEnd = el._pixelEndPos !== undefined ? effPos + (el._pixelEndPos - el._pixelPos) : undefined;
             // LN/BSS は上端(_pixelEndPos)まで表示されるので上端で判定
-            const topPos = el._pixelEndPos !== undefined ? el._pixelEndPos : el._pixelPos;
+            const topPos = effEnd !== undefined ? effEnd : effPos;
             if (topPos - cur < -150) {
                 // 画面外に確実に退避: translate で viewport 下方に押し出す
                 if (el._offscreen !== true) {
@@ -7279,20 +7310,20 @@ class BMSViewer {
                 return;
             }
             // プレイエリアは 400px: 下端が上方に 420px 以上ある要素は画面外（overflow:hidden でクリップ済み）
-            if (el._pixelPos - cur > 420) {
+            if (effPos - cur > 420) {
                 // 一度画面内に入ったノートが後退シークで上方に出た場合、translate をリセット
                 if (el._offscreen === false) {
-                    el.style.translate = '0px ' + (-(el._pixelPos - cur)) + 'px';
+                    el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
                     el._offscreen = undefined;
                 }
                 return;
             }
             el._offscreen = false;
             // translate のみ変更（Reflow不要・GPU合成のみで完結）
-            el.style.translate = '0px ' + (-(el._pixelPos - cur)) + 'px';
+            el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
             // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
             if (el._dimMask) {
-                el._dimMask.style.display = cur >= el._pixelPos ? 'none' : '';
+                el._dimMask.style.display = cur >= effPos ? 'none' : '';
             }
             // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（AUTOのみ、PLAYは_onLaneReleaseで処理）
             if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined &&
@@ -7305,8 +7336,8 @@ class BMSViewer {
             if (el._headNote) {
                 const _pinHeld = this._heldLN ? this._heldLN.get(el._dl) : null;
                 const _pinOk = !this.isPlayMode || (_pinHeld && _pinHeld.pinEligible);
-                if (this.lnHeadPin && _pinOk && cur >= el._pixelPos && cur < el._pixelEndPos) {
-                    el._headNote.style.translate = '0px ' + (-(cur - el._pixelPos)) + 'px';
+                if (this.lnHeadPin && _pinOk && cur >= effPos && cur < effEnd) {
+                    el._headNote.style.translate = '0px ' + (-(cur - effPos)) + 'px';
                     el._headCap.style.display = 'none';
                 } else {
                     el._headNote.style.translate = '';

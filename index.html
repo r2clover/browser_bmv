@@ -696,7 +696,7 @@
             font-variant-numeric:tabular-nums; line-height:1;
             background:linear-gradient(to bottom,#ffbf02 0%,#fffdf4 100%);
             -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-            filter:drop-shadow(0 0 8px rgba(255,191,2,0.8)) drop-shadow(0 0 16px rgba(255,191,2,0.4));
+            filter:none;
         }
         /* PGREAT: JUSTサイクルと共有 */
         .play-judge-display.pj-pgreat-pink  .play-judge-label,
@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.895</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.896</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6684,83 +6684,75 @@ class BMSViewer {
     _showPlayJudgment(judgment, dl) {
         if (!this.judgementEnabled) return;
         if (this.currentSide === 'PM') { this._showPMPlayJudgment(judgment, dl); return; }
-        const disp  = document.getElementById('playJudgeDisplay');
-        const label = document.getElementById('playJudgeLabel');
-        const combo = document.getElementById('playJudgeCombo');
+        // DOM キャッシュ（初回のみ取得）
+        if (!this._pjDisp) {
+            this._pjDisp  = document.getElementById('playJudgeDisplay');
+            this._pjLabel = document.getElementById('playJudgeLabel');
+            this._pjCombo = document.getElementById('playJudgeCombo');
+        }
+        const disp = this._pjDisp, label = this._pjLabel, combo = this._pjCombo;
         if (!disp) return;
 
         const PJ_COLORS = ['pj-pgreat-pink', 'pj-pgreat-blue', 'pj-pgreat-green'];
         const ALL_CLS   = [...PJ_COLORS, 'pj-great', 'pj-good', 'pj-bad', 'pj-poor'];
 
-        // PGREAT ラベルはモードによって変わる
         const labelText = {
             PGREAT: this.currentSide === 'PM' ? 'COOL!!' : 'GREAT',
             GREAT: 'GREAT', GOOD: 'GOOD', BAD: 'BAD', POOR: 'POOR'
         }[judgment] || judgment;
         label.textContent = labelText;
 
-        // BAD/POOR: コンボ非表示・中央寄せ
+        // BAD/POOR: コンボ非表示
         const showCombo = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
         combo.style.display = showCombo ? '' : 'none';
         if (showCombo) combo.textContent = this.combo;
 
-        // タイマーリセット
-        if (this._pjFadeTimer)  { clearTimeout(this._pjFadeTimer);   this._pjFadeTimer  = null; }
+        // タイマー全停止
+        if (this._pjFadeTimer)  { clearTimeout(this._pjFadeTimer);          this._pjFadeTimer  = null; }
         if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+        if (this._pjBlinkTimer) { cancelAnimationFrame(this._pjBlinkTimer); this._pjBlinkTimer = null; }
 
-        disp.style.transition = 'none';
-        disp.style.opacity    = '1';
-        disp.classList.remove(...ALL_CLS);
-        label.style.filter = '';
-        combo.style.filter = '';
+        disp.style.opacity = '1';
+        // クラスを一括で切り替え（remove+addを1操作にまとめて中間状態を排除）
+        disp.className = 'play-judge-display ' + (
+            judgment === 'PGREAT' ? '' :
+            judgment === 'GREAT'  ? 'pj-great' :
+            judgment === 'GOOD'   ? 'pj-good'  :
+            judgment === 'BAD'    ? 'pj-bad'   : 'pj-poor'
+        );
 
         if (judgment === 'PGREAT') {
-            // JUSTサイクル継続（止まっていれば起動）
-            if (!this._pjCycleTimer) {
-                let _cf = 0;
-                const cycle = () => {
-                    if (_cf % (this._justFrameInterval || 1) === 0) {
-                        disp.classList.remove(...PJ_COLORS);
-                        disp.classList.add(PJ_COLORS[this._justColorIdx % 3]);
-                        this._justColorIdx++;
-                    }
-                    _cf++;
-                    this._pjCycleTimer = requestAnimationFrame(cycle);
-                };
+            // JUSTカラーサイクル（rAFで毎フレーム同期）
+            let _cf = 0;
+            const cycle = () => {
+                if (_cf % (this._justFrameInterval || 1) === 0) {
+                    const col = PJ_COLORS[this._justColorIdx % 3];
+                    disp.className = 'play-judge-display ' + col;
+                    this._justColorIdx++;
+                }
+                _cf++;
                 this._pjCycleTimer = requestAnimationFrame(cycle);
-            }
+            };
+            this._pjCycleTimer = requestAnimationFrame(cycle);
         } else if (judgment === 'GREAT') {
-            disp.classList.add('pj-great');
-            // NORMAL: 点滅
-            if (!this._pjBlinkTimer) {
-                let bright = true;
-                this._pjBlinkTimer = setInterval(() => {
+            // 点滅をrAFで管理（setIntervalを廃止して表示フレームに同期）
+            let bright = true, _bf = 0;
+            const blink = () => {
+                if (++_bf % 2 === 0) { // 2フレームごとに切り替え（≒33ms@60fps）
                     bright = !bright;
-                    disp.style.opacity = bright ? '1' : '0.8';
-                }, 33);
-            }
-        } else if (judgment === 'GOOD') {
-            disp.classList.add('pj-good');
-            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
-        } else if (judgment === 'BAD') {
-            disp.classList.add('pj-bad');
-            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
-            if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
-        } else { // POOR
-            disp.classList.add('pj-poor');
-            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
-            if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
+                    disp.style.opacity = bright ? '1' : '0.75';
+                }
+                this._pjBlinkTimer = requestAnimationFrame(blink);
+            };
+            this._pjBlinkTimer = requestAnimationFrame(blink);
         }
 
         // 500ms後フェードアウト
         this._pjFadeTimer = setTimeout(() => {
             if (this._pjCycleTimer) { cancelAnimationFrame(this._pjCycleTimer); this._pjCycleTimer = null; }
-            if (this._pjBlinkTimer) { clearInterval(this._pjBlinkTimer); this._pjBlinkTimer = null; }
-            disp.classList.remove(...ALL_CLS, ...PJ_COLORS);
-            disp.style.transition = 'none';
-            disp.style.opacity    = '0';
-            label.style.filter = 'none';
-            combo.style.filter = 'none';
+            if (this._pjBlinkTimer) { cancelAnimationFrame(this._pjBlinkTimer); this._pjBlinkTimer = null; }
+            disp.className = 'play-judge-display';
+            disp.style.opacity = '0';
         }, 500);
     }
 

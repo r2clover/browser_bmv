@@ -1996,7 +1996,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.896</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.898</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2011,9 +2011,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- モード選択 -->
             <div class="detail-section nowrap">
                 <span class="detail-label">モード</span>
-                <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
+                <button class="fx-btn"    id="autoPlayModeBtn">AUTO PLAY</button>
                 <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
-                <button class="fx-btn"    id="playModeAutoWavBtn">WAVオート</button>
+                <button class="fx-btn on" id="playModeAutoWavBtn">WAVオート</button>
             </div>
             <!-- クォンタイズ再生モード -->
             <div class="detail-section nowrap">
@@ -2024,15 +2024,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- IIDX コントローラー（IIDXモード時のみ表示） -->
             <div class="detail-section nowrap" id="iidxControllerSection" style="display:none;">
                 <span class="detail-label">コントローラー</span>
-                <button class="fx-btn on" id="gpIidxOffBtn">OFF</button>
+                <button class="fx-btn"    id="gpIidxOffBtn">OFF</button>
                 <button class="fx-btn"   id="gpPremiumBtn">ENTRY/PREMIUM</button>
                 <button class="fx-btn"   id="gpPs2Btn">PS2</button>
-                <button class="fx-btn"   id="gpPhoenixBtn">PHOENIX WAN</button>
-            </div>
-            <!-- コントローラーモニター -->
-            <div class="detail-section" id="gpMonitorSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
-                <span class="detail-label">コントローラー確認</span>
-                <div id="gpMonitorBody" style="font-size:10px; color:#aaa; line-height:1.7; font-family:monospace; width:100%;"></div>
+                <button class="fx-btn on" id="gpPhoenixBtn">PHOENIX WAN</button>
             </div>
             <!-- GROOVE GAUGE タイプ選択 -->
             <div class="detail-section nowrap">
@@ -2795,8 +2790,8 @@ class BMSViewer {
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
         this.bombMode         = 'B';     // ボム: A/B/OFF
-        this.isPlayMode       = false;   // false=オートプレイ / true=プレイモード
-        this.isAutoWavMode    = false;   // true=PLAY MODE（キー音オート）: キー入力判定+WAV自動再生
+        this.isPlayMode       = true;    // false=オートプレイ / true=プレイモード
+        this.isAutoWavMode    = true;    // true=PLAY MODE（キー音オート）: キー入力判定+WAV自動再生
         // プレイモード判定カウンター
         this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
         this._bdCount = 0; this._prCount = 0;
@@ -2816,7 +2811,7 @@ class BMSViewer {
         this._pmGdInc = 1;       // PMゲージ GOOD増加量
         this._heldLN  = new Map(); // dl → { tailEvent } 保持中LN管理
         this._gpPrevButtons = new Map(); // gamepadIndex_buttonIndex → pressed
-        this._gpIidxType = 'OFF';       // 'OFF'|'PREMIUM'|'PS2'
+        this._gpIidxType = 'PHOENIX_WAN'; // 'OFF'|'PREMIUM'|'PS2'|'PHOENIX_WAN'
         this._gpPrevAxes = new Map();   // "gpIdx_axisIdx" → previous axis value
         this._pjBlinkTimer = null;
         this._pjFadeTimer  = null;
@@ -3255,14 +3250,8 @@ class BMSViewer {
                 if(base!==e.name) wavFileMap[base]=buf;
             }
 
-            const videoFileMap={};
-            for (const e of mp4Entries) {
-                const buf=await e.async('arraybuffer');
-                videoFileMap[e.name]=buf;
-                const base=e.name.split('/').pop();
-                if(base!==e.name) videoFileMap[base]=buf;
-            }
-
+            // mp4 は BGA ON 時まで展開しない（遅延ロード）
+            // imageFileMap は即時展開（静止画BGA用）
             const imageFileMap={};
             for (const e of imgEntries) {
                 const buf=await e.async('arraybuffer');
@@ -3274,10 +3263,10 @@ class BMSViewer {
             if (bmsEntries.length===1) {
                 const buf=await bmsEntries[0].async('arraybuffer');
                 const text=await this._decodeTextBuf(buf);
-                await this._loadBmsContent(text, wavFileMap, videoFileMap, imageFileMap);
+                await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, mp4Entries);
             } else {
                 document.getElementById('loading').style.display='none';
-                this._showBmsSelector(bmsEntries, wavFileMap, videoFileMap, imageFileMap);
+                this._showBmsSelector(bmsEntries, wavFileMap, imageFileMap, mp4Entries);
             }
         } catch(err) {
             document.getElementById('error').textContent='エラー: '+err.message;
@@ -3286,7 +3275,7 @@ class BMSViewer {
         }
     }
 
-    _showBmsSelector(bmsEntries, wavFileMap, videoFileMap={}, imageFileMap={}) {
+    _showBmsSelector(bmsEntries, wavFileMap, imageFileMap={}, pendingMp4Entries=[]) {
         const overlay=document.getElementById('bmsSelectOverlay');
         const list   =document.getElementById('bmsSelectList');
         list.innerHTML='';
@@ -3302,7 +3291,7 @@ class BMSViewer {
                 try {
                     const buf=await entry.async('arraybuffer');
                     const text=await this._decodeTextBuf(buf);
-                    await this._loadBmsContent(text, wavFileMap, videoFileMap, imageFileMap);
+                    await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, pendingMp4Entries);
                 } catch(err) {
                     document.getElementById('error').textContent='エラー: '+err.message;
                     document.getElementById('loading').style.display='none';
@@ -3313,10 +3302,11 @@ class BMSViewer {
         overlay.style.display='block';
     }
 
-    async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}) {
+    async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}, pendingMp4Entries=null) {
         if (this.isPlaying){this.isPlaying=false;cancelAnimationFrame(this.animFrameId);}
         this._stopAudio();
         this.wavBuffers={};
+        this._pendingMp4Entries = pendingMp4Entries; // BGA ON 時まで遅延ロード
 
         this.bmsText = text; // 再パース用に保存
         this._crossModeType = null; // 新規ロード時はクロスモードリセット
@@ -3452,6 +3442,24 @@ class BMSViewer {
         vid.onwaiting = vid.onstalled = () => {
             if (this.isPlaying && this.bgaEnabled) setTimeout(() => { vid.play().catch(() => {}); }, 200);
         };
+    }
+
+    async _loadMp4AndShowBga() {
+        const entries = this._pendingMp4Entries;
+        this._pendingMp4Entries = null; // 二重ロード防止
+        const videoFileMap = {};
+        for (const entry of entries) {
+            const buf = await entry.async('arraybuffer');
+            const name = entry.name.split('/').pop();
+            videoFileMap[name] = buf;
+        }
+        this._loadBgaVideo(videoFileMap);
+        // ロード後に表示状態を反映
+        const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
+        if (vid && vid.src) {
+            vid.style.display = 'block';
+            if (this.isPlaying) vid.play().catch(() => {});
+        }
     }
 
     _loadBgaImages(imageFileMap) {
@@ -4163,9 +4171,6 @@ class BMSViewer {
             // タイプ変更時に状態をリセット
             this._gpPrevButtons = new Map();
             this._gpPrevAxes    = new Map();
-            // OFFのときモニター非表示
-            const mon = document.getElementById('gpMonitorSection');
-            if (mon) mon.style.display = type === 'OFF' ? 'none' : '';
         };
         for (const [type, id] of Object.entries(_gpIidxIds))
             document.getElementById(id).addEventListener('click', () => _setGpIidx(type));
@@ -4257,6 +4262,10 @@ class BMSViewer {
             this.bgaEnabled = show;
             document.getElementById('bgaOnBtn').classList.toggle('on',  show);
             document.getElementById('bgaOffBtn').classList.toggle('on', !show);
+            if (show && this._pendingMp4Entries && this._pendingMp4Entries.length) {
+                this._loadMp4AndShowBga();
+                return;
+            }
             const vid = this._bgaVideoEl || document.getElementById('bgaVideo');
             if (vid) vid.style.display = show ? 'block' : 'none';
             if (show && this.isPlaying && vid && vid.src) vid.play().catch(() => {});
@@ -4545,7 +4554,6 @@ class BMSViewer {
 ・ENTRY/PREMIUM：beatmania IIDX ENTRY / PREMIUM モデルで接続します
 ・PS2：PS2コントローラーアダプター経由で接続します
 ・PHOENIX WAN：PHOENIX WAN を INFINITASモードで接続します
-・コントローラー確認：接続中のゲームパッドのボタン状態と軸の値を表示します
 
 <span class="help-h1">【GROOVE GAUGE】</span>
 ・ゲージタイプを選択します（NORMAL / EASY / HARD / EX HARD / 段位認定）
@@ -6261,17 +6269,7 @@ class BMSViewer {
     }
 
     _updateGpMonitor(gp) {
-        const el = document.getElementById('gpMonitorBody');
-        if (!el || document.getElementById('gpMonitorSection').style.display === 'none') return;
-        const btns = Array.from(gp.buttons).map((b, i) =>
-            `<span style="color:${b.pressed ? '#0f9' : '#555'}">B${i}${b.pressed ? '■' : '□'}</span>`
-        ).join(' ');
-        const axes = Array.from(gp.axes).map((v, i) =>
-            `<span>A${i}:<span style="color:#fa0;">${v.toFixed(3)}</span></span>`
-        ).join(' ');
-        el.innerHTML = `<div style="color:#88f;margin-bottom:2px;">${gp.id.substring(0,48)}</div>`
-            + `<div style="margin-bottom:2px;">${btns}</div>`
-            + `<div>${axes}</div>`;
+        return;
     }
 
     // ── IIDX コントローラーポーリング ────────────────────────────

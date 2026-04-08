@@ -2001,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.903</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.905</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2087,6 +2087,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                         <button class="loop-btn loop-btn-end" id="loopEndPlus">＋</button>
                     </div>
                 </div>
+            </div>
+            <!-- オールスクラッチ / ノースクラッチ (IIDXのみ) -->
+            <div class="detail-section nowrap" id="scrConvSection">
+                <span class="detail-label">スクラッチ変換</span>
+                <button class="fx-btn" id="allScrBtn">オールスクラッチ</button>
+                <button class="fx-btn" id="noScrBtn">ノースクラッチ</button>
             </div>
             <!-- オートレーン -->
             <div class="detail-section" id="autoLaneSection">
@@ -2754,6 +2760,8 @@ class BMSViewer {
         this.mirrorActive    = false;  // MIRROR ON/OFF
         this.sRandomActive   = false;  // S-RANDOM ON/OFF
         this.hRandomActive   = false;  // H-RANDOM ON/OFF
+        this.allScrActive    = false;  // オールスクラッチ ON/OFF
+        this.noScrActive     = false;  // ノースクラッチ ON/OFF
         this._noteRandomMap  = null;   // Map<note, newLane> ノーツ単位ランダムマッピング
         // ── WAV / ZIP ──────────────────────────────────────
         this.wavBuffers    = {};   // wavId(base-62) → AudioBuffer
@@ -3371,7 +3379,10 @@ class BMSViewer {
         this._precompute();
         this._syncLoopInputs();
         this._renderLanes();
-        // BMSロード時: S/H-RANDOM が ON なら新しいBMSデータでマップを再生成
+        // BMSロード時: スクラッチ変換 → S/H-RANDOM の順で再生成
+        if (this.allScrActive || this.noScrActive) {
+            this._buildScratchConvertMap();
+        }
         if (this.sRandomActive || this.hRandomActive) {
             this._buildNoteRandomMap(this.hRandomActive);
         }
@@ -4074,10 +4085,15 @@ class BMSViewer {
             this.sRandomActive = false;
             this.hRandomActive = false;
             this._noteRandomMap = null;
+            this.allScrActive  = false;
+            this.noScrActive   = false;
+            this._scratchConvertMap = null;
             document.getElementById('randomBtn').classList.remove('active');
             document.getElementById('mirrorBtn').classList.remove('active');
             document.getElementById('sRandomBtn').classList.remove('active');
             document.getElementById('hRandomBtn').classList.remove('active');
+            document.getElementById('allScrBtn').classList.remove('on');
+            document.getElementById('noScrBtn').classList.remove('on');
             swapEl.classList.remove('error', 'active');
             document.getElementById('error').textContent = '';
             // 判定文字ボタン切り替え（IIDX: JUST/NORMAL/SIMPLE/OFF, PM: pm_COOL!!）
@@ -4093,6 +4109,7 @@ class BMSViewer {
             document.getElementById('pmBeamLiteBtn').style.display   = isPM ? '' : 'none';
             document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
             document.getElementById('iidxControllerSection').style.display = isPM ? 'none' : '';
+            document.getElementById('scrConvSection').style.display        = isPM ? 'none' : '';
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 _updateJustFrameVis();
@@ -4478,6 +4495,8 @@ class BMSViewer {
         // S-RANDOM / H-RANDOM ボタン
         document.getElementById('sRandomBtn').addEventListener('click', () => this._toggleSRandom('s'));
         document.getElementById('hRandomBtn').addEventListener('click', () => this._toggleSRandom('h'));
+        document.getElementById('allScrBtn').addEventListener('click', () => this._toggleScrConv('allscr'));
+        document.getElementById('noScrBtn').addEventListener('click',  () => this._toggleScrConv('noscr'));
 
         // Random ボタン：ON/OFF トグル（ON→シャッフル、OFF→デフォルトに戻す）
         document.getElementById('randomBtn').addEventListener('click', () => {
@@ -4938,6 +4957,102 @@ class BMSViewer {
 
     /* ============================================================ レーン入れ替えバリデーション */
     /* ============================================================
+       オールスクラッチ / ノースクラッチ マップ生成
+       ============================================================ */
+    _buildScratchConvertMap() {
+        if (!this.bmsData) return;
+        if (!this.allScrActive && !this.noScrActive) {
+            this._scratchConvertMap = null;
+            return;
+        }
+        const EPS = 1e-9;
+        const map = new Map();
+        // IIDXノーツのみ対象（dpBgm除外）
+        const notes = this.bmsData.notes.filter(n =>
+            (n.type === 'normal' || n.type === 'ln' || n.type === 'bss' || n.type === 'mss') &&
+            !n.dpBgm && n.lane >= 0 && n.lane <= 7
+        ).sort((a, b) => a.position - b.position || a.lane - b.lane);
+
+        if (this.allScrActive) {
+            // ─── オールスクラッチ ──────────────────────────────────
+            // positionでグループ化
+            let i = 0;
+            while (i < notes.length) {
+                const pos = notes[i].position;
+                const group = [];
+                while (i < notes.length && Math.abs(notes[i].position - pos) < EPS) group.push(notes[i++]);
+                const hasScratch = group.some(n => n.lane === 0);
+                if (hasScratch) {
+                    // 既にスクラッチあり → 鍵盤ノーツはそのまま
+                    group.forEach(n => map.set(n, n.lane));
+                } else {
+                    // スクラッチなし → 最も左の鍵盤(最小lane)を1つスクラッチに変換
+                    const keyNotes = group.slice().sort((a, b) => a.lane - b.lane);
+                    map.set(keyNotes[0], 0); // 最左をスクラッチへ
+                    keyNotes.slice(1).forEach(n => map.set(n, n.lane));
+                }
+            }
+        } else {
+            // ─── ノースクラッチ ────────────────────────────────────
+            // H-RANDOMベース: 連打回避しつつスクラッチを鍵盤へ
+            // positionごとに占有中の鍵盤を把握
+            const positions = [...new Set(notes.map(n => n.position))].sort((a, b) => a - b);
+            const byPos = new Map();
+            for (const n of notes) {
+                const k = positions.find(p => Math.abs(p - n.position) < EPS);
+                if (!byPos.has(k)) byPos.set(k, []);
+                byPos.get(k).push(n);
+            }
+            let lastKey = -1; // 直前にスクラッチを配置したキーレーン（連打防止）
+            for (const pos of positions) {
+                const group = byPos.get(pos);
+                const keyNotes  = group.filter(n => n.lane >= 1 && n.lane <= 7);
+                const scrNotes  = group.filter(n => n.lane === 0);
+                const occupiedKeys = new Set(keyNotes.map(n => n.lane));
+                // 鍵盤ノーツはそのまま
+                keyNotes.forEach(n => map.set(n, n.lane));
+                // スクラッチを鍵盤へ移動（1つずつ処理）
+                for (const scr of scrNotes) {
+                    const available = [1,2,3,4,5,6,7].filter(l => !occupiedKeys.has(l));
+                    if (available.length === 0) {
+                        // 全鍵盤埋まり → スクラッチのまま
+                        map.set(scr, 0);
+                    } else {
+                        // 連打回避: lastKeyと異なるレーンを優先
+                        const preferred = available.filter(l => l !== lastKey);
+                        const pool = preferred.length > 0 ? preferred : available;
+                        const picked = pool[Math.floor(Math.random() * pool.length)];
+                        map.set(scr, picked);
+                        occupiedKeys.add(picked);
+                        lastKey = picked;
+                    }
+                }
+            }
+        }
+        this._scratchConvertMap = map;
+    }
+
+    _toggleScrConv(mode) {
+        // mode: 'allscr' | 'noscr' — 排他: 同じを押すとOFF、違うを押すと切り替え
+        const wasAllScr = this.allScrActive;
+        const wasNoScr  = this.noScrActive;
+        this.allScrActive = false;
+        this.noScrActive  = false;
+        if (mode === 'allscr' && !wasAllScr) this.allScrActive = true;
+        if (mode === 'noscr'  && !wasNoScr)  this.noScrActive  = true;
+
+        document.getElementById('allScrBtn').classList.toggle('on', this.allScrActive);
+        document.getElementById('noScrBtn').classList.toggle('on',  this.noScrActive);
+
+        this._buildScratchConvertMap();
+        // S/H-RANDOMが有効なら変換後のレーンでマップを再生成
+        if (this.sRandomActive || this.hRandomActive) {
+            this._buildNoteRandomMap(this.hRandomActive);
+        }
+        if (this.bmsData) { this.renderNotes(); this._updatePositions(); }
+    }
+
+    /* ============================================================
        S-RANDOM / H-RANDOM: ノーツ単位ランダムマッピング生成
        ============================================================ */
     _buildNoteRandomMap(hMode) {
@@ -4951,13 +5066,16 @@ class BMSViewer {
         };
 
         // PMモード: 全9レーン対象 / IIDXモード: スクラッチ除く1-7
+        // スクラッチ変換が有効な場合は変換後の実効レーンで判断
         const isPM = this.currentSide === 'PM';
+        const _effLane = (n) => (this._scratchConvertMap && this._scratchConvertMap.has(n))
+            ? this._scratchConvertMap.get(n) : n.lane;
         const targets = this.bmsData.notes.filter(n =>
             (n.type === 'normal' || n.type === 'ln' ||
              n.type === 'bss'    || n.type === 'mss') &&
             !n.dpBgm &&
-            (isPM ? (n.lane >= 0 && n.lane <= 8) : (n.lane >= 1 && n.lane <= 7))
-        ).sort((a, b) => a.position - b.position || a.lane - b.lane);
+            (isPM ? (n.lane >= 0 && n.lane <= 8) : (_effLane(n) >= 1 && _effLane(n) <= 7))
+        ).sort((a, b) => a.position - b.position || _effLane(a) - _effLane(b));
 
         const map = new Map();
         const EPS = 1e-9;
@@ -5473,15 +5591,18 @@ class BMSViewer {
                 }
                 return { dl, swappedLane: dl };
             }
-            let swappedLane = note.lane;
+            // スクラッチ変換（オールスクラッチ/ノースクラッチ）を最初に適用
+            const _baseLane = (this._scratchConvertMap && this._scratchConvertMap.has(note))
+                ? this._scratchConvertMap.get(note) : note.lane;
+            let swappedLane = _baseLane;
             // M/S/H はスクラッチ以外に適用（優先順: S/H > M > LANE入力）
             if ((this.sRandomActive || this.hRandomActive) &&
-                note.lane >= 1 && note.lane <= 7 && this._noteRandomMap) {
-                swappedLane = this._noteRandomMap.get(note) ?? note.lane;
-            } else if (this.mirrorActive && note.lane >= 1 && note.lane <= 7) {
-                swappedLane = 8 - note.lane; // MIRROR: 1↔7, 2↔6, 3↔5, 4→4
-            } else if (note.lane >= 1 && note.lane <= 7 && this.laneSwapReverse) {
-                swappedLane = this.laneSwapReverse[note.lane];
+                _baseLane >= 1 && _baseLane <= 7 && this._noteRandomMap) {
+                swappedLane = this._noteRandomMap.get(note) ?? _baseLane;
+            } else if (this.mirrorActive && _baseLane >= 1 && _baseLane <= 7) {
+                swappedLane = 8 - _baseLane; // MIRROR: 1↔7, 2↔6, 3↔5, 4→4
+            } else if (_baseLane >= 1 && _baseLane <= 7 && this.laneSwapReverse) {
+                swappedLane = this.laneSwapReverse[_baseLane];
             }
             let dl = swappedLane;
             if (this.currentSide==='2P') dl = swappedLane===0 ? 7 : swappedLane-1;
@@ -6849,6 +6970,7 @@ class BMSViewer {
 
     // ── キー押下（判定） ─────────────────────────────────────────
     _onLanePress(dl) {
+        if (this.autoLanes && this.autoLanes.has(dl)) return; // オートレーンは入力を無視
         if (this.currentSide !== 'PM') this._triggerBomb(dl);
         if (!this.isPlayMode) return;
 
@@ -6907,6 +7029,7 @@ class BMSViewer {
 
     // ── キー解放（LN終点判定） ───────────────────────────────────
     _onLaneRelease(dl) {
+        if (this.autoLanes && this.autoLanes.has(dl)) return; // オートレーンは入力を無視
         if (!this.isPlayMode) return;
         // PLAYモード: キー離しでキービームを即時非表示
         if (this.beamEnabled) {

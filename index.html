@@ -2001,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.907</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.908</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2538,7 +2538,8 @@ class BMSParser {
             wavDefs:    this.wavDefs,
             bmpDefs:    this.bmpDefs,
             bgmEvents:  this.bgmEvents,
-            bgaEvents:  this.bgaEvents
+            bgaEvents:  this.bgaEvents,
+            isPMS:      this.isPMS
         };
     }
 
@@ -3334,7 +3335,7 @@ class BMSViewer {
         {
             const _pm = text.match(/^#PLAYER\s+(\d+)/im);
             const _playerNum = _pm ? parseInt(_pm[1]) : 0;
-            const _hasDPChannels = /^#\d{3}(?:1[6-9]|2[1-9]):/im.test(text);
+            const _hasDPChannels = /^#\d{3}(?:21|2[6-9]):/im.test(text);
             parser.isPMS = _playerNum === 3 && !_hasDPChannels;
         }
         this.bmsData=parser.parse(text);
@@ -7716,7 +7717,7 @@ class BMSViewer {
             // BMS固有のisPMSでパース（#PLAYER 3 の DP BMS / PMS 区別含む）
             const _pm = this.bmsText.match(/^#PLAYER\s+(\d+)/im);
             const _playerNum = _pm ? parseInt(_pm[1]) : 0;
-            const _hasDPChannels = /^#\d{3}(?:1[6-9]|2[1-9]):/im.test(this.bmsText);
+            const _hasDPChannels = /^#\d{3}(?:21|2[6-9]):/im.test(this.bmsText);
             const bmsIsPMS = _playerNum === 3 && !_hasDPChannels;
             // クロスモード判定
             if (bmsIsPMS && side !== 'PM')       this._crossModeType = 'pm-in-iidx';

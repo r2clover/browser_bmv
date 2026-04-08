@@ -1599,6 +1599,11 @@
         .pitch-btn { padding:2px 7px; border:none; background:#444; color:#ccc; border-radius:4px; font-size:14px; cursor:pointer; line-height:1.4; }
         .pitch-btn:active { background:#666; }
         .pitch-val { font-size:12px; color:#fff; min-width:32px; text-align:center; font-weight:bold; }
+            /* ── オートレーンカバー ── */
+        .auto-lane-cover {
+            position:absolute; inset:0; z-index:25; pointer-events:none; display:none;
+            background:repeating-linear-gradient(-45deg,#001a10 0px,#001a10 5px,#002818 5px,#002818 10px);
+        }
             /* ── SUD+ カバー ── */
         .sud-cover {
             position:absolute;
@@ -1996,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.901</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.902</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2082,6 +2087,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                         <button class="loop-btn loop-btn-end" id="loopEndPlus">＋</button>
                     </div>
                 </div>
+            </div>
+            <!-- オートレーン -->
+            <div class="detail-section" id="autoLaneSection">
+                <span class="detail-label">オートレーン</span>
+                <div id="autoLaneBtns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
             </div>
             <!-- SUD+ モード -->
             <div class="detail-section nowrap">
@@ -2831,6 +2841,7 @@ class BMSViewer {
         this.noteEvents      = [];
         this.bombElements    = {};
         this.explosionElements = {};
+        this.autoLanes       = new Set(); // オートレーン: dl インデックスのSet
         this.ringElements      = {};
         this.lastProcessedPx = 0;
         // SUD+
@@ -4001,6 +4012,8 @@ class BMSViewer {
         // モード切替時のスタイルボタン表示/非表示・デフォルト設定
         const _updateStylesForMode = (side) => {
             const isPM = side === 'PM';
+            // モード変更時はオートレーンをリセット（レーン番号の意味が変わるため）
+            this.autoLanes.clear();
             // IIDXモード: pmボタン非表示
             document.getElementById('notesStylePMPopFaceBtn').style.display  = isPM ? '' : 'none';
             document.getElementById('notesStylePMPopLiteBtn').style.display  = isPM ? '' : 'none';
@@ -5110,6 +5123,38 @@ class BMSViewer {
         if (wasPlaying) { this.isPlaying=true; this.lastTimestamp=performance.now(); this._animate(); }
     }
 
+    /* ============================================================ オートレーン */
+    _rebuildAutoLaneBtns() {
+        const wrap = document.getElementById('autoLaneBtns');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        const labels = this.currentSide === '1P' ? ['SC','1','2','3','4','5','6','7'] :
+                       this.currentSide === 'PM' ? ['1','2','3','4','5','6','7','8','9'] :
+                                                   ['1','2','3','4','5','6','7','SC'];
+        for (let i = 0; i < this.laneCount; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'fx-btn' + (this.autoLanes.has(i) ? ' on' : '');
+            btn.textContent = labels[i];
+            btn.dataset.dl = i;
+            btn.addEventListener('click', () => this._toggleAutoLane(parseInt(btn.dataset.dl)));
+            wrap.appendChild(btn);
+        }
+    }
+    _toggleAutoLane(dl) {
+        if (this.autoLanes.has(dl)) this.autoLanes.delete(dl);
+        else this.autoLanes.add(dl);
+        this._updateAutoLaneUI();
+    }
+    _updateAutoLaneUI() {
+        // ボタン状態
+        document.querySelectorAll('#autoLaneBtns button').forEach(btn => {
+            btn.classList.toggle('on', this.autoLanes.has(parseInt(btn.dataset.dl)));
+        });
+        // カバー表示
+        document.querySelectorAll('.auto-lane-cover').forEach(cover => {
+            cover.style.display = this.autoLanes.has(parseInt(cover.dataset.dl)) ? 'block' : 'none';
+        });
+    }
     /* ============================================================ ループ */
     _loopStartPx() {
         const sp = this.barStartPx[this.loopStart] || 0;
@@ -5291,8 +5336,15 @@ class BMSViewer {
                 else bomb.classList.add('black-key');
             }
             lane.appendChild(bomb); this.bombElements[i] = bomb;
+            // オートレーンカバー
+            const autoCover = document.createElement('div');
+            autoCover.className = 'auto-lane-cover'; autoCover.dataset.dl = i;
+            autoCover.style.display = this.autoLanes.has(i) ? 'block' : 'none';
+            lane.appendChild(autoCover);
             c.appendChild(lane);
         }
+        // オートレーンUIボタン再構築
+        this._rebuildAutoLaneBtns();
         // 最後のレーンの右ボーダーを除去（lanes-container の border-right に委ねる）
         { const lanes = c.querySelectorAll('.lane'); if (lanes.length) lanes[lanes.length-1].style.borderRight = 'none'; }
         // 爆発リング要素を lanes-container 直接子として配置
@@ -6121,6 +6173,39 @@ class BMSViewer {
             }
         }
 
+        // ── オートレーン: PLAY MODEでもPGREAT自動判定 ───────────────────────
+        if (this.isPlayMode && this.autoLanes && this.autoLanes.size > 0) {
+            const bombed2 = new Set();
+            const pmPositions2 = new Set();
+            let triggered2 = false;
+            for (let i = 0; i < events.length; i++) {
+                const e = events[i];
+                if (e.isAutoBgm || !this.autoLanes.has(e.dl) || e.judged) continue;
+                const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
+                if (_ePx <= prevPx) continue;
+                if (_ePx > curPx)   break;
+                e.judged = true;
+                if (e._tailEvent) e._tailEvent.judged = true;
+                this.combo++;
+                this._pgCount++;
+                this._score += 2;
+                const _pgEl = document.getElementById('pgCount');
+                if (_pgEl) _pgEl.textContent = this._pgCount;
+                const _scEl = document.getElementById('scoreDisplay');
+                if (_scEl) _scEl.textContent = this._score;
+                this._applyGauge('PGREAT');
+                triggered2 = true;
+                if (!e.isEnd && !bombed2.has(e.dl)) { this._triggerBomb(e.dl, 'PGREAT'); this._triggerExplosion(e.dl); bombed2.add(e.dl); }
+                if (this.currentSide === 'PM' && !e.isEnd) {
+                    pmPositions2.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
+                }
+            }
+            if (triggered2) {
+                if (this.currentSide === 'PM') this._showPMCool(pmPositions2);
+                else this._showGreat();
+            }
+        }
+
         // ── Pass 2: 音声再生 ──────────────────────────────────────────────
         // 通常PLAYモードは isAutoBgm（BGM・DP）のみ発音（キー音はプレイヤー入力で再生）
         // WAVオートモードは全音を自動再生（判定のみプレイヤー入力）
@@ -6129,7 +6214,7 @@ class BMSViewer {
         const _pass2Ev = (_isNormalPlay && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
         for (let i = 0; i < _pass2Ev.length; i++) {
             const e = _pass2Ev[i];
-            if (_isNormalPlay && !e.isAutoBgm) continue; // 通常PLAYモード: キー音はスキップ
+            if (_isNormalPlay && !e.isAutoBgm && !(this.autoLanes && this.autoLanes.has(e.dl))) continue; // 通常PLAYモード: キー音はスキップ（オートレーンは除く）
             const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
             if (_ePx2 <= prevPx) continue;
             if (_ePx2 > curPx)   break;
@@ -6891,7 +6976,7 @@ class BMSViewer {
 
         for (const e of this.noteEvents) {
             if (e.px > curPx) break; // noteEventsはpx昇順ソート済み。curPx超えたら以降は判定不要
-            if (e.isAutoBgm || e.judged) continue;
+            if (e.isAutoBgm || e.judged || (this.autoLanes && this.autoLanes.has(e.dl))) continue;
             const refPx = e.adjPxVisual ?? e.px;
 
             if (!e.isEnd) {

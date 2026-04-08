@@ -1602,7 +1602,7 @@
             /* ── オートレーンカバー ── */
         .auto-lane-cover {
             position:absolute; inset:0; z-index:25; pointer-events:none; display:none;
-            background:repeating-linear-gradient(-45deg,#001a10 0px,#001a10 5px,#002818 5px,#002818 10px);
+            background:linear-gradient(to top, #2a2a2a 0%, #d8d8d8 100%);
         }
             /* ── SUD+ カバー ── */
         .sud-cover {
@@ -2001,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.902</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.903</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6173,11 +6173,8 @@ class BMSViewer {
             }
         }
 
-        // ── オートレーン: PLAY MODEでもPGREAT自動判定 ───────────────────────
+        // ── オートレーン: judged フラグのみ立てる（判定文字・カウント・ゲージなし）
         if (this.isPlayMode && this.autoLanes && this.autoLanes.size > 0) {
-            const bombed2 = new Set();
-            const pmPositions2 = new Set();
-            let triggered2 = false;
             for (let i = 0; i < events.length; i++) {
                 const e = events[i];
                 if (e.isAutoBgm || !this.autoLanes.has(e.dl) || e.judged) continue;
@@ -6186,23 +6183,6 @@ class BMSViewer {
                 if (_ePx > curPx)   break;
                 e.judged = true;
                 if (e._tailEvent) e._tailEvent.judged = true;
-                this.combo++;
-                this._pgCount++;
-                this._score += 2;
-                const _pgEl = document.getElementById('pgCount');
-                if (_pgEl) _pgEl.textContent = this._pgCount;
-                const _scEl = document.getElementById('scoreDisplay');
-                if (_scEl) _scEl.textContent = this._score;
-                this._applyGauge('PGREAT');
-                triggered2 = true;
-                if (!e.isEnd && !bombed2.has(e.dl)) { this._triggerBomb(e.dl, 'PGREAT'); this._triggerExplosion(e.dl); bombed2.add(e.dl); }
-                if (this.currentSide === 'PM' && !e.isEnd) {
-                    pmPositions2.add(e.dl <= 2 ? 'L' : e.dl <= 5 ? 'C' : 'R');
-                }
-            }
-            if (triggered2) {
-                if (this.currentSide === 'PM') this._showPMCool(pmPositions2);
-                else this._showGreat();
             }
         }
 

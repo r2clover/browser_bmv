@@ -2001,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.906</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.907</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5919,8 +5919,9 @@ class BMSViewer {
         const bpm = this._bpmAt(this.currentPixelPos);
         this._pollGamepad();
         if (this._loopWrapInfo) {
-            // 折り返し: prevPx→ep までを先に処理してから、newStart→curPx を処理
-            this._detectPassed(prevPx, this._loopWrapInfo.prevEp);
+            // 折り返し: prevPx→ep未満 までを先に処理してから、newStart→curPx を処理
+            // ep - 0.001: epちょうど（終点次小節の最初）のノーツを除外
+            this._detectPassed(prevPx, this._loopWrapInfo.prevEp - 0.001);
             this._detectPassed(this._loopWrapInfo.newStart - 0.001, this.currentPixelPos);
         } else {
             this._detectPassed(prevPx, this.currentPixelPos);

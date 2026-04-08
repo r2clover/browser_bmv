@@ -2001,7 +2001,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.905</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.906</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -4994,8 +4994,7 @@ class BMSViewer {
             }
         } else {
             // ─── ノースクラッチ ────────────────────────────────────
-            // H-RANDOMベース: 連打回避しつつスクラッチを鍵盤へ
-            // positionごとに占有中の鍵盤を把握
+            // H-RANDOMベース: 直前の拍で使われた全レーン（鍵盤+変換済みスクラッチ）を避けて配置
             const positions = [...new Set(notes.map(n => n.position))].sort((a, b) => a - b);
             const byPos = new Map();
             for (const n of notes) {
@@ -5003,7 +5002,7 @@ class BMSViewer {
                 if (!byPos.has(k)) byPos.set(k, []);
                 byPos.get(k).push(n);
             }
-            let lastKey = -1; // 直前にスクラッチを配置したキーレーン（連打防止）
+            let lastUsedLanes = new Set(); // 直前の拍で使われた全レーンのSet（連打防止）
             for (const pos of positions) {
                 const group = byPos.get(pos);
                 const keyNotes  = group.filter(n => n.lane >= 1 && n.lane <= 7);
@@ -5011,6 +5010,8 @@ class BMSViewer {
                 const occupiedKeys = new Set(keyNotes.map(n => n.lane));
                 // 鍵盤ノーツはそのまま
                 keyNotes.forEach(n => map.set(n, n.lane));
+                // この拍で使われるレーンを収集（鍵盤ノーツ分から開始）
+                const thisLanes = new Set(occupiedKeys);
                 // スクラッチを鍵盤へ移動（1つずつ処理）
                 for (const scr of scrNotes) {
                     const available = [1,2,3,4,5,6,7].filter(l => !occupiedKeys.has(l));
@@ -5018,15 +5019,16 @@ class BMSViewer {
                         // 全鍵盤埋まり → スクラッチのまま
                         map.set(scr, 0);
                     } else {
-                        // 連打回避: lastKeyと異なるレーンを優先
-                        const preferred = available.filter(l => l !== lastKey);
+                        // 連打回避: 直前の拍で使われた全レーン（鍵盤含む）と異なるレーンを優先
+                        const preferred = available.filter(l => !lastUsedLanes.has(l));
                         const pool = preferred.length > 0 ? preferred : available;
                         const picked = pool[Math.floor(Math.random() * pool.length)];
                         map.set(scr, picked);
-                        occupiedKeys.add(picked);
-                        lastKey = picked;
+                        occupiedKeys.add(picked); // 同拍に複数スクラッチがある場合の衝突防止
+                        thisLanes.add(picked);
                     }
                 }
+                lastUsedLanes = thisLanes; // この拍の全レーンを次の拍の参照に
             }
         }
         this._scratchConvertMap = map;

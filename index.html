@@ -1047,6 +1047,17 @@
             box-shadow: none;
             background: linear-gradient(to right, #880000 0%, #f08080 50%, #880000 100%);
         }
+        /* スクラッチアシストビュー: グリーン */
+        .note.scratch.scratch-assist-green {
+            box-shadow: inset 0 0 0 1px rgba(0,110,0,1.0),
+                        inset 0  2px 3px rgba(0,0,0,0.55),
+                        inset 0 -2px 3px rgba(0,0,0,0.55);
+            background: linear-gradient(to right, #006600 0%, #ccffcc 50%, #006600 100%);
+        }
+        .notes-b .note.scratch.scratch-assist-green {
+            box-shadow: none;
+            background: linear-gradient(to right, #004400 0%, #80e080 50%, #004400 100%);
+        }
         /* ── チャージノーツB（キャップ非表示） ── */
         .charge-b .cn-white-start-cap, .charge-b .cn-white-end-cap,
         .charge-b .cn-blue-start-cap,  .charge-b .cn-blue-end-cap,
@@ -2001,7 +2012,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.908</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.909</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2093,6 +2104,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">スクラッチ変換</span>
                 <button class="fx-btn" id="allScrBtn">オールスクラッチ</button>
                 <button class="fx-btn" id="noScrBtn">ノースクラッチ</button>
+            </div>
+            <!-- スクラッチアシストビュー (IIDXのみ) -->
+            <div class="detail-section nowrap" id="scrAssistSection">
+                <span class="detail-label">スクラッチアシストビュー</span>
+                <button class="fx-btn on" id="scrAssistOffBtn">OFF</button>
+                <button class="fx-btn"    id="scrAssist4Btn">4分</button>
+                <button class="fx-btn"    id="scrAssist8Btn">8分</button>
+                <button class="fx-btn"    id="scrAssist16Btn">16分</button>
             </div>
             <!-- オートレーン -->
             <div class="detail-section" id="autoLaneSection">
@@ -2763,6 +2782,7 @@ class BMSViewer {
         this.hRandomActive   = false;  // H-RANDOM ON/OFF
         this.allScrActive    = false;  // オールスクラッチ ON/OFF
         this.noScrActive     = false;  // ノースクラッチ ON/OFF
+        this.scratchAssist   = 'off'; // スクラッチアシストビュー: 'off'|'4'|'8'|'16'
         this._noteRandomMap  = null;   // Map<note, newLane> ノーツ単位ランダムマッピング
         // ── WAV / ZIP ──────────────────────────────────────
         this.wavBuffers    = {};   // wavId(base-62) → AudioBuffer
@@ -4110,7 +4130,8 @@ class BMSViewer {
             document.getElementById('pmBeamLiteBtn').style.display   = isPM ? '' : 'none';
             document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
             document.getElementById('iidxControllerSection').style.display = isPM ? 'none' : '';
-            document.getElementById('scrConvSection').style.display        = isPM ? 'none' : '';
+            document.getElementById('scrConvSection').style.display         = isPM ? 'none' : '';
+            document.getElementById('scrAssistSection').style.display       = isPM ? 'none' : '';
             if (isPM) {
                 _setJudgeMode('PM_COOL');
                 _updateJustFrameVis();
@@ -4498,6 +4519,15 @@ class BMSViewer {
         document.getElementById('hRandomBtn').addEventListener('click', () => this._toggleSRandom('h'));
         document.getElementById('allScrBtn').addEventListener('click', () => this._toggleScrConv('allscr'));
         document.getElementById('noScrBtn').addEventListener('click',  () => this._toggleScrConv('noscr'));
+
+        // スクラッチアシストビュー
+        [['scrAssistOffBtn','off'],['scrAssist4Btn','4'],['scrAssist8Btn','8'],['scrAssist16Btn','16']].forEach(([id, val]) => {
+            document.getElementById(id).addEventListener('click', () => {
+                this.scratchAssist = val;
+                this._updateScratchAssistBtns();
+                if (this.bmsData) { this.renderNotes(); this._updatePositions(); }
+            });
+        });
 
         // Random ボタン：ON/OFF トグル（ON→シャッフル、OFF→デフォルトに戻す）
         document.getElementById('randomBtn').addEventListener('click', () => {
@@ -5035,6 +5065,34 @@ class BMSViewer {
         this._scratchConvertMap = map;
     }
 
+    _updateScratchAssistBtns() {
+        const v = this.scratchAssist;
+        document.getElementById('scrAssistOffBtn').classList.toggle('on', v === 'off');
+        document.getElementById('scrAssist4Btn').classList.toggle('on',   v === '4');
+        document.getElementById('scrAssist8Btn').classList.toggle('on',   v === '8');
+        document.getElementById('scrAssist16Btn').classList.toggle('on',  v === '16');
+    }
+
+    _computeScratchAssistColors() {
+        if (!this.bmsData) return;
+        // 4/4拍子基準: 1小節=1.0, 4分=0.25, 8分=0.125, 16分=0.0625
+        const thresholds = { '4': 0.25, '8': 0.125, '16': 0.0625 };
+        const threshold = thresholds[this.scratchAssist];
+
+        const scrNotes = this.bmsData.notes
+            .filter(n => n.lane === 0 && n.type === 'normal' && !n.dpBgm)
+            .sort((a, b) => a.position - b.position);
+
+        let prevPos = -Infinity, isGreen = false;
+        for (const n of scrNotes) {
+            if (!threshold) { n._scratchAssistGreen = false; continue; }
+            const interval = n.position - prevPos;
+            isGreen = (interval < threshold) ? !isGreen : false;
+            n._scratchAssistGreen = isGreen;
+            prevPos = n.position;
+        }
+    }
+
     _toggleScrConv(mode) {
         // mode: 'allscr' | 'noscr' — 排他: 同じを押すとOFF、違うを押すと切り替え
         const wasAllScr = this.allScrActive;
@@ -5547,6 +5605,7 @@ class BMSViewer {
     renderNotes() {
         this.noteElements.forEach(el=>el.remove()); this.noteElements=[]; this.lnElements=[];
         if (!this.bmsData) return;
+        this._computeScratchAssistColors();
         const container=document.getElementById('lanesContainer');
         const lanes=document.querySelectorAll('.lane');
 
@@ -5628,8 +5687,10 @@ class BMSViewer {
             if (this.currentSide === 'PM') {
                 el.classList.add(PM_COLORS[swappedLane] || 'pm-red');
             } else {
-                if(swappedLane===0) el.classList.add('scratch');
-                else if([1,3,5,7].includes(swappedLane)) el.classList.add('white-key');
+                if(swappedLane===0) {
+                    el.classList.add('scratch');
+                    if (note._scratchAssistGreen) el.classList.add('scratch-assist-green');
+                } else if([1,3,5,7].includes(swappedLane)) el.classList.add('white-key');
                 else el.classList.add('black-key');
             }
             el._pixelPos=px; el.style.bottom='0'; el.style.translate='0px '+(-(px-this.currentPixelPos))+'px';

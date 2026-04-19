@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BMS Viewer</title>
     <style>
-        :root { --scratch-width:64px; --white-lane-width:44px; --black-lane-width:28px; --note-height:10px;
-                --pm-white-w:44px; --pm-yellow-w:38px; --pm-green-w:44px; --pm-blue-w:38px; --pm-red-w:44px; }
+        :root { --scratch-width:128px; --white-lane-width:88px; --black-lane-width:56px; --note-height:20px;
+                --pm-white-w:88px; --pm-yellow-w:76px; --pm-green-w:88px; --pm-blue-w:76px; --pm-red-w:88px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -20,7 +20,7 @@
             -webkit-tap-highlight-color:transparent;
         }
         #appScaler { position:fixed; inset:0; background:#000; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; }
-        .container { display:flex; flex-direction:column; position:relative; width:390px; height:640px; overflow:hidden; transform-origin:top center; transform:scale(var(--app-scale,1)); flex-shrink:0; }
+        .container { display:flex; flex-direction:column; position:relative; width:780px; height:1280px; overflow:hidden; transform-origin:top center; transform:scale(var(--app-scale,1)); flex-shrink:0; }
         .header { background:#1a1a1a; padding:7px 12px 6px; border-bottom:2px solid #333; position:relative; z-index:1; flex-shrink:0; }
         .ctrl-footer { flex-shrink:0; background:#1a1a1a; border-top:2px solid #333; padding:6px 12px 8px; }
         .song-title { font-size:12px; font-weight:bold; margin-bottom:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
@@ -215,12 +215,12 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:none; height:400px; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:500px; }
+        .play-area { flex:none; height:800px; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1000px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:400px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
+        .lane { width:var(--white-lane-width); height:800px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
         .play-area.bga-active .lane.scratch,
@@ -1715,7 +1715,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <script>
         // ウィンドウサイズに応じてアプリをスケーリング（縦横比維持）
         (function() {
-            var DESIGN_W = 390, DESIGN_H = 640;
+            var DESIGN_W = 780, DESIGN_H = 1280;
             function updateScale() {
                 var s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
                 document.documentElement.style.setProperty('--app-scale', s.toFixed(4));
@@ -2012,7 +2012,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.909</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.911</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2109,6 +2109,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap" id="scrAssistSection">
                 <span class="detail-label">スクラッチアシストビュー</span>
                 <button class="fx-btn on" id="scrAssistOffBtn">OFF</button>
+                <button class="fx-btn"    id="scrAssist1barBtn">1小節</button>
+                <button class="fx-btn"    id="scrAssist2Btn">2分</button>
                 <button class="fx-btn"    id="scrAssist4Btn">4分</button>
                 <button class="fx-btn"    id="scrAssist8Btn">8分</button>
                 <button class="fx-btn"    id="scrAssist16Btn">16分</button>
@@ -2782,7 +2784,7 @@ class BMSViewer {
         this.hRandomActive   = false;  // H-RANDOM ON/OFF
         this.allScrActive    = false;  // オールスクラッチ ON/OFF
         this.noScrActive     = false;  // ノースクラッチ ON/OFF
-        this.scratchAssist   = 'off'; // スクラッチアシストビュー: 'off'|'4'|'8'|'16'
+        this.scratchAssist   = 'off'; // スクラッチアシストビュー: 'off'|'1bar'|'2'|'4'|'8'|'16'
         this._noteRandomMap  = null;   // Map<note, newLane> ノーツ単位ランダムマッピング
         // ── WAV / ZIP ──────────────────────────────────────
         this.wavBuffers    = {};   // wavId(base-62) → AudioBuffer
@@ -2795,7 +2797,7 @@ class BMSViewer {
         this.audioStartSec = 0;    // 音楽時間(秒) @ 再生開始位置
         this.audioPlayStart= 0;    // performance.now()/1000 @ 再生開始（マスタークロック）
         this.currentPixelPos = 0;
-        this.basePixelsPerBar= 200;
+        this.basePixelsPerBar= 400;
         this.hiSpeed         = 1.0;
         this.realSpeed       = 1.0;   // ★ BPM倍率（テンポ変更）
         this.regulSpeed      = false; // REGUL-SPEED: 曲頭BPMを基準にスクロール速度を固定
@@ -2876,7 +2878,7 @@ class BMSViewer {
         // SUD+
         this.sudEnabled    = false;
         this.sudMode       = 'A';
-        this.sudCoverPx    = 60;
+        this.sudCoverPx    = 120;
         this.sudBasePx     = 0;     // SUD+白数字の基準位置（px）
         this.sudNumDisplay = 'always'; // 'always' | 'onop'
         this._sudInfoTimer = null;
@@ -3748,7 +3750,7 @@ class BMSViewer {
                 // ONにした瞬間: 現在の可視緑数字をtargetGreenNumとして記録
                 if (this.sudEnabled && this.bmsData) {
                     const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
-                    const _effH = 400;
+                    const _effH = 800;
                     const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                     const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
                     this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
@@ -3783,7 +3785,7 @@ class BMSViewer {
             // モードCに切替: 現在の可視緑数字をtargetGreenNumとして取り込み、HS再計算
             if (this.sudEnabled && this.bmsData) {
                 const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
-                const _effH = 400;
+                const _effH = 800;
                 const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                 const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
                 this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
@@ -4521,7 +4523,7 @@ class BMSViewer {
         document.getElementById('noScrBtn').addEventListener('click',  () => this._toggleScrConv('noscr'));
 
         // スクラッチアシストビュー
-        [['scrAssistOffBtn','off'],['scrAssist4Btn','4'],['scrAssist8Btn','8'],['scrAssist16Btn','16']].forEach(([id, val]) => {
+        [['scrAssistOffBtn','off'],['scrAssist1barBtn','1bar'],['scrAssist2Btn','2'],['scrAssist4Btn','4'],['scrAssist8Btn','8'],['scrAssist16Btn','16']].forEach(([id, val]) => {
             document.getElementById(id).addEventListener('click', () => {
                 this.scratchAssist = val;
                 this._updateScratchAssistBtns();
@@ -4931,7 +4933,7 @@ class BMSViewer {
         const bpm   = this._bpmAt(this.currentPixelPos);
         const green = Math.round(175300 / (bpm * this.hiSpeed));
         let greenVal = green;
-        const effH   = 400;
+        const effH   = 800;
         const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx));
         if (this.sudEnabled) {
             if (this.sudMode === 'A' || this.sudMode === 'C') {
@@ -5067,7 +5069,9 @@ class BMSViewer {
 
     _updateScratchAssistBtns() {
         const v = this.scratchAssist;
-        document.getElementById('scrAssistOffBtn').classList.toggle('on', v === 'off');
+        document.getElementById('scrAssistOffBtn').classList.toggle('on',  v === 'off');
+        document.getElementById('scrAssist1barBtn').classList.toggle('on', v === '1bar');
+        document.getElementById('scrAssist2Btn').classList.toggle('on',   v === '2');
         document.getElementById('scrAssist4Btn').classList.toggle('on',   v === '4');
         document.getElementById('scrAssist8Btn').classList.toggle('on',   v === '8');
         document.getElementById('scrAssist16Btn').classList.toggle('on',  v === '16');
@@ -5075,8 +5079,8 @@ class BMSViewer {
 
     _computeScratchAssistColors() {
         if (!this.bmsData) return;
-        // 4/4拍子基準: 1小節=1.0, 4分=0.25, 8分=0.125, 16分=0.0625
-        const thresholds = { '4': 0.25, '8': 0.125, '16': 0.0625 };
+        // 4/4拍子基準: 1小節=1.0, 2分=0.5, 4分=0.25, 8分=0.125, 16分=0.0625
+        const thresholds = { '1bar': 1.0, '2': 0.5, '4': 0.25, '8': 0.125, '16': 0.0625 };
         const threshold = thresholds[this.scratchAssist];
 
         const scrNotes = this.bmsData.notes
@@ -6007,7 +6011,7 @@ class BMSViewer {
         // カバー緑数字: 可視緑数字（Mode A/C はHSにvisEff/effH組み込み済み）
         let _greenT = _greenRaw;
         if (this.sudEnabled) {
-            const _effH   = 400;
+            const _effH   = 800;
             const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
             _greenT = Math.round(_greenRaw * _visEff / _effH);
         }
@@ -6172,8 +6176,8 @@ class BMSViewer {
     _calcAdjustedHS(bpm, gn) {
         const baseHS = 175300 / (bpm * gn);
         if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
-            const effH     = 400; // SUD+有効ゾーン（0px基準）
-            const laneH    = 400;
+            const effH     = 800; // SUD+有効ゾーン（0px基準）
+            const laneH    = 800;
             const visEff   = Math.max(1, Math.min(effH, laneH - this.sudCoverPx));
             return Math.max(0.01, baseHS * (visEff / effH));
         }
@@ -6226,7 +6230,7 @@ class BMSViewer {
         const wn = document.getElementById('sudWhiteNum');
         if (wn) wn.textContent = String(this.sudCoverPx).padStart(3, '0');
         const cv = document.getElementById('sudCoverVal');
-        if (cv) cv.textContent = Math.round(this.sudCoverPx / 400 * 1000);
+        if (cv) cv.textContent = Math.round(this.sudCoverPx / 800 * 1000);
         // カバー内緑数字: BPM変化に追従する実際の可視緑数字
         const cg = this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'));
         const cgr = this._elCoverGreenRange || (this._elCoverGreenRange = document.getElementById('sudCoverGreenRange'));
@@ -6239,7 +6243,7 @@ class BMSViewer {
                     ? this._bpmAtBar(0) * this.realSpeed
                     : this._bpmAt(this.currentPixelPos);
                 const _raw = Math.round(175300 / (_bpm * this.hiSpeed));
-                const _effH = 400;
+                const _effH = 800;
                 const _vis  = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                 cg.textContent = this.sudEnabled ? Math.round(_raw * _vis / _effH) : _raw;
 
@@ -6275,7 +6279,7 @@ class BMSViewer {
     }
 
     _setSudCoverPx(px, rebuild = true) {
-        const MIN = 20, MAX = 400;
+        const MIN = 20, MAX = 800;
         this.sudCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._sudUpdateCoverDOM();
         if (rebuild && this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) this._reapplyHS();
@@ -6287,7 +6291,7 @@ class BMSViewer {
         if (!cover) return;
         let startY = 0, startH = 0, dragging = false;
         const onMove = (y) => {
-            const scale = Math.min(window.innerWidth / 390, window.innerHeight / 640);
+            const scale = Math.min(window.innerWidth / 780, window.innerHeight / 1280);
             this._setSudCoverPx(startH + (y - startY) / scale, false);
             this._sudShowInfoTemp(); // ドラッグ中は1秒タイマーをリセットし続ける
         };

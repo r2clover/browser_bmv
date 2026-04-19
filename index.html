@@ -949,59 +949,59 @@
         .fx-popup {
             position:relative; z-index:1;
             background:#1c1c1c; border:1px solid #444; border-radius:8px;
-            width:min(460px, 96vw); max-height:86vh;
+            width:min(800px, 96vw); max-height:86vh;
             display:flex; flex-direction:column;
             box-shadow:0 10px 40px rgba(0,0,0,0.9);
-            font-size:12px; color:#ccc;
+            font-size:20px; color:#ccc;
         }
         .fx-popup-hdr {
-            display:flex; align-items:center; gap:8px;
-            padding:10px 14px; background:#111;
+            display:flex; align-items:center; gap:12px;
+            padding:16px 22px; background:#111;
             border-radius:8px 8px 0 0; border-bottom:1px solid #333; flex-shrink:0;
         }
-        .fx-popup-hdr>span { flex:1; color:#fff; font-weight:bold; font-size:13px; letter-spacing:1.5px; }
+        .fx-popup-hdr>span { flex:1; color:#fff; font-weight:bold; font-size:22px; letter-spacing:1.5px; }
         .fx-popup-close-btn {
             background:none; border:none; color:#777; cursor:pointer;
-            font-size:15px; padding:0 4px; line-height:1;
+            font-size:26px; padding:0 6px; line-height:1;
         }
         .fx-popup-close-btn:hover { color:#fff; }
-        .fx-popup-body { overflow-y:auto; padding:10px 14px 16px; flex:1; }
+        .fx-popup-body { overflow-y:auto; padding:16px 22px 24px; flex:1; }
         .fx-sec-title {
-            color:#FFD700; font-weight:bold; font-size:10px; letter-spacing:2.5px;
-            margin:12px 0 8px; padding-bottom:4px; border-bottom:1px solid #333;
+            color:#FFD700; font-weight:bold; font-size:18px; letter-spacing:2.5px;
+            margin:18px 0 12px; padding-bottom:6px; border-bottom:1px solid #333;
         }
-        .fx-sec-title:first-child { margin-top:4px; }
+        .fx-sec-title:first-child { margin-top:6px; }
         .fx-block {
             background:#252525; border:1px solid #333; border-radius:6px;
-            padding:8px 10px; margin-bottom:6px;
+            padding:14px 18px; margin-bottom:10px;
         }
-        .fx-block-hdr { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
-        .fx-name { color:#bbb; font-weight:bold; font-size:11px; flex:1; }
+        .fx-block-hdr { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+        .fx-name { color:#bbb; font-weight:bold; font-size:20px; flex:1; }
         .fx-toggle {
-            padding:1px 9px; border-radius:3px;
+            padding:3px 14px; border-radius:3px;
             border:1px solid #445; background:#1a1a1a; color:#555;
-            font-size:10px; font-weight:bold; cursor:pointer;
-            min-width:36px; min-height:20px; white-space:nowrap; flex-shrink:0;
+            font-size:18px; font-weight:bold; cursor:pointer;
+            min-width:60px; min-height:36px; white-space:nowrap; flex-shrink:0;
         }
         .fx-toggle.on { border-color:#0c9; background:#002618; color:#0c9; }
-        .fx-row { display:flex; align-items:center; gap:6px; margin-top:5px; }
-        .fx-lbl { color:#777; font-size:10px; width:74px; flex-shrink:0; }
-        .fx-range { flex:1; height:3px; cursor:pointer; accent-color:#4af; margin:0; }
-        .fx-val { color:#999; font-size:10px; width:58px; text-align:right; flex-shrink:0; font-family:'Courier New',monospace; }
-        .fx-eq-note { color:#555; font-size:9px; width:54px; flex-shrink:0; }
+        .fx-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
+        .fx-lbl { color:#777; font-size:18px; width:130px; flex-shrink:0; }
+        .fx-range { flex:1; height:6px; cursor:pointer; accent-color:#4af; margin:0; }
+        .fx-val { color:#999; font-size:18px; width:100px; text-align:right; flex-shrink:0; font-family:'Courier New',monospace; }
+        .fx-eq-note { color:#555; font-size:16px; width:90px; flex-shrink:0; }
         .fx-eq-wrap { flex:1; position:relative; }
         .fx-eq-wrap::before {
             content:''; position:absolute; left:50%; top:50%;
             transform:translate(-50%,-50%);
-            width:2px; height:10px; background:#3a3a3a;
+            width:2px; height:14px; background:#3a3a3a;
             border-radius:1px; pointer-events:none; z-index:1;
         }
         .fx-eq-wrap input { width:100%; }
-        .fx-subdiv-wrap { display:flex; gap:3px; flex-wrap:wrap; }
+        .fx-subdiv-wrap { display:flex; gap:6px; flex-wrap:wrap; }
         .fx-subdiv-btn {
-            padding:1px 7px; border-radius:3px;
+            padding:3px 12px; border-radius:3px;
             border:1px solid #445; background:#1a1a1a; color:#666;
-            font-size:9px; font-weight:bold; cursor:pointer; min-height:20px;
+            font-size:16px; font-weight:bold; cursor:pointer; min-height:34px;
         }
         .fx-subdiv-btn.on { border-color:#4af; background:#001833; color:#4af; }
         /* ── リッチノーツ（軽量版） ── */
@@ -1553,7 +1553,7 @@
             transform:translate(-50%,-50%);
             background:#1e1e1e; border:1px solid #555;
             border-radius:12px; padding:0;
-            min-width:290px; max-width:92%;
+            min-width:500px; max-width:92%;
             max-height:88%;
             display:flex; flex-direction:column;
             z-index:1;
@@ -1561,13 +1561,13 @@
         .detail-panel-header {
             display:flex; justify-content:space-between; align-items:center;
             flex-shrink:0;
-            padding:12px 16px; border-bottom:1px solid #333;
-            color:#fff; font-weight:bold; font-size:14px;
+            padding:16px 20px; border-bottom:1px solid #333;
+            color:#fff; font-weight:bold; font-size:24px;
         }
         /* スクロール可能なボディ部分 */
         .detail-body {
             overflow-y:auto; flex:1;
-            padding:12px 16px 16px;
+            padding:16px 20px 20px;
             overscroll-behavior:contain;
         }
         /* スクロールバーのスタイル（Webkit） */
@@ -1575,39 +1575,45 @@
         .detail-body::-webkit-scrollbar-track { background:transparent; }
         .detail-body::-webkit-scrollbar-thumb { background:#444; border-radius:3px; }
         .detail-body::-webkit-scrollbar-thumb:hover { background:#666; }
-        .song-info-row { display:flex; align-items:baseline; gap:8px; padding:6px 16px; border-bottom:1px solid #2a2a2a; }
+        .song-info-row { display:flex; align-items:baseline; gap:8px; padding:8px 20px; border-bottom:1px solid #2a2a2a; }
         .song-info-row:last-child { border-bottom:none; }
-        .song-info-label { flex-shrink:0; font-size:11px; color:#888; width:120px; }
-        .song-info-value { font-size:13px; color:#fff; word-break:break-all; }
+        .song-info-label { flex-shrink:0; font-size:18px; color:#888; width:180px; }
+        .song-info-value { font-size:20px; color:#fff; word-break:break-all; }
         .detail-close {
             background:none; border:none; color:#aaa;
-            font-size:20px; line-height:1; cursor:pointer; padding:2px 6px;
+            font-size:36px; line-height:1; cursor:pointer; padding:2px 8px;
         }
         .detail-section {
-            display:flex; align-items:center; gap:5px;
-            margin-bottom:10px; flex-wrap:wrap;
+            display:flex; align-items:center; gap:8px;
+            margin-bottom:14px; flex-wrap:wrap;
         }
         .detail-section.nowrap {
             flex-wrap:nowrap;
         }
         .detail-section:last-child { margin-bottom:0; }
         .detail-label {
-            font-size:11px; color:#aaa; min-width:52px;
+            font-size:18px; color:#aaa; min-width:88px;
         }
         /* 詳細ボタン */
         #detailBtn { letter-spacing:0.05em; }
+        /* detail-panel内ボタンを2x対応サイズに上書き */
+        .detail-panel .btn,
+        .detail-panel .fx-btn { font-size:18px; min-height:38px; padding:4px 14px; }
+        .detail-panel .loop-btn { font-size:22px; min-height:40px; }
+        .detail-panel .loop-input { font-size:18px; height:38px; width:68px; }
+        .detail-panel .loop-sep { font-size:20px; }
     
         /* ── 音量スライダー ── */
         .vol-row { display:flex; align-items:center; gap:6px; width:100%; margin-top:2px; }
-        .vol-label { font-size:11px; color:#aaa; min-width:32px; }
-        .vol-slider { -webkit-appearance:none; appearance:none; flex:1; height:4px; border-radius:2px; background:#444; outline:none; cursor:pointer; }
-        .vol-slider::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#4caf50; cursor:pointer; }
-        .vol-val { font-size:11px; color:#aaa; min-width:28px; text-align:right; }
+        .vol-label { font-size:18px; color:#aaa; min-width:52px; }
+        .vol-slider { -webkit-appearance:none; appearance:none; flex:1; height:6px; border-radius:3px; background:#444; outline:none; cursor:pointer; }
+        .vol-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#4caf50; cursor:pointer; }
+        .vol-val { font-size:18px; color:#aaa; min-width:46px; text-align:right; }
     
         /* ── ピッチコントローラー ── */
         .pitch-row { display:flex; align-items:center; gap:5px; margin-top:2px; }
-        .pitch-label { font-size:11px; color:#aaa; min-width:32px; }
-        .pitch-btn { padding:2px 7px; border:none; background:#444; color:#ccc; border-radius:4px; font-size:14px; cursor:pointer; line-height:1.4; }
+        .pitch-label { font-size:18px; color:#aaa; min-width:52px; }
+        .pitch-btn { padding:4px 12px; border:none; background:#444; color:#ccc; border-radius:4px; font-size:22px; cursor:pointer; line-height:1.4; }
         .pitch-btn:active { background:#666; }
         .pitch-val { font-size:12px; color:#fff; min-width:32px; text-align:center; font-weight:bold; }
             /* ── オートレーンカバー ── */
@@ -2232,7 +2238,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">判定文字サイズ</span>
                 <button class="loop-btn" id="judgeSizeMinus">－</button>
-                <input type="number" id="judgeSizeInput" min="10" max="200" value="56"
+                <input type="number" id="judgeSizeInput" min="10" max="200" value="120"
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeSizePlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
@@ -2241,7 +2247,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">判定文字高さ</span>
                 <button class="loop-btn" id="judgeHeightMinus">－</button>
-                <input type="number" id="judgeHeightInput" min="0" max="2000" value="110"
+                <input type="number" id="judgeHeightInput" min="0" max="2000" value="180"
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeHeightPlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
@@ -4066,7 +4072,7 @@ class BMSViewer {
             if (isPM) {
                 _setNotesStyle('PM_POP_LITE');
                 _setChargeStyle('PM_POP_LITE');
-                document.getElementById('judgeSizeInput').value = 26;
+                document.getElementById('judgeSizeInput').value = 52;
                 _applyJudgeSize();
                 this.lnHeadPin = true;
                 document.getElementById('lnModeBBtn').classList.add('on');
@@ -4086,7 +4092,7 @@ class BMSViewer {
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.chargeStyle)) _setChargeStyle('A');
                 if (_isPmGaugeType(this._gaugeType)) _setGaugeType('NORMAL');
-                document.getElementById('judgeSizeInput').value = 56;
+                document.getElementById('judgeSizeInput').value = 120;
                 _applyJudgeSize();
                 // SUD+デフォルト: ON, モードC
                 this.sudEnabled = true;
@@ -4334,7 +4340,7 @@ class BMSViewer {
 
         // 判定文字サイズ
         const _applyJudgeSize = () => {
-            const size = Math.max(10, Math.min(200, parseInt(document.getElementById('judgeSizeInput').value) || 56));
+            const size = Math.max(10, Math.min(200, parseInt(document.getElementById('judgeSizeInput').value) || 120));
             document.querySelectorAll('.great-label, .great-combo, .pm-judge-label, .pm-judge-combo').forEach(el => { el.style.fontSize = size + 'px'; });
         };
         document.getElementById('judgeSizeInput').addEventListener('input', _applyJudgeSize);
@@ -4354,7 +4360,7 @@ class BMSViewer {
 
         // 判定文字高さ
         const _applyJudgeHeight = () => {
-            const h = Math.max(0, parseInt(document.getElementById('judgeHeightInput').value) || 110);
+            const h = Math.max(0, parseInt(document.getElementById('judgeHeightInput').value) || 180);
             document.querySelector('.great-positioner').style.bottom = h + 'px';
             document.querySelectorAll('.pm-judge-positioner').forEach(el => { el.style.bottom = h + 'px'; });
         };

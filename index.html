@@ -184,7 +184,7 @@
 
         /* シークバー */
         .seek-wrap {
-            background:#0d0d0d; padding:5px 0;
+            background:#0d0d0d; padding:12px 0;
             border-top:1px solid #222; touch-action:none; user-select:none; flex-shrink:0;
         }
         .seek-inner {
@@ -682,16 +682,16 @@
         /* ── GREAT + コンボ表示 ── */
         /* ── プレイモード判定文字（IIDX_play） ── */
         .play-judge-positioner {
-            position:absolute; left:0; right:0; bottom:90px;
+            position:absolute; left:0; right:0; bottom:180px;
             text-align:center; pointer-events:none; z-index:31;
         }
         .play-judge-display {
-            display:inline-flex; align-items:center; gap:12px;
+            display:inline-flex; align-items:center; gap:24px;
             opacity:0; white-space:nowrap; vertical-align:middle;
             transform:scaleX(0.75); transform-origin:center bottom; transition:none;
         }
         .play-judge-label, .play-judge-combo {
-            font-size:var(--pj-size,62px); font-weight:800;
+            font-size:var(--pj-size,120px); font-weight:800;
             font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
             font-variant-numeric:tabular-nums; line-height:1;
             background:linear-gradient(to bottom,#ffbf02 0%,#fffdf4 100%);
@@ -745,18 +745,18 @@
             filter:none !important;
         }
         /* PMモードサイズ */
-        .pm-mode .play-judge-positioner { --pj-size:40px; }
+        .pm-mode .play-judge-positioner { --pj-size:80px; }
 
         /* GREAT + コンボ表示 */
         /* GREAT + コンボ */
         .great-positioner {
             position:absolute;
-            left:0; right:0; bottom:90px;
+            left:0; right:0; bottom:180px;
             text-align:center;
             pointer-events:none; z-index:30;
         }
         .great-display {
-            display:inline-flex; align-items:center; gap:16px;
+            display:inline-flex; align-items:center; gap:32px;
             opacity:0; white-space:nowrap;
             vertical-align:middle;
             transform:scaleX(0.75);
@@ -768,7 +768,7 @@
         }
 
         .great-label, .great-combo {
-            font-size:62px; font-weight:800;
+            font-size:120px; font-weight:800;
             /* 上:#ffbf02 → 下:#fffdf4 グラデーション文字色 */
             background: linear-gradient(to bottom, #ffbf02 0%, #fffdf4 100%);
             -webkit-background-clip: text;
@@ -1360,21 +1360,21 @@
         /* ── PM モード判定文字 (COOL!!) ── */
         .pm-judge-positioner {
             position: absolute;
-            bottom: 70px;
+            bottom: 140px;
             opacity: 0;
             pointer-events: none;
             z-index: 30;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 8px;
             transform: translateX(-50%);
         }
-        .pm-judge-L { left: calc(50% - 123px); }
+        .pm-judge-L { left: calc(50% - 246px); }
         .pm-judge-C { left: 50%; }
-        .pm-judge-R { left: calc(50% + 123px); }
+        .pm-judge-R { left: calc(50% + 246px); }
         .pm-judge-label {
-            font-size: 26px; font-weight: 800;
+            font-size: 52px; font-weight: 800;
             background: linear-gradient(to bottom, #ff00aa 0%, #ffffff 100%);
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -1382,7 +1382,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
         }
         .pm-judge-combo {
-            font-size: 26px; font-weight: 800;
+            font-size: 52px; font-weight: 800;
             color: #ffffff;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.9), -1px -1px 2px rgba(0,0,0,0.9);
             white-space: nowrap; line-height: 1; text-align: center;
@@ -1454,7 +1454,7 @@
         /* グルーブゲージ */
         .groove-gauge-area {
             display:flex; align-items:center; padding:3px 8px; gap:6px; height:20px; box-sizing:border-box;
-            margin-top:5px;
+            margin-top:10px;
         }
         .groove-gauge-track {
             flex:1; height:12px; background:#111; border:1px solid #333; border-radius:2px; overflow:hidden;
@@ -1481,7 +1481,7 @@
         .fs-gauge-disp.fs-slow { color:#f44; }
         /* ステータスバー（2行） */
         .status-bar {
-            padding:2px 8px 3px; font-size:10px; color:#aaa;
+            padding:6px 8px 6px; font-size:10px; color:#aaa;
             font-variant-numeric:tabular-nums; display:flex; flex-direction:column; gap:0;
         }
         .status-row {

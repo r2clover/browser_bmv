@@ -188,7 +188,7 @@
             border-top:1px solid #222; touch-action:none; user-select:none; flex-shrink:0;
         }
         .seek-inner {
-            max-width:360px; margin:0 auto; padding:0 14px;
+            max-width:720px; margin:0 auto; padding:0 20px;
         }
         .seek-track {
             width:100%; height:10px; background:#2a2a2a;
@@ -949,7 +949,7 @@
         .fx-popup {
             position:relative; z-index:1;
             background:#1c1c1c; border:1px solid #444; border-radius:8px;
-            width:min(1200px, 96vw); max-height:99vh;
+            width:min(1200px, 96vw); height:99vh;
             display:flex; flex-direction:column;
             box-shadow:0 10px 40px rgba(0,0,0,0.9);
             font-size:20px; color:#ccc;
@@ -984,6 +984,14 @@
             min-width:60px; min-height:36px; white-space:nowrap; flex-shrink:0;
         }
         .fx-toggle.on { border-color:#0c9; background:#002618; color:#0c9; }
+        .fx-hold-btn {
+            padding:3px 14px; border-radius:3px;
+            border:1px solid #664400; background:#1a1000; color:#886633;
+            font-size:18px; font-weight:bold; cursor:pointer;
+            min-width:60px; min-height:36px; white-space:nowrap; flex-shrink:0;
+            touch-action:none; user-select:none;
+        }
+        .fx-hold-btn.on { border-color:#ff9900; background:#331a00; color:#ff9900; }
         .fx-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
         .fx-lbl { color:#777; font-size:18px; width:130px; flex-shrink:0; }
         .fx-range { flex:1; height:6px; cursor:pointer; accent-color:#4af; margin:0; }
@@ -1119,23 +1127,23 @@
         .charge-pm-beat-pop .cn-pm-red-start-cap,    .charge-pm-beat-pop .cn-pm-red-end-cap { display:none !important; }
         /* ── PM ノーツ（pm_pop / ポップ君）── */
         .notes-pm-pop .note.pm-white, .notes-pm-pop .ln-note-start.pm-white, .notes-pm-pop .ln-note-end.pm-white {
-            height:18px !important; border-radius:12px;
+            height:36px !important; border-radius:24px;
             box-shadow:inset 0 0 0 1px rgba(140,140,140,0.9);
             background:linear-gradient(to bottom,#666 0%,#999 10%,#aaa 25%,#ccc 32%,#fff 35%,#fff 65%,#ccc 68%,#aaa 75%,#999 90%,#666 100%); }
         .notes-pm-pop .note.pm-yellow, .notes-pm-pop .ln-note-start.pm-yellow, .notes-pm-pop .ln-note-end.pm-yellow {
-            height:18px !important; border-radius:12px;
+            height:36px !important; border-radius:24px;
             box-shadow:inset 0 0 0 1px rgba(150,150,0,0.9);
             background:linear-gradient(to bottom,#989800 0%,#c0c000 10%,#e0e000 25%,#fafa02 32%,#fff 35%,#fff 65%,#fafa02 68%,#e0e000 75%,#c0c000 90%,#989800 100%); }
         .notes-pm-pop .note.pm-green, .notes-pm-pop .ln-note-start.pm-green, .notes-pm-pop .ln-note-end.pm-green {
-            height:18px !important; border-radius:12px;
+            height:36px !important; border-radius:24px;
             box-shadow:inset 0 0 0 1px rgba(0,140,45,0.9);
             background:linear-gradient(to bottom,#025c00 0%,#038500 10%,#04a800 25%,#04c000 32%,#fff 35%,#fff 65%,#04c000 68%,#04a800 75%,#038500 90%,#025c00 100%); }
         .notes-pm-pop .note.pm-blue, .notes-pm-pop .ln-note-start.pm-blue, .notes-pm-pop .ln-note-end.pm-blue {
-            height:18px !important; border-radius:12px;
+            height:36px !important; border-radius:24px;
             box-shadow:inset 0 0 0 1px rgba(40,90,180,0.9);
             background:linear-gradient(to bottom,#003db0 0%,#0052cc 10%,#005de8 25%,#0065f7 32%,#fff 35%,#fff 65%,#0065f7 68%,#005de8 75%,#0052cc 90%,#003db0 100%); }
         .notes-pm-pop .note.pm-red, .notes-pm-pop .ln-note-start.pm-red, .notes-pm-pop .ln-note-end.pm-red {
-            height:18px !important; border-radius:12px;
+            height:36px !important; border-radius:24px;
             box-shadow:inset 0 0 0 1px rgba(160,20,20,0.9);
             background:linear-gradient(to bottom,#cc0000 0%,#dd2222 10%,#ee3333 25%,#ff5555 32%,#fff 35%,#fff 65%,#ff5555 68%,#ee3333 75%,#dd2222 90%,#cc0000 100%); }
         .notes-pm-pop .note          { transform:translateY(50%) !important; }
@@ -1145,7 +1153,7 @@
         .notes-pm-pop .ln-note-start.pm-green,
         .notes-pm-pop .ln-note-start.pm-blue,
         .notes-pm-pop .ln-note-start.pm-red {
-            height:18px !important; border-radius:12px !important;
+            height:36px !important; border-radius:24px !important;
             background-size:100% 100% !important; background-position:0% 0% !important;
             transform:translateY(50%) !important;
         }
@@ -1155,7 +1163,7 @@
         .notes-pm-pop .ln-note-end.pm-green,
         .notes-pm-pop .ln-note-end.pm-blue,
         .notes-pm-pop .ln-note-end.pm-red {
-            height:9px !important; border-radius:12px 12px 0 0 !important;
+            height:18px !important; border-radius:24px 24px 0 0 !important;
             background-size:100% !important; transform:none !important;
         }
         .notes-pm-pop .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
@@ -1181,9 +1189,9 @@
         .charge-pm-pop-face .ln-note-end.pm-blue::before,
         .charge-pm-pop-face .ln-note-end.pm-red::before {
             content:''; position:absolute;
-            width:4px; height:4px; border-radius:50%;
+            width:8px; height:8px; border-radius:50%;
             background:radial-gradient(circle at 68% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
-            top:1px; left:calc(35% - 2px); z-index:1; pointer-events:none;
+            top:3px; left:calc(35% - 4px); z-index:1; pointer-events:none;
         }
         /* 右目 (::after) - 黒目を左寄りにして寄り目 */
         .notes-pm-pop-face .note.pm-white::after,
@@ -1202,9 +1210,9 @@
         .charge-pm-pop-face .ln-note-end.pm-blue::after,
         .charge-pm-pop-face .ln-note-end.pm-red::after {
             content:''; position:absolute;
-            width:4px; height:4px; border-radius:50%;
+            width:8px; height:8px; border-radius:50%;
             background:radial-gradient(circle at 32% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
-            top:1px; right:calc(35% - 2px); z-index:1; pointer-events:none;
+            top:3px; right:calc(35% - 4px); z-index:1; pointer-events:none;
         }
         /* ── pm_pop-face LN 終点ノーツ: 目を非表示 ── */
         .charge-pm-pop-face .ln-note-end.pm-white::before,  .charge-pm-pop-face .ln-note-end.pm-white::after,
@@ -1218,7 +1226,7 @@
         .charge-pm-pop-face .ln-note-end.pm-green,
         .charge-pm-pop-face .ln-note-end.pm-blue,
         .charge-pm-pop-face .ln-note-end.pm-red {
-            height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important;
+            height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
         .charge-pm-pop-face .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
@@ -1288,32 +1296,32 @@
         /* ── PM ポップ君風ライト ノーツ ── */
         .notes-pm-pop-lite .note.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-white,
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#ddd calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#ddd calc(50% + 1px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#ddd calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#ddd calc(50% + 2px)); }
         .notes-pm-pop-lite .note.pm-yellow,
         .notes-pm-pop-lite .ln-note-start.pm-yellow,
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#fafa02 calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#fafa02 calc(50% + 1px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#fafa02 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#fafa02 calc(50% + 2px)); }
         .notes-pm-pop-lite .note.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-green,
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#04c000 calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#04c000 calc(50% + 1px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#04c000 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#04c000 calc(50% + 2px)); }
         .notes-pm-pop-lite .note.pm-blue,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#0065f7 calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#0065f7 calc(50% + 1px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#0065f7 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#0065f7 calc(50% + 2px)); }
         .notes-pm-pop-lite .note.pm-red,
         .notes-pm-pop-lite .ln-note-start.pm-red,
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:18px !important; border-radius:12px; box-shadow:none; background:linear-gradient(to bottom,#ff5555 calc(50% - 3px),rgba(255,255,255,0.85) calc(50% - 3px),rgba(255,255,255,0.85) calc(50% + 3px),#ff5555 calc(50% + 1px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#ff5555 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#ff5555 calc(50% + 2px)); }
         .notes-pm-pop-lite .note { transform:translateY(50%) !important; }
         /* LN 始点: 通常ノーツと同じ */
         .notes-pm-pop-lite .ln-note-start.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-yellow,
         .notes-pm-pop-lite .ln-note-start.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
-        .notes-pm-pop-lite .ln-note-start.pm-red   { height:18px !important; border-radius:12px !important; transform:translateY(50%) !important; }
+        .notes-pm-pop-lite .ln-note-start.pm-red   { height:36px !important; border-radius:24px !important; transform:translateY(50%) !important; }
         /* LN 終点: 上半分・ストライプなし */
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#ddd !important;    transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#fafa02 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#04c000 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#0065f7 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important; background:#ff5555 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#ddd !important;    transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#fafa02 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#04c000 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#0065f7 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#ff5555 !important; transform:none !important; }
         /* LN チューブ: 判定中はノーツ色より少し明るい色 */
         .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#eeeeee; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#ffff66; }
@@ -1332,7 +1340,7 @@
         .charge-pm-pop-lite .ln-note-end.pm-green,
         .charge-pm-pop-lite .ln-note-end.pm-blue,
         .charge-pm-pop-lite .ln-note-end.pm-red {
-            height:9px !important; top:-9px !important; border-radius:12px 12px 0 0 !important;
+            height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
         .charge-pm-pop-lite .ln-note-end.pm-white  { background:#ddd !important; }
@@ -1792,6 +1800,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="fx-block">
                     <div class="fx-block-hdr">
                         <button class="fx-toggle" id="fxGateBtn">OFF</button>
+                        <button class="fx-hold-btn" id="fxGateHoldBtn">HOLD</button>
                         <span class="fx-name">GATE</span>
                     </div>
                     <div class="fx-row">
@@ -1814,6 +1823,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <div class="fx-block">
                     <div class="fx-block-hdr">
                         <button class="fx-toggle" id="fxRepBtn">OFF</button>
+                        <button class="fx-hold-btn" id="fxRepHoldBtn">HOLD</button>
                         <span class="fx-name">REPEATER</span>
                     </div>
                     <div class="fx-row">
@@ -2018,7 +2028,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.912</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.915</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2387,13 +2397,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div id="bmsSelectBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.78);"></div>
         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
                     background:#1e1e1e;border:1px solid #555;border-radius:12px;
-                    padding:16px 20px;min-width:300px;max-width:92vw;max-height:80vh;
+                    padding:24px 28px;min-width:700px;max-width:96vw;max-height:92vh;
                     display:flex;flex-direction:column;z-index:1;">
-            <div style="font-size:14px;font-weight:bold;color:#fff;margin-bottom:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:bold;color:#fff;margin-bottom:18px;text-align:center;">
                 📁 読み込む BMS ファイルを選択
             </div>
-            <div id="bmsSelectList" style="overflow-y:auto;flex:1;margin-bottom:12px;"></div>
-            <button id="bmsSelectCancel" class="btn btn-secondary" style="width:100%;">キャンセル</button>
+            <div id="bmsSelectList" style="overflow-y:auto;flex:1;margin-bottom:16px;"></div>
+            <button id="bmsSelectCancel" class="btn btn-secondary" style="width:100%;font-size:20px;min-height:48px;">キャンセル</button>
         </div>
     </div>
 
@@ -3330,8 +3340,9 @@ class BMSViewer {
         for (const entry of bmsEntries) {
             const btn=document.createElement('button');
             btn.className='btn btn-secondary';
-            btn.style.cssText='width:100%;margin-bottom:6px;text-align:left;'
-                             +'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+            btn.style.cssText='width:100%;margin-bottom:10px;text-align:left;'
+                             +'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+                             +'font-size:20px;min-height:48px;padding:8px 16px;';
             btn.textContent=entry.name;
             btn.addEventListener('click', async()=>{
                 overlay.style.display='none';
@@ -7021,7 +7032,7 @@ class BMSViewer {
                 this._pjCycleTimer = requestAnimationFrame(cycle);
             };
             this._pjCycleTimer = requestAnimationFrame(cycle);
-        } else if (judgment === 'GREAT') {
+        } else if (judgment === 'GREAT' || judgment === 'GOOD' || judgment === 'BAD' || judgment === 'POOR') {
             // 点滅をrAFで管理（setIntervalを廃止して表示フレームに同期）
             let bright = true, _bf = 0;
             const blink = () => {
@@ -8092,6 +8103,27 @@ class BMSViewer {
                 if (this._audioCtx) this._gateNextTime = this._audioCtx.currentTime;
             });
         });
+        // Gate HOLD（押してる間だけON）
+        this._gateHeld = false;
+        const _gateHoldBtn = document.getElementById('fxGateHoldBtn');
+        const _gateHoldOn = () => {
+            if (this._gateHeld) return;
+            this._gateHeld = true;
+            _gateHoldBtn.classList.add('on');
+            if (!this._fxSettings.gate.enabled && this._audioCtx) this._startGateScheduler();
+        };
+        const _gateHoldOff = () => {
+            if (!this._gateHeld) return;
+            this._gateHeld = false;
+            _gateHoldBtn.classList.remove('on');
+            if (!this._fxSettings.gate.enabled) this._stopGateScheduler();
+        };
+        _gateHoldBtn.addEventListener('mousedown',   _gateHoldOn);
+        _gateHoldBtn.addEventListener('touchstart',  e => { e.preventDefault(); _gateHoldOn(); }, {passive:false});
+        _gateHoldBtn.addEventListener('mouseup',     _gateHoldOff);
+        _gateHoldBtn.addEventListener('mouseleave',  _gateHoldOff);
+        _gateHoldBtn.addEventListener('touchend',    e => { e.preventDefault(); _gateHoldOff(); }, {passive:false});
+        _gateHoldBtn.addEventListener('touchcancel', _gateHoldOff);
 
         // ─── Repeater ──────────────────────────────────────────────────
         document.getElementById('fxRepBtn').addEventListener('click', e => {
@@ -8133,6 +8165,43 @@ class BMSViewer {
                 }
             });
         });
+        // Repeater HOLD（押してる間だけON）
+        this._repHeld = false;
+        const _repHoldBtn = document.getElementById('fxRepHoldBtn');
+        const _repHoldOn = () => {
+            if (this._repHeld) return;
+            this._repHeld = true;
+            _repHoldBtn.classList.add('on');
+            if (!this._fxSettings.repeater.enabled && this._fx && this._audioCtx) {
+                const s = this._fxSettings.repeater;
+                const t = this._audioCtx.currentTime, tc = 0.015;
+                const bpm = this._getFxBpm();
+                const sec = Math.max(0.01, 60 / Math.max(1, bpm) / s.subdiv);
+                this._fx.repeater.delay.delayTime.setValueAtTime(sec, t);
+                this._fx.repeater.dry.gain.setTargetAtTime(0,     t, tc);
+                this._fx.repeater.src.gain.setTargetAtTime(0,     t, tc);
+                this._fx.repeater.fb.gain.setTargetAtTime( 0.998, t, tc);
+                this._fx.repeater.wet.gain.setTargetAtTime(1,     t, tc);
+            }
+        };
+        const _repHoldOff = () => {
+            if (!this._repHeld) return;
+            this._repHeld = false;
+            _repHoldBtn.classList.remove('on');
+            if (!this._fxSettings.repeater.enabled && this._fx && this._audioCtx) {
+                const t = this._audioCtx.currentTime, tc = 0.015;
+                this._fx.repeater.dry.gain.setTargetAtTime(1, t, tc);
+                this._fx.repeater.src.gain.setTargetAtTime(1, t, tc);
+                this._fx.repeater.fb.gain.setTargetAtTime( 0, t, tc);
+                this._fx.repeater.wet.gain.setTargetAtTime(0, t, tc);
+            }
+        };
+        _repHoldBtn.addEventListener('mousedown',   _repHoldOn);
+        _repHoldBtn.addEventListener('touchstart',  e => { e.preventDefault(); _repHoldOn(); }, {passive:false});
+        _repHoldBtn.addEventListener('mouseup',     _repHoldOff);
+        _repHoldBtn.addEventListener('mouseleave',  _repHoldOff);
+        _repHoldBtn.addEventListener('touchend',    e => { e.preventDefault(); _repHoldOff(); }, {passive:false});
+        _repHoldBtn.addEventListener('touchcancel', _repHoldOff);
 
         // ─── LPF ───────────────────────────────────────────────────────
         mkToggle('fxLpfBtn','lpf',

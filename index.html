@@ -9,7 +9,7 @@
     <style>
         :root { --scratch-width:57.6px; --white-lane-width:39.6px; --black-lane-width:25.2px; --note-height:10px;
                 --pm-white-w:39.6px; --pm-yellow-w:34.2px; --pm-green-w:39.6px; --pm-blue-w:34.2px; --pm-red-w:39.6px;
-                --eff-h:400px; --lane-h:800px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
+                --eff-h:470px; --lane-h:940px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -216,8 +216,8 @@
         }
 
         /* プレイエリア */
-        .play-area-wrapper { flex:none; height:var(--lane-h); overflow:hidden; position:relative; }
-        .play-area { height:var(--eff-h); width:100%; transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
+        .play-area-wrapper { flex:none; height:var(--lane-h); overflow:hidden; position:relative; display:flex; flex-direction:column; }
+        .play-area { margin-top:auto; height:var(--eff-h); width:100%; transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
@@ -2075,7 +2075,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.948</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.950</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2977,7 +2977,7 @@ class BMSViewer {
         this.lastProcessedPx = 0;
         // 解像度モード
         this._resMode          = 'LOW';
-        this._effH             = 400;
+        this._effH             = 470;
         this._displayScale     = 2;
         this._currentLaneScale = 90;
         this._laneBaseWidths   = { '--scratch-width':64,'--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
@@ -6431,7 +6431,7 @@ class BMSViewer {
         const oldEffH = this._effH;
         this._resMode = mode;
         const isHigh = (mode === 'HIGH');
-        this._effH = isHigh ? 940 : 400;
+        this._effH = isHigh ? 940 : 470;
         const root = document.documentElement;
 
         // レーンベース幅を解像度で切替

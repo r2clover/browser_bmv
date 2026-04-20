@@ -217,7 +217,7 @@
 
         /* プレイエリア */
         .play-area-wrapper { flex:none; height:var(--lane-h); overflow:hidden; position:relative; display:flex; flex-direction:column; }
-        .play-area { margin-top:auto; height:var(--eff-h); width:100%; transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
+        .play-area { margin-top:auto; height:var(--eff-h); width:100%; transform:scale(2); transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
@@ -2075,7 +2075,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.950</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.951</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

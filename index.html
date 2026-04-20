@@ -220,7 +220,7 @@
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:940px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; }
+        .lane { width:var(--white-lane-width); height:940px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
         .play-area.bga-active .lane.scratch,
@@ -2073,7 +2073,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.932</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.936</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3833,7 +3833,22 @@ class BMSViewer {
             this.liftEnabled = !this.liftEnabled;
             document.getElementById('liftBtn').classList.toggle('on', this.liftEnabled);
             this._liftUpdateCoverDOM();
-            if (this.liftEnabled) this._liftShowInfoTemp();
+            if (this.liftEnabled) {
+                this._liftShowInfoTemp();
+                // LIFTをONにする直前の表示緑数字をtargetGreenNumに固定
+                // SUD+モードA/Cはすでに正しいtargetGreenNumを持つのでそのまま
+                if (this.bmsData) {
+                    const _bpm    = (this.bmsData.headers.bpm || 130) * this.realSpeed;
+                    const _raw    = Math.round(175300 / (_bpm * this.hiSpeed));
+                    const _effH   = 940;
+                    if (this.sudEnabled && this.sudMode === 'B') {
+                        const _vis = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
+                        this.targetGreenNum = Math.round(_raw * _vis / _effH);
+                    } else if (!this.sudEnabled) {
+                        this.targetGreenNum = _raw;
+                    }
+                }
+            }
             this._reapplyHS();
         });
         document.getElementById('liftUpBtn').addEventListener('click', () => {
@@ -5097,7 +5112,7 @@ class BMSViewer {
         let greenVal = green;
         const effH   = 940;
         const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
-        const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx - liftPx));
+        const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx));
         if (this.sudEnabled || this.liftEnabled) {
             if (!this.sudEnabled || this.sudMode === 'A' || this.sudMode === 'C') {
                 greenVal = Math.round(this.targetGreenNum || green);
@@ -6178,10 +6193,10 @@ class BMSViewer {
             const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
             _greenT = Math.round(_greenRaw * _visEff / _effH);
         }
-        if (_posT   !== this._lastPosText)   { document.getElementById('positionDisplay').textContent = _posT;   this._lastPosText   = _posT;   }
-        if (_bpmT   !== this._lastBpmText)   { document.getElementById('bpmDisplay').textContent      = _bpmT;   this._lastBpmText   = _bpmT;   }
+        if (_posT   !== this._lastPosText)   { (this._elPosDisplay  ||(this._elPosDisplay  =document.getElementById('positionDisplay'))).textContent = _posT;   this._lastPosText   = _posT;   }
+        if (_bpmT   !== this._lastBpmText)   { (this._elBpmDisplay  ||(this._elBpmDisplay  =document.getElementById('bpmDisplay'))).textContent      = _bpmT;   this._lastBpmText   = _bpmT;   }
         if (_greenT !== this._lastGreenText) {
-            document.getElementById('statusGreenNum').textContent = _greenT;
+            (this._elStatusGreen||(this._elStatusGreen=document.getElementById('statusGreenNum'))).textContent = _greenT;
             (this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'))).textContent = _greenT;
             (this._elFooterGreen || (this._elFooterGreen = document.getElementById('footerGreenNum'))).textContent = _greenT;
             this._lastGreenText = _greenT;
@@ -6221,7 +6236,7 @@ class BMSViewer {
                 const isF2 = this._lnAnimFrameCount === 8;
                 for (const el of this.lnElements) {
                     // dimMaskが非表示（判定ライン通過中）のときのみアニメーション
-                    const active = !el._dimMask || el._dimMask.style.display === 'none';
+                    const active = !el._dimMask || el._dimMaskHidden === true;
                     el.classList.toggle('ln-anim-f2', isF2 && active);
                 }
             }
@@ -6371,9 +6386,9 @@ class BMSViewer {
     }
 
     // HS再計算＆再描画
-    _reapplyHS() {
+    _reapplyHS(bpmOverride) {
         if (!this.bmsData) return;
-        const baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
+        const baseBpm = bpmOverride || (this.bmsData.headers.bpm || 130) * this.realSpeed;
         const gnEl = document.getElementById('greenInput');
         const gn   = this.targetGreenNum || parseFloat(gnEl ? gnEl.value : '225') || 225;
         this.hiSpeed = this._calcAdjustedHS(baseBpm, gn);
@@ -6570,7 +6585,6 @@ class BMSViewer {
         const MIN = 0, MAX = 900;
         this.liftCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._liftUpdateCoverDOM();
-        this._sudUpdateCoverDOM(); // SUD+カバー幅も再整合
         if (rebuild && this.liftEnabled) this._reapplyHS();
         else if (rebuild) this._updateRealGreen();
     }
@@ -7864,14 +7878,14 @@ class BMSViewer {
         const _smlsSp = _smls ? (this.barStartPx[this.loopStart] || 0) : 0;
         const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
         const _smlsSpan = _smlsEp - _smlsSp;
-        this.noteElements.forEach(el => {
+        for (const el of this.noteElements) {
             // シームレス: ep 以降の本来の譜面は非表示にして退避
             if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay) {
                 if (el._offscreen !== true) {
                     el.style.translate = '0px 200px';
                     el._offscreen = true;
                 }
-                return;
+                continue;
             }
             // シームレス: ループ範囲内のノートが cur の後方にある場合、span 分先にシフトして表示
             let effPos = el._pixelPos;
@@ -7891,7 +7905,7 @@ class BMSViewer {
                     el.style.translate = '0px ' + pushDown + 'px';
                     el._offscreen = true;
                 }
-                return;
+                continue;
             }
             // プレイエリアは 800px: 下端が上方に 820px 以上ある要素は画面外（overflow:hidden でクリップ済み）
             if (effPos - cur > 960) {
@@ -7900,14 +7914,18 @@ class BMSViewer {
                     el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
                     el._offscreen = undefined;
                 }
-                return;
+                continue;
             }
             el._offscreen = false;
             // translate のみ変更（Reflow不要・GPU合成のみで完結）
             el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
-            // LN/BSS/MSS: 判定ライン前/後 暗幕（頭が到達した瞬間に全消灯）
+            // LN/BSS/MSS: 判定ライン前/後 暗幕（変化時のみ書き込みでリフロー削減）
             if (el._dimMask) {
-                el._dimMask.style.display = cur >= effPos ? 'none' : '';
+                const shouldHide = cur >= effPos;
+                if (el._dimMaskHidden !== shouldHide) {
+                    el._dimMask.style.display = shouldHide ? 'none' : '';
+                    el._dimMaskHidden = shouldHide;
+                }
             }
             // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（AUTOのみ、PLAYは_onLaneReleaseで処理）
             if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined &&
@@ -7927,19 +7945,21 @@ class BMSViewer {
                     this._stopHoldBomb(el._dl);
                 }
             }
-            // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定
+            // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定（変化時のみ書き込み）
             if (el._headNote) {
                 const _pinHeld = this._heldLN ? this._heldLN.get(el._dl) : null;
                 const _pinOk = !this.isPlayMode || (_pinHeld && _pinHeld.pinEligible);
-                if (this.lnHeadPin && _pinOk && cur >= effPos && cur < effEnd) {
+                const shouldPin = this.lnHeadPin && _pinOk && cur >= effPos && cur < effEnd;
+                if (shouldPin) {
                     el._headNote.style.translate = '0px ' + (-(cur - effPos)) + 'px';
-                    el._headCap.style.display = 'none';
-                } else {
+                    if (!el._headCapHidden) { el._headCap.style.display = 'none'; el._headCapHidden = true; }
+                } else if (el._headCapHidden) {
                     el._headNote.style.translate = '';
                     el._headCap.style.display = '';
+                    el._headCapHidden = false;
                 }
             }
-        });
+        }
         if (updateSeek) this._updateSeekBar();
     }
 

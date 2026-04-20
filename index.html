@@ -2075,7 +2075,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.951</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.952</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5118,6 +5118,9 @@ class BMSViewer {
             C: document.getElementById('pmJudgeCombo_C'),
             R: document.getElementById('pmJudgeCombo_R'),
         };
+
+        // 初期解像度モードを適用
+        this._applyResMode(this._resMode);
     }
 
     /* ============================================================ RS 処理 */
@@ -6444,7 +6447,7 @@ class BMSViewer {
         this._displayScale = isHigh ? 1 : 2;
         const pa = document.querySelector('.play-area');
         if (pa) {
-            pa.style.transform = isHigh ? '' : 'scale(2)';
+            pa.style.transform = isHigh ? 'none' : 'scale(2)';
         }
 
         // 高さ・ボム・爆発サイズ

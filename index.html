@@ -2075,7 +2075,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.952</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.953</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6442,6 +6442,9 @@ class BMSViewer {
             ? { '--scratch-width':128,'--white-lane-width':88,'--black-lane-width':56,'--pm-white-w':88,'--pm-yellow-w':76,'--pm-green-w':88,'--pm-blue-w':76,'--pm-red-w':88 }
             : { '--scratch-width':64, '--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
         this._applyLaneWidths();
+
+        // basePixelsPerBar を _effH に比例させてスクロール速度を揃える
+        this.basePixelsPerBar = Math.round(400 * this._effH / 940);
 
         // displayScale と transform
         this._displayScale = isHigh ? 1 : 2;

@@ -9,7 +9,7 @@
     <style>
         :root { --scratch-width:57.6px; --white-lane-width:39.6px; --black-lane-width:25.2px; --note-height:10px;
                 --pm-white-w:39.6px; --pm-yellow-w:34.2px; --pm-green-w:39.6px; --pm-blue-w:34.2px; --pm-red-w:39.6px;
-                --lane-h:400px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
+                --eff-h:400px; --lane-h:800px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -216,12 +216,13 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:none; height:var(--lane-h); position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
+        .play-area-wrapper { flex:none; height:var(--lane-h); overflow:hidden; position:relative; }
+        .play-area { height:var(--eff-h); width:100%; transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:var(--lane-h); position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
+        .lane { width:var(--white-lane-width); height:var(--eff-h); position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
         .play-area.bga-active .lane.scratch,
@@ -2074,7 +2075,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.947</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.948</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2483,6 +2484,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
     </div>
 
+    <div class="play-area-wrapper" id="playAreaWrapper">
     <div class="play-area">
         <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
         <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
@@ -2528,6 +2530,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span id="liftCoverVal"></span>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- play-footer: グルーブゲージ + ステータスバー -->
@@ -2975,6 +2978,7 @@ class BMSViewer {
         // 解像度モード
         this._resMode          = 'LOW';
         this._effH             = 400;
+        this._displayScale     = 2;
         this._currentLaneScale = 90;
         this._laneBaseWidths   = { '--scratch-width':64,'--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
         this._noteHeightKey    = 'normal';
@@ -6436,8 +6440,16 @@ class BMSViewer {
             : { '--scratch-width':64, '--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
         this._applyLaneWidths();
 
+        // displayScale と transform
+        this._displayScale = isHigh ? 1 : 2;
+        const pa = document.querySelector('.play-area');
+        if (pa) {
+            pa.style.transform = isHigh ? '' : 'scale(2)';
+        }
+
         // 高さ・ボム・爆発サイズ
-        root.style.setProperty('--lane-h', this._effH + 'px');
+        root.style.setProperty('--eff-h', this._effH + 'px');
+        root.style.setProperty('--lane-h', (this._effH * this._displayScale) + 'px');
         root.style.setProperty('--explosion-sz', (isHigh ? 160 : 80) + 'px');
         root.style.setProperty('--explosion-offset', (isHigh ? -80 : -40) + 'px');
         root.style.setProperty('--bomb-h', (isHigh ? 400 : 200) + 'px');
@@ -6544,9 +6556,10 @@ class BMSViewer {
         const containerEl = document.querySelector('.container');
         const scale = containerEl ? containerEl.getBoundingClientRect().width / containerEl.offsetWidth : 1;
         cover.style.display = 'block';
-        cover.style.top    = Math.max(0, (lcRect.top  - paRect.top ) / scale) + 'px';
-        cover.style.left   = (lcRect.left - paRect.left) / scale + 1 + 'px';
-        cover.style.width  = lcRect.width / scale - 2 + 'px';
+        const ds = this._displayScale || 1;
+        cover.style.top    = Math.max(0, (lcRect.top  - paRect.top ) / scale / ds) + 'px';
+        cover.style.left   = (lcRect.left - paRect.left) / scale / ds + 1 + 'px';
+        cover.style.width  = lcRect.width / scale / ds - 2 + 'px';
         cover.style.height = this.sudCoverPx + 'px';
         this._syncWhiteNums();
         // カバー内緑数字: BPM変化に追従する実際の可視緑数字
@@ -6610,7 +6623,7 @@ class BMSViewer {
         let startY = 0, startH = 0, dragging = false;
         const onMove = (y) => {
             const scale = Math.min(window.innerWidth / 780, window.innerHeight / 1280);
-            this._setSudCoverPx(startH + (y - startY) / scale, false);
+            this._setSudCoverPx(startH + (y - startY) / scale / (this._displayScale || 1), false);
             this._sudShowInfoTemp(); // ドラッグ中は1秒タイマーをリセットし続ける
         };
         const onEnd  = () => {
@@ -6675,9 +6688,10 @@ class BMSViewer {
         const lcRect = lc.getBoundingClientRect();
         const paRect = pa.getBoundingClientRect();
 
+        const ds = this._displayScale || 1;
         cover.style.display = 'block';
-        cover.style.left   = (lcRect.left - paRect.left) / scale + 1 + 'px';
-        cover.style.width  = lcRect.width / scale - 2 + 'px';
+        cover.style.left   = (lcRect.left - paRect.left) / scale / ds + 1 + 'px';
+        cover.style.width  = lcRect.width / scale / ds - 2 + 'px';
         cover.style.height = this.liftCoverPx + 'px';
         this._syncWhiteNums();
 
@@ -6717,7 +6731,7 @@ class BMSViewer {
         const onMove = (y) => {
             const scale = Math.min(window.innerWidth / 780, window.innerHeight / 1280);
             // 上ドラッグ→カバー増、下ドラッグ→カバー減
-            this._setLiftCoverPx(startH - (y - startY) / scale, false);
+            this._setLiftCoverPx(startH - (y - startY) / scale / (this._displayScale || 1), false);
             this._liftShowInfoTemp();
         };
         const onEnd = () => {

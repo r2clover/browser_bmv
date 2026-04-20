@@ -7,8 +7,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BMS Viewer</title>
     <style>
-        :root { --scratch-width:115.2px; --white-lane-width:79.2px; --black-lane-width:50.4px; --note-height:20px;
-                --pm-white-w:79.2px; --pm-yellow-w:68.4px; --pm-green-w:79.2px; --pm-blue-w:68.4px; --pm-red-w:79.2px; }
+        :root { --scratch-width:57.6px; --white-lane-width:39.6px; --black-lane-width:25.2px; --note-height:10px;
+                --pm-white-w:39.6px; --pm-yellow-w:34.2px; --pm-green-w:39.6px; --pm-blue-w:34.2px; --pm-red-w:39.6px;
+                --lane-h:400px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -215,12 +216,12 @@
         }
 
         /* プレイエリア */
-        .play-area { flex:none; height:940px; position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
+        .play-area { flex:none; height:var(--lane-h); position:relative; overflow:hidden; isolation:isolate; background:linear-gradient(to bottom,#0a0a0a,#1a1a1a); --pm-beam-h:1175px; }
         .play-area.gauge-dead { background:linear-gradient(to bottom,#300000,#1a0000) !important; }
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:940px; position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
+        .lane { width:var(--white-lane-width); height:var(--lane-h); position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
         .play-area.bga-active .lane.scratch,
@@ -815,7 +816,7 @@
         }
         .lane-bomb {
             position:absolute; bottom:0; left:0; right:0;
-            height:400px; pointer-events:none; opacity:0; z-index:13;
+            height:var(--bomb-h); pointer-events:none; opacity:0; z-index:13;
         }
         .lane-bomb.boom { animation: beam-flash 0.20s ease-out forwards; }
         @keyframes beam-flash {
@@ -885,8 +886,8 @@
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
-            width:160px; height:160px;
-            bottom:-80px; left:calc(50% - 80px);
+            width:var(--explosion-sz); height:var(--explosion-sz);
+            bottom:var(--explosion-offset); left:calc(50% - calc(var(--explosion-sz) / 2));
             pointer-events:none; opacity:0; z-index:50;
             background: radial-gradient(circle,
                 rgba(255,255,255,1.00)  0%,
@@ -932,8 +933,8 @@
         /* ── ボム: 拡散リング ── */
         .lane-ring {
             position:absolute; border-radius:50%;
-            width:160px; height:160px;
-            bottom:-80px; left:calc(50% - 80px);
+            width:var(--explosion-sz); height:var(--explosion-sz);
+            bottom:var(--explosion-offset); left:calc(50% - calc(var(--explosion-sz) / 2));
             pointer-events:none; opacity:0; z-index:49;
             border: 6px solid rgba(60,170,255,0.95);
             background: transparent;
@@ -2073,7 +2074,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.944</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.947</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2242,6 +2243,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 </div>
                 <span style="font-size:10px; color:#666;">※pmライトは変更不可</span>
             </div>
+            <!-- 解像度 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">解像度</span>
+                <button class="fx-btn"    id="resHighBtn">HIGH</button>
+                <button class="fx-btn on" id="resLowBtn">LOW</button>
+            </div>
             <!-- レーン横幅 -->
             <div class="detail-section nowrap">
                 <span class="detail-label">レーン幅</span>
@@ -2311,7 +2318,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">判定文字サイズ</span>
                 <button class="loop-btn" id="judgeSizeMinus">－</button>
-                <input type="number" id="judgeSizeInput" min="10" max="200" value="120"
+                <input type="number" id="judgeSizeInput" min="10" max="200" value="62"
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeSizePlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
@@ -2320,7 +2327,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">判定文字高さ</span>
                 <button class="loop-btn" id="judgeHeightMinus">－</button>
-                <input type="number" id="judgeHeightInput" min="0" max="2000" value="180"
+                <input type="number" id="judgeHeightInput" min="0" max="2000" value="90"
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeHeightPlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
@@ -2965,10 +2972,16 @@ class BMSViewer {
         this.autoLanes       = new Set(); // オートレーン: dl インデックスのSet
         this.ringElements      = {};
         this.lastProcessedPx = 0;
+        // 解像度モード
+        this._resMode          = 'LOW';
+        this._effH             = 400;
+        this._currentLaneScale = 90;
+        this._laneBaseWidths   = { '--scratch-width':64,'--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
+        this._noteHeightKey    = 'normal';
         // SUD+
         this.sudEnabled    = false;
         this.sudMode       = 'A';
-        this.sudCoverPx    = 141;
+        this.sudCoverPx    = 60;
         this.sudBasePx     = 0;     // SUD+白数字の基準位置（px）
         this.sudNumDisplay = 'always'; // 'always' | 'onop'
         this._sudInfoTimer = null;
@@ -2978,7 +2991,7 @@ class BMSViewer {
         this._liftInfoTimer = null;
         // AUTO判定表示設定
         this.autoJudgeDisplay = 'PGREAT'; // 'PGREAT' | 'GREAT'
-        this._judgeBaseHeight = 180;
+        this._judgeBaseHeight = 90;
         // DOM差分更新キャッシュ
         this._lastPosText   = null;
         this._lastBpmText   = null;
@@ -3846,7 +3859,7 @@ class BMSViewer {
             if (this.bmsData) {
                 const _bpm  = this._bpmAt(this.currentPixelPos) || (this.bmsData.headers.bpm || 130) * this.realSpeed;
                 const _raw  = Math.round(175300 / (_bpm * this.hiSpeed));
-                const _effH = 940;
+                const _effH = this._effH;
                 if (this.sudEnabled && this.sudMode === 'B') {
                     const _vis = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                     this.targetGreenNum = Math.round(_raw * _vis / _effH);
@@ -3878,7 +3891,7 @@ class BMSViewer {
                 // ONにした瞬間: 現在の可視緑数字をtargetGreenNumとして記録
                 if (this.sudEnabled && this.bmsData) {
                     const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
-                    const _effH = 940;
+                    const _effH = this._effH;
                     const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                     const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
                     this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
@@ -3913,7 +3926,7 @@ class BMSViewer {
             // モードCに切替: 現在の可視緑数字をtargetGreenNumとして取り込み、HS再計算
             if (this.sudEnabled && this.bmsData) {
                 const _baseBpm = (this.bmsData.headers.bpm || 130) * this.realSpeed;
-                const _effH = 940;
+                const _effH = this._effH;
                 const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                 const _greenRaw = 175300 / (_baseBpm * this.hiSpeed);
                 this.targetGreenNum = Math.round(_greenRaw * (_visEff / _effH));
@@ -4349,7 +4362,8 @@ class BMSViewer {
         const _noteHeightMap  = { 'veryshort': 10, 'short': 15, 'normal': 20, 'long': 25 };
         const _noteHeightBtns = { 'veryshort': 'noteHVeryShortBtn', 'short': 'noteHShortBtn', 'normal': 'noteHNormalBtn', 'long': 'noteHLongBtn' };
         const _setNoteHeight = (key) => {
-            document.documentElement.style.setProperty('--note-height', _noteHeightMap[key] + 'px');
+            this._noteHeightKey = key;
+            document.documentElement.style.setProperty('--note-height', Math.round(_noteHeightMap[key] * this._effH / 940) + 'px');
             Object.keys(_noteHeightBtns).forEach(k => {
                 document.getElementById(_noteHeightBtns[k]).classList.toggle('on', k === key);
             });
@@ -4359,23 +4373,23 @@ class BMSViewer {
         document.getElementById('noteHNormalBtn').addEventListener('click',    () => _setNoteHeight('normal'));
         document.getElementById('noteHLongBtn').addEventListener('click',      () => _setNoteHeight('long'));
 
+        // 解像度切替
+        document.getElementById('resHighBtn').addEventListener('click', () => this._applyResMode('HIGH'));
+        document.getElementById('resLowBtn').addEventListener('click',  () => this._applyResMode('LOW'));
+
         // レーン横幅スケール
-        const _laneBaseWidths = {
-            '--scratch-width': 128, '--white-lane-width': 88, '--black-lane-width': 56,
-            '--pm-white-w': 88, '--pm-yellow-w': 76, '--pm-green-w': 88, '--pm-blue-w': 76, '--pm-red-w': 88
-        };
         const _laneWBtns = [50,60,70,80,90,100];
         const _setLaneScale = (pct) => {
-            const r = pct / 100;
-            const root = document.documentElement;
-            Object.entries(_laneBaseWidths).forEach(([k, v]) => root.style.setProperty(k, (v * r) + 'px'));
+            this._currentLaneScale = pct;
+            this._applyLaneWidths();
             _laneWBtns.forEach(p => document.getElementById('laneW' + p + 'Btn').classList.toggle('on', p === pct));
             // ボム・リング位置 + SUD+カバー幅を再計算（レイアウト反映後）
             requestAnimationFrame(() => {
+                const expHalf = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--explosion-sz')) / 2;
                 const lanesC = document.querySelector('.lanes-container');
                 if (lanesC) {
                     Array.from(lanesC.querySelectorAll('.lane')).forEach((lane, i) => {
-                        const cx = lane.offsetLeft + lane.offsetWidth / 2 - 80;
+                        const cx = lane.offsetLeft + lane.offsetWidth / 2 - expHalf;
                         if (this.explosionElements && this.explosionElements[i]) this.explosionElements[i].style.left = cx + 'px';
                         if (this.ringElements      && this.ringElements[i])      this.ringElements[i].style.left      = cx + 'px';
                     });
@@ -5023,10 +5037,9 @@ class BMSViewer {
         // visibilitychange: タブ/アプリが前面に戻ったとき
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                // タブ非表示・アプリ切替: rAFを停止し音声も停止
+                // タブ非表示・アプリ切替: バックグラウンドフラグを立て音声停止
                 this._wasInBackground = true;
                 if (this.isPlaying) {
-                    cancelAnimationFrame(this.animFrameId);
                     this._needAudioRestart = true;
                     this._stopAudio();
                 }
@@ -5034,11 +5047,7 @@ class BMSViewer {
                 // フォアグラウンド復帰
                 const needRestart = this.isPlaying && (this._needAudioRestart || this._wasInBackground);
                 this._wasInBackground = false;
-                if (!this._audioCtx) {
-                    // AudioContext未初期化でも再生中ならrAFを再開
-                    if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
-                    return;
-                }
+                if (!this._audioCtx) return;
                 const ctx = this._audioCtx;
                 if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
                     ctx.resume().then(() => {
@@ -5046,16 +5055,13 @@ class BMSViewer {
                             this._needAudioRestart = false;
                             this._startAudio();
                         }
-                        if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
                     }).catch(() => {
+                        // resume がユーザー操作待ちの場合: 次回タッチで再スタート
                         if (this.isPlaying) this._needAudioRestart = true;
                     });
-                } else {
-                    if (needRestart) {
-                        this._needAudioRestart = false;
-                        this._startAudio();
-                    }
-                    if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
+                } else if (ctx.state === 'running' && needRestart) {
+                    this._needAudioRestart = false;
+                    this._startAudio();
                 }
             }
         });
@@ -5143,7 +5149,7 @@ class BMSViewer {
         const bpm   = this._bpmAt(this.currentPixelPos);
         const green = Math.round(175300 / (bpm * this.hiSpeed));
         let greenVal = green;
-        const effH   = 940;
+        const effH   = this._effH;
         const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
         const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx));
         if (this.sudEnabled || this.liftEnabled) {
@@ -6222,7 +6228,7 @@ class BMSViewer {
         // カバー緑数字: _calcAdjustedHS と同じ vis 計算で補正（SUD+/LIFT 両対応）
         let _greenT = _greenRaw;
         {
-            const _effH2   = 940;
+            const _effH2   = this._effH;
             const _liftPx2 = this.liftEnabled ? this.liftCoverPx : 0;
             if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
                 const _vis = Math.max(1, Math.min(_effH2, _effH2 - this.sudCoverPx - _liftPx2));
@@ -6395,7 +6401,7 @@ class BMSViewer {
     _calcWhiteNum() {
         const sudPx  = this.sudEnabled  ? this.sudCoverPx  : 0;
         const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
-        return Math.max(1, Math.round((sudPx + liftPx) / 940 * 1000));
+        return Math.max(1, Math.round((sudPx + liftPx) / this._effH * 1000));
     }
 
     // 両カバーの白数字表示を一括更新
@@ -6411,10 +6417,83 @@ class BMSViewer {
 
     /* ============================================================ SUD+ */
 
+    _applyLaneWidths() {
+        const r = this._currentLaneScale / 100;
+        const root = document.documentElement;
+        Object.entries(this._laneBaseWidths).forEach(([k, v]) => root.style.setProperty(k, (v * r) + 'px'));
+    }
+
+    _applyResMode(mode) {
+        const oldEffH = this._effH;
+        this._resMode = mode;
+        const isHigh = (mode === 'HIGH');
+        this._effH = isHigh ? 940 : 400;
+        const root = document.documentElement;
+
+        // レーンベース幅を解像度で切替
+        this._laneBaseWidths = isHigh
+            ? { '--scratch-width':128,'--white-lane-width':88,'--black-lane-width':56,'--pm-white-w':88,'--pm-yellow-w':76,'--pm-green-w':88,'--pm-blue-w':76,'--pm-red-w':88 }
+            : { '--scratch-width':64, '--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
+        this._applyLaneWidths();
+
+        // 高さ・ボム・爆発サイズ
+        root.style.setProperty('--lane-h', this._effH + 'px');
+        root.style.setProperty('--explosion-sz', (isHigh ? 160 : 80) + 'px');
+        root.style.setProperty('--explosion-offset', (isHigh ? -80 : -40) + 'px');
+        root.style.setProperty('--bomb-h', (isHigh ? 400 : 200) + 'px');
+
+        // --pm-beam-h
+        document.querySelector('.play-area')?.style.setProperty('--pm-beam-h', (isHigh ? 1175 : 500) + 'px');
+
+        // ノーツ高さを解像度スケール
+        const _nhMap = { veryshort:10, short:15, normal:20, long:25 };
+        root.style.setProperty('--note-height', Math.round((_nhMap[this._noteHeightKey] || 20) * this._effH / 940) + 'px');
+
+        // SUD/LIFT カバーpx を比率で変換
+        if (oldEffH !== this._effH) {
+            this.sudCoverPx  = Math.round(this.sudCoverPx  * this._effH / oldEffH);
+            this.liftCoverPx = Math.round(this.liftCoverPx * this._effH / oldEffH);
+        }
+
+        // 判定文字高さ
+        const newJH = isHigh ? 180 : 90;
+        this._judgeBaseHeight = newJH;
+        const jhi = document.getElementById('judgeHeightInput');
+        if (jhi) { jhi.value = newJH; }
+
+        // 判定文字サイズ
+        const newJS = isHigh ? 120 : 62;
+        const jsi = document.getElementById('judgeSizeInput');
+        if (jsi) {
+            jsi.value = newJS;
+            document.querySelectorAll('.great-label,.great-combo,.pm-judge-label,.pm-judge-combo,.play-judge-label,.play-judge-combo')
+                .forEach(el => { el.style.fontSize = newJS + 'px'; });
+        }
+
+        // positioner 位置をリセット
+        const liftOff = this.liftEnabled ? this.liftCoverPx : 0;
+        const jp = document.querySelector('.play-judge-positioner');
+        if (jp) jp.style.bottom = (newJH + liftOff) + 'px';
+        document.querySelector('.great-positioner')?.style.setProperty('bottom', newJH + 'px') ||
+            (() => { const gp = document.querySelector('.great-positioner'); if (gp) gp.style.bottom = newJH + 'px'; })();
+        document.querySelectorAll('.pm-judge-positioner').forEach(el => { el.style.bottom = (newJH + liftOff) + 'px'; });
+
+        // DOM 更新
+        this._sudUpdateCoverDOM();
+        this._liftUpdateCoverDOM();
+
+        // ボタン
+        document.getElementById('resHighBtn')?.classList.toggle('on', isHigh);
+        document.getElementById('resLowBtn')?.classList.toggle('on', !isHigh);
+
+        // ノーツ再レイアウト
+        if (this.bmsData) { this._reapplyHS(); }
+    }
+
     // SUD+のHS計算（モードA: 有効ゾーンへの食い込みに応じて調整）
     _calcAdjustedHS(bpm, gn) {
         const baseHS = 175300 / (bpm * gn);
-        const effH   = 940;
+        const effH   = this._effH;
         const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
         if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
             const visEff = Math.max(1, Math.min(effH, effH - this.sudCoverPx - liftPx));
@@ -6482,7 +6561,7 @@ class BMSViewer {
                     ? this._bpmAtBar(0) * this.realSpeed
                     : this._bpmAt(this.currentPixelPos);
                 const _raw = Math.round(175300 / (_bpm * this.hiSpeed));
-                const _effH = 940;
+                const _effH = this._effH;
                 const _vis  = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
                 cg.textContent = this.sudEnabled ? Math.round(_raw * _vis / _effH) : _raw;
 
@@ -6518,7 +6597,7 @@ class BMSViewer {
     }
 
     _setSudCoverPx(px, rebuild = true) {
-        const MIN = 20, MAX = 940;
+        const MIN = Math.round(20 * this._effH / 940), MAX = this._effH;
         this.sudCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._sudUpdateCoverDOM();
         if (rebuild && this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) this._reapplyHS();
@@ -6585,7 +6664,7 @@ class BMSViewer {
             const jp = document.querySelector('.play-judge-positioner');
             if (jp) jp.style.bottom = (this._judgeBaseHeight || 180) + 'px';
             document.querySelectorAll('.pm-judge-positioner').forEach(el => {
-                el.style.bottom = (parseInt(el.dataset.baseBottom || 180)) + 'px';
+                el.style.bottom = (parseInt(el.dataset.baseBottom) || this._judgeBaseHeight || 180) + 'px';
             });
             return;
         }
@@ -6606,7 +6685,7 @@ class BMSViewer {
         const jp = document.querySelector('.play-judge-positioner');
         if (jp) jp.style.bottom = ((this._judgeBaseHeight || 180) + this.liftCoverPx) + 'px';
         document.querySelectorAll('.pm-judge-positioner').forEach(el => {
-            const base = parseInt(el.dataset.baseBottom || 180);
+            const base = parseInt(el.dataset.baseBottom) || this._judgeBaseHeight || 180;
             el.style.bottom = (base + this.liftCoverPx) + 'px';
         });
 
@@ -6624,7 +6703,7 @@ class BMSViewer {
     }
 
     _setLiftCoverPx(px, rebuild = true) {
-        const MIN = 0, MAX = 900;
+        const MIN = 0, MAX = Math.round(900 * this._effH / 940);
         this.liftCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._liftUpdateCoverDOM();
         if (rebuild && this.liftEnabled) this._reapplyHS(this._bpmAt(this.currentPixelPos) || undefined);

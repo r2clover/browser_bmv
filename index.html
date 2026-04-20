@@ -2073,7 +2073,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.942</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.943</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3273,8 +3273,9 @@ class BMSViewer {
     _createWavNode(wavId, vol) {
         const buf = this.wavBuffers[wavId];
         if (!buf||!this._audioCtx) return null;
-        // 同時再生ノード数が上限を超えたら古いノードを停止して解放
-        const MAX_NODES = 48;
+        // ノード数が上限を超えたら古いノードを停止して解放
+        // BGMは曲全体分を先行スケジュールするため上限は余裕を持たせる
+        const MAX_NODES = 512;
         while (this.scheduledNodes.length >= MAX_NODES) {
             const old = this.scheduledNodes.shift();
             try {

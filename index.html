@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BMS Viewer</title>
     <style>
-        :root { --scratch-width:128px; --white-lane-width:88px; --black-lane-width:56px; --note-height:20px;
-                --pm-white-w:88px; --pm-yellow-w:76px; --pm-green-w:88px; --pm-blue-w:76px; --pm-red-w:88px; }
+        :root { --scratch-width:115.2px; --white-lane-width:79.2px; --black-lane-width:50.4px; --note-height:20px;
+                --pm-white-w:79.2px; --pm-yellow-w:68.4px; --pm-green-w:79.2px; --pm-blue-w:68.4px; --pm-red-w:79.2px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -2073,7 +2073,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.936</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.942</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2088,9 +2088,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- モード選択 -->
             <div class="detail-section nowrap">
                 <span class="detail-label">モード</span>
-                <button class="fx-btn"    id="autoPlayModeBtn">AUTO PLAY</button>
+                <button class="fx-btn on" id="autoPlayModeBtn">AUTO PLAY</button>
                 <button class="fx-btn"    id="playModeBtn">PLAY MODE</button>
-                <button class="fx-btn on" id="playModeAutoWavBtn">WAVオート</button>
+                <button class="fx-btn"    id="playModeAutoWavBtn">WAVオート</button>
             </div>
             <!-- クォンタイズ再生モード -->
             <div class="detail-section nowrap">
@@ -2225,12 +2225,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- キービーム -->
             <div class="detail-section nowrap">
                 <span class="detail-label">キービーム</span>
-                <button class="fx-btn on" id="beamShortBtn">SHORT</button>
+                <button class="fx-btn"    id="beamShortBtn">SHORT</button>
                 <button class="fx-btn"    id="beamNormalBtn">NORMAL</button>
                 <button class="fx-btn"    id="beamLongBtn">LONG</button>
                 <button class="fx-btn"    id="pmBeamNormalBtn" style="display:none;">pmノーマル</button>
                 <button class="fx-btn"    id="pmBeamLiteBtn"   style="display:none;">pmライト</button>
-                <button class="fx-btn"    id="beamOffBtn">OFF</button>
+                <button class="fx-btn on" id="beamOffBtn">OFF</button>
             </div>
             <!-- PM キービームの長さ -->
             <div class="detail-section" id="pmBeamLengthSection" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
@@ -2249,8 +2249,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="laneW60Btn">60%</button>
                 <button class="fx-btn"    id="laneW70Btn">70%</button>
                 <button class="fx-btn"    id="laneW80Btn">80%</button>
-                <button class="fx-btn"    id="laneW90Btn">90%</button>
-                <button class="fx-btn on" id="laneW100Btn">100%</button>
+                <button class="fx-btn on" id="laneW90Btn">90%</button>
+                <button class="fx-btn"    id="laneW100Btn">100%</button>
             </div>
             <!-- ノーツ高さ（IIDXモード） -->
             <div class="detail-section nowrap">
@@ -2264,8 +2264,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="detail-section nowrap">
                 <span class="detail-label">ボム</span>
                 <button class="fx-btn"    id="bombABtn">通常</button>
-                <button class="fx-btn on" id="bombBBtn">軽量</button>
-                <button class="fx-btn"    id="bombOffBtn">OFF</button>
+                <button class="fx-btn"    id="bombBBtn">軽量</button>
+                <button class="fx-btn on" id="bombOffBtn">OFF</button>
             </div>
             <!-- BPM -->
             <div class="detail-section nowrap">
@@ -2324,6 +2324,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     class="loop-input" style="width:52px;">
                 <button class="loop-btn" id="judgeHeightPlus">＋</button>
                 <span style="font-size:11px; color:#888;">px</span>
+            </div>
+            <!-- AUTO判定 表示選択 -->
+            <div class="detail-section nowrap" id="autoJudgeSection">
+                <span class="detail-label">AUTO判定</span>
+                <button class="fx-btn on" id="autoJudgePgreatBtn">PGREAT</button>
+                <button class="fx-btn"    id="autoJudgeGreatBtn">GREAT</button>
             </div>
             <!-- FAST/SLOW -->
             <div class="detail-section" id="fastSlowSection">
@@ -2909,13 +2915,13 @@ class BMSViewer {
         this._justAnimFrame   = null;   // JUST モード rAF ID
         this._pmJudgeFadeTimer = { L: null, C: null, R: null }; // PM判定文字フェードタイマー
         this._pmComboPos       = null;  // PM コンボ表示中のポジション
-        this.beamEnabled      = true;
+        this.beamEnabled      = false;
         this.bpmMode          = 'LINE';  // BPM: LINE/NUM/OFF
         this.notesStyle       = 'A';     // ノーツ A/B
         this.chargeStyle      = 'A';     // チャージノーツ A/B
-        this.keyBeamLength    = 'SHORT'; // キービーム SHORT/NORMAL/LONG/OFF
-        this.bombMode         = 'B';     // ボム: A/B/OFF
-        this.isPlayMode       = true;    // false=オートプレイ / true=プレイモード
+        this.keyBeamLength    = 'OFF';   // キービーム SHORT/NORMAL/LONG/OFF
+        this.bombMode         = 'OFF';   // ボム: A/B/OFF
+        this.isPlayMode       = false;   // false=オートプレイ / true=プレイモード
         this.isAutoWavMode    = true;    // true=PLAY MODE（キー音オート）: キー入力判定+WAV自動再生
         // プレイモード判定カウンター
         this._pgCount = 0; this._grCount = 0; this._gdCount = 0;
@@ -2970,6 +2976,9 @@ class BMSViewer {
         this.liftEnabled   = false;
         this.liftCoverPx   = 100;
         this._liftInfoTimer = null;
+        // AUTO判定表示設定
+        this.autoJudgeDisplay = 'PGREAT'; // 'PGREAT' | 'GREAT'
+        this._judgeBaseHeight = 180;
         // DOM差分更新キャッシュ
         this._lastPosText   = null;
         this._lastBpmText   = null;
@@ -3264,6 +3273,15 @@ class BMSViewer {
     _createWavNode(wavId, vol) {
         const buf = this.wavBuffers[wavId];
         if (!buf||!this._audioCtx) return null;
+        // 同時再生ノード数が上限を超えたら古いノードを停止して解放
+        const MAX_NODES = 48;
+        while (this.scheduledNodes.length >= MAX_NODES) {
+            const old = this.scheduledNodes.shift();
+            try {
+                if (old._gainNode) old._gainNode.gain.setValueAtTime(0, 0);
+                old.stop();
+            } catch(e) {}
+        }
         const src  = this._audioCtx.createBufferSource();
         src.buffer = buf;
         src.playbackRate.value = Math.max(0.1, this.realSpeed);
@@ -3833,23 +3851,22 @@ class BMSViewer {
             this.liftEnabled = !this.liftEnabled;
             document.getElementById('liftBtn').classList.toggle('on', this.liftEnabled);
             this._liftUpdateCoverDOM();
-            if (this.liftEnabled) {
-                this._liftShowInfoTemp();
-                // LIFTをONにする直前の表示緑数字をtargetGreenNumに固定
-                // SUD+モードA/Cはすでに正しいtargetGreenNumを持つのでそのまま
-                if (this.bmsData) {
-                    const _bpm    = (this.bmsData.headers.bpm || 130) * this.realSpeed;
-                    const _raw    = Math.round(175300 / (_bpm * this.hiSpeed));
-                    const _effH   = 940;
-                    if (this.sudEnabled && this.sudMode === 'B') {
-                        const _vis = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
-                        this.targetGreenNum = Math.round(_raw * _vis / _effH);
-                    } else if (!this.sudEnabled) {
-                        this.targetGreenNum = _raw;
-                    }
+            if (this.liftEnabled) this._liftShowInfoTemp();
+            if (this.bmsData) {
+                const _bpm  = this._bpmAt(this.currentPixelPos) || (this.bmsData.headers.bpm || 130) * this.realSpeed;
+                const _raw  = Math.round(175300 / (_bpm * this.hiSpeed));
+                const _effH = 940;
+                if (this.sudEnabled && this.sudMode === 'B') {
+                    const _vis = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
+                    this.targetGreenNum = Math.round(_raw * _vis / _effH);
+                } else if (!this.sudEnabled) {
+                    this.targetGreenNum = _raw;
                 }
+                // SUD A/C: targetGreenNum は変更しない
+                this._reapplyHS(_bpm);
+            } else {
+                this._reapplyHS();
             }
-            this._reapplyHS();
         });
         document.getElementById('liftUpBtn').addEventListener('click', () => {
             this._setLiftCoverPx(this.liftCoverPx + 5);
@@ -4244,6 +4261,7 @@ class BMSViewer {
             _judgeIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
             document.getElementById('judgeOffBtn').style.display = '';
             document.getElementById('pmJudgeCoolBtn').style.display = isPM ? '' : 'none';
+            document.getElementById('autoJudgeSection').style.display = isPM ? 'none' : '';
             // キービームボタン切り替え（IIDX: SHORT/NORMAL/LONG/OFF, PM: pmノーマル/pmライト）
             const _beamIidxIds = ['beamShortBtn','beamNormalBtn','beamLongBtn'];
             _beamIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
@@ -4512,7 +4530,7 @@ class BMSViewer {
         // 判定文字サイズ
         const _applyJudgeSize = () => {
             const size = Math.max(10, Math.min(200, parseInt(document.getElementById('judgeSizeInput').value) || 120));
-            document.querySelectorAll('.great-label, .great-combo, .pm-judge-label, .pm-judge-combo').forEach(el => { el.style.fontSize = size + 'px'; });
+            document.querySelectorAll('.great-label, .great-combo, .pm-judge-label, .pm-judge-combo, .play-judge-label, .play-judge-combo').forEach(el => { el.style.fontSize = size + 'px'; });
         };
         document.getElementById('judgeSizeInput').addEventListener('input', _applyJudgeSize);
         document.getElementById('judgeSizeMinus').addEventListener('click', () => {
@@ -4532,8 +4550,12 @@ class BMSViewer {
         // 判定文字高さ
         const _applyJudgeHeight = () => {
             const h = Math.max(0, parseInt(document.getElementById('judgeHeightInput').value) || 180);
+            this._judgeBaseHeight = h;
             document.querySelector('.great-positioner').style.bottom = h + 'px';
             document.querySelectorAll('.pm-judge-positioner').forEach(el => { el.style.bottom = h + 'px'; });
+            // PLAY MODE / AUTO MODE 判定positioner
+            const jp = document.querySelector('.play-judge-positioner');
+            if (jp) jp.style.bottom = (h + (this.liftEnabled ? this.liftCoverPx : 0)) + 'px';
         };
         document.getElementById('judgeHeightInput').addEventListener('input', _applyJudgeHeight);
         document.getElementById('judgeHeightMinus').addEventListener('click', () => {
@@ -4545,6 +4567,18 @@ class BMSViewer {
             const inp = document.getElementById('judgeHeightInput');
             inp.value = (parseInt(inp.value) || 110) + 1;
             _applyJudgeHeight();
+        });
+
+        // AUTO判定 PGREAT/GREAT 切り替え
+        document.getElementById('autoJudgePgreatBtn').addEventListener('click', () => {
+            this.autoJudgeDisplay = 'PGREAT';
+            document.getElementById('autoJudgePgreatBtn').classList.add('on');
+            document.getElementById('autoJudgeGreatBtn').classList.remove('on');
+        });
+        document.getElementById('autoJudgeGreatBtn').addEventListener('click', () => {
+            this.autoJudgeDisplay = 'GREAT';
+            document.getElementById('autoJudgeGreatBtn').classList.add('on');
+            document.getElementById('autoJudgePgreatBtn').classList.remove('on');
         });
 
         // 背景透過率スライダー
@@ -4998,9 +5032,10 @@ class BMSViewer {
         // visibilitychange: タブ/アプリが前面に戻ったとき
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                // タブ非表示・アプリ切替: バックグラウンドフラグを立て音声停止
+                // タブ非表示・アプリ切替: rAFを停止し音声も停止
                 this._wasInBackground = true;
                 if (this.isPlaying) {
+                    cancelAnimationFrame(this.animFrameId);
                     this._needAudioRestart = true;
                     this._stopAudio();
                 }
@@ -5008,7 +5043,11 @@ class BMSViewer {
                 // フォアグラウンド復帰
                 const needRestart = this.isPlaying && (this._needAudioRestart || this._wasInBackground);
                 this._wasInBackground = false;
-                if (!this._audioCtx) return;
+                if (!this._audioCtx) {
+                    // AudioContext未初期化でも再生中ならrAFを再開
+                    if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
+                    return;
+                }
                 const ctx = this._audioCtx;
                 if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
                     ctx.resume().then(() => {
@@ -5016,13 +5055,16 @@ class BMSViewer {
                             this._needAudioRestart = false;
                             this._startAudio();
                         }
+                        if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
                     }).catch(() => {
-                        // resume がユーザー操作待ちの場合: 次回タッチで再スタート
                         if (this.isPlaying) this._needAudioRestart = true;
                     });
-                } else if (ctx.state === 'running' && needRestart) {
-                    this._needAudioRestart = false;
-                    this._startAudio();
+                } else {
+                    if (needRestart) {
+                        this._needAudioRestart = false;
+                        this._startAudio();
+                    }
+                    if (this.isPlaying) { this.lastTimestamp = performance.now(); this._animate(); }
                 }
             }
         });
@@ -6186,12 +6228,21 @@ class BMSViewer {
         const _bpmForGreen = (this.regulSpeed && this._rsK)
             ? this._bpmAtBar(0) * this.realSpeed : bpm;
         const _greenRaw = Math.round(175300 / (_bpmForGreen * this.hiSpeed));
-        // カバー緑数字: 可視緑数字（Mode A/C はHSにvisEff/effH組み込み済み）
+        // カバー緑数字: _calcAdjustedHS と同じ vis 計算で補正（SUD+/LIFT 両対応）
         let _greenT = _greenRaw;
-        if (this.sudEnabled) {
-            const _effH   = 940;
-            const _visEff = Math.max(1, Math.min(_effH, _effH - this.sudCoverPx));
-            _greenT = Math.round(_greenRaw * _visEff / _effH);
+        {
+            const _effH2   = 940;
+            const _liftPx2 = this.liftEnabled ? this.liftCoverPx : 0;
+            if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
+                const _vis = Math.max(1, Math.min(_effH2, _effH2 - this.sudCoverPx - _liftPx2));
+                _greenT = Math.round(_greenRaw * _vis / _effH2);
+            } else if (this.liftEnabled) {
+                const _vis = Math.max(1, Math.min(_effH2, _effH2 - _liftPx2));
+                _greenT = Math.round(_greenRaw * _vis / _effH2);
+            } else if (this.sudEnabled) {
+                const _vis = Math.max(1, Math.min(_effH2, _effH2 - this.sudCoverPx));
+                _greenT = Math.round(_greenRaw * _vis / _effH2);
+            }
         }
         if (_posT   !== this._lastPosText)   { (this._elPosDisplay  ||(this._elPosDisplay  =document.getElementById('positionDisplay'))).textContent = _posT;   this._lastPosText   = _posT;   }
         if (_bpmT   !== this._lastBpmText)   { (this._elBpmDisplay  ||(this._elBpmDisplay  =document.getElementById('bpmDisplay'))).textContent      = _bpmT;   this._lastBpmText   = _bpmT;   }
@@ -6541,7 +6592,7 @@ class BMSViewer {
             this._syncWhiteNums();
             // 判定テキスト・PMジャッジ positioner をデフォルト位置に戻す
             const jp = document.querySelector('.play-judge-positioner');
-            if (jp) jp.style.bottom = '';
+            if (jp) jp.style.bottom = (this._judgeBaseHeight || 180) + 'px';
             document.querySelectorAll('.pm-judge-positioner').forEach(el => {
                 el.style.bottom = (parseInt(el.dataset.baseBottom || 180)) + 'px';
             });
@@ -6562,7 +6613,7 @@ class BMSViewer {
 
         // 判定テキスト positioner を LIFT 量だけ上げる
         const jp = document.querySelector('.play-judge-positioner');
-        if (jp) jp.style.bottom = (180 + this.liftCoverPx) + 'px';
+        if (jp) jp.style.bottom = ((this._judgeBaseHeight || 180) + this.liftCoverPx) + 'px';
         document.querySelectorAll('.pm-judge-positioner').forEach(el => {
             const base = parseInt(el.dataset.baseBottom || 180);
             el.style.bottom = (base + this.liftCoverPx) + 'px';
@@ -6585,7 +6636,7 @@ class BMSViewer {
         const MIN = 0, MAX = 900;
         this.liftCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._liftUpdateCoverDOM();
-        if (rebuild && this.liftEnabled) this._reapplyHS();
+        if (rebuild && this.liftEnabled) this._reapplyHS(this._bpmAt(this.currentPixelPos) || undefined);
         else if (rebuild) this._updateRealGreen();
     }
 
@@ -6602,8 +6653,7 @@ class BMSViewer {
         const onEnd = () => {
             if (!dragging) return;
             dragging = false;
-            if (this.liftEnabled) this._reapplyHS();
-            else this._updateRealGreen();
+            this._setLiftCoverPx(this.liftCoverPx, true);
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup',   onMouseUp);
             window.removeEventListener('touchmove', onTouchMove);
@@ -6663,7 +6713,7 @@ class BMSViewer {
             }
             if (triggered) {
                 if (this.currentSide === 'PM') this._showPMCool(pmPositions);
-                else this._showGreat();
+                else this._showPlayJudgment(this.autoJudgeDisplay || 'PGREAT', -1);
             }
         }
 

@@ -815,7 +815,7 @@
         }
         .lane-bomb {
             position:absolute; bottom:0; left:0; right:0;
-            height:200px; pointer-events:none; opacity:0; z-index:13;
+            height:400px; pointer-events:none; opacity:0; z-index:13;
         }
         .lane-bomb.boom { animation: beam-flash 0.20s ease-out forwards; }
         @keyframes beam-flash {
@@ -885,8 +885,8 @@
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
-            width:80px; height:80px;
-            bottom:-40px;
+            width:160px; height:160px;
+            bottom:-80px; left:calc(50% - 80px);
             pointer-events:none; opacity:0; z-index:50;
             background: radial-gradient(circle,
                 rgba(255,255,255,1.00)  0%,
@@ -900,11 +900,28 @@
         }
         /* ボムB: 超軽量版（opacity fade のみ・blur/gradient上書き/transform なし） */
         .lane-explosion.explode-lite {
-            animation: explosion-lite 0.15s linear forwards;
+            animation: explosion-lite 0.25s linear forwards;
         }
         @keyframes explosion-lite {
             0%   { opacity: 0.70; }
             100% { opacity: 0; }
+        }
+        /* Hold bomb: LN/BSS押し中のループアニメーション */
+        .lane-explosion.explode-hold {
+            animation: explosion-hold 0.275s ease-in-out infinite;
+        }
+        @keyframes explosion-hold {
+            0%   { opacity: 0.60; transform: scale(0.275); }
+            50%  { opacity: 0.85; transform: scale(0.425); }
+            100% { opacity: 0.60; transform: scale(0.275); }
+        }
+        .lane-explosion.explode-hold-lite {
+            animation: explosion-hold-lite 0.275s ease-in-out infinite;
+        }
+        @keyframes explosion-hold-lite {
+            0%   { opacity: 0.40; transform: scale(0.275); }
+            50%  { opacity: 0.75; transform: scale(0.425); }
+            100% { opacity: 0.40; transform: scale(0.275); }
         }
         @keyframes explosion-ring {
             0%   { opacity: 0.80; transform: scale(0.20); }
@@ -915,10 +932,10 @@
         /* ── ボム: 拡散リング ── */
         .lane-ring {
             position:absolute; border-radius:50%;
-            width:80px; height:80px;
-            bottom:-40px;
+            width:160px; height:160px;
+            bottom:-80px; left:calc(50% - 80px);
             pointer-events:none; opacity:0; z-index:49;
-            border: 3px solid rgba(60,170,255,0.95);
+            border: 6px solid rgba(60,170,255,0.95);
             background: transparent;
             box-sizing: border-box;
             will-change:transform,opacity;
@@ -1443,9 +1460,9 @@
 
         /* ── ボムエフェクト ── */
         .bomb {
-            position:absolute; bottom:-10px; left:50%;
+            position:absolute; bottom:-20px; left:50%;
             transform:translateX(-50%);
-            width:130%; height:70px;
+            width:130%; height:140px;
             pointer-events:none; opacity:0;
             background:radial-gradient(ellipse at bottom,
                 rgba(60,160,255,0.95) 0%,
@@ -1629,6 +1646,31 @@
             position:absolute; inset:0; z-index:25; pointer-events:none; display:none;
             background:linear-gradient(to top, #2a2a2a 0%, #d8d8d8 100%);
         }
+            /* ── LIFT カバー ── */
+        .lift-cover {
+            position:absolute;
+            background:repeating-linear-gradient(
+                -45deg,#2a2a2a 0px,#2a2a2a 5px,#353535 5px,#353535 10px
+            );
+            border:1px solid #666; border-top:3px solid #bbb;
+            z-index:500; display:none; min-height:20px;
+            bottom:0; cursor:ns-resize; touch-action:none; box-sizing:border-box;
+            pointer-events:auto;
+        }
+        .lift-cover::before {
+            content:''; display:block; position:absolute;
+            top:-3px; left:0; right:0; height:4px;
+            background:linear-gradient(to right,#888,#ddd 20%,#fff 50%,#ddd 80%,#888);
+        }
+        .lift-cover-info {
+            position:absolute; top:6px; left:0; right:0;
+            display:flex; align-items:flex-start; justify-content:center;
+            pointer-events:none; opacity:0; transition:opacity 0.3s;
+        }
+        #liftCoverVal {
+            font-size:20px; font-weight:700; color:#fff;
+            text-shadow:0 0 6px #00aaff,0 0 2px #000; letter-spacing:1px;
+        }
             /* ── SUD+ カバー ── */
         .sud-cover {
             position:absolute;
@@ -1770,6 +1812,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <button class="sud-btn" id="sudBtn">SUD+</button>
             <button class="sud-btn" id="sudUpBtn" title="カバーを上へ">↑</button>
             <button class="sud-btn" id="sudDownBtn" title="カバーを下へ">↓</button>
+            <button class="sud-btn" id="liftBtn" style="margin-left:6px;">LIFT</button>
+            <button class="sud-btn" id="liftUpBtn" title="カバーを上へ">↑</button>
+            <button class="sud-btn" id="liftDownBtn" title="カバーを下へ">↓</button>
         </div>
 
         <div class="error" id="error"></div>
@@ -2028,7 +2073,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.915</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.931</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2196,6 +2241,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span style="font-size:11px; color:#888;">px</span>
                 </div>
                 <span style="font-size:10px; color:#666;">※pmライトは変更不可</span>
+            </div>
+            <!-- レーン横幅 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">レーン幅</span>
+                <button class="fx-btn"    id="laneW50Btn">50%</button>
+                <button class="fx-btn"    id="laneW60Btn">60%</button>
+                <button class="fx-btn"    id="laneW70Btn">70%</button>
+                <button class="fx-btn"    id="laneW80Btn">80%</button>
+                <button class="fx-btn"    id="laneW90Btn">90%</button>
+                <button class="fx-btn on" id="laneW100Btn">100%</button>
+            </div>
+            <!-- ノーツ高さ（IIDXモード） -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">ノーツ高さ</span>
+                <button class="fx-btn"    id="noteHVeryShortBtn">VERY SHORT</button>
+                <button class="fx-btn"    id="noteHShortBtn">SHORT</button>
+                <button class="fx-btn on" id="noteHNormalBtn">NORMAL</button>
+                <button class="fx-btn"    id="noteHLongBtn">LONG</button>
             </div>
             <!-- ボム -->
             <div class="detail-section nowrap">
@@ -2445,6 +2508,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span id="sudCoverGreenRange"></span>
                     <span id="sudCoverGreen"></span>
                 </div>
+            </div>
+        </div>
+        <div id="liftCover" class="lift-cover">
+            <div class="lift-cover-info">
+                <span id="liftCoverVal"></span>
             </div>
         </div>
     </div>
@@ -2898,6 +2966,10 @@ class BMSViewer {
         this.sudBasePx     = 0;     // SUD+白数字の基準位置（px）
         this.sudNumDisplay = 'always'; // 'always' | 'onop'
         this._sudInfoTimer = null;
+        // LIFT
+        this.liftEnabled   = false;
+        this.liftCoverPx   = 100;
+        this._liftInfoTimer = null;
         // DOM差分更新キャッシュ
         this._lastPosText   = null;
         this._lastBpmText   = null;
@@ -3755,6 +3827,22 @@ class BMSViewer {
         mkVol('volKey',   'volKeyVal',   v => this.volKey = v);
         mkVol('volMetro', 'volMetroVal', v => this.volMetronome = v);
 
+        // ── LIFT ──────────────────────────────────────────────────────────
+        this._bindLiftDrag();
+        document.getElementById('liftBtn').addEventListener('click', () => {
+            this.liftEnabled = !this.liftEnabled;
+            document.getElementById('liftBtn').classList.toggle('on', this.liftEnabled);
+            this._liftUpdateCoverDOM();
+            if (this.liftEnabled) this._liftShowInfoTemp();
+            this._reapplyHS();
+        });
+        document.getElementById('liftUpBtn').addEventListener('click', () => {
+            this._setLiftCoverPx(this.liftCoverPx + 5);
+        });
+        document.getElementById('liftDownBtn').addEventListener('click', () => {
+            this._setLiftCoverPx(this.liftCoverPx - 5);
+        });
+
         // ── SUD+ ──────────────────────────────────────────────────────────
         this._bindSudDrag();
         document.getElementById('sudBtn').addEventListener('click', () => {
@@ -4208,7 +4296,23 @@ class BMSViewer {
 
         // ボム（A / B（軽量） / OFF）
         const _setBombMode = (mode) => {
+            // アクティブなホールドボムを全停止してからモード変更
+            Object.values(this.explosionElements || {}).forEach(el => {
+                if (!el) return;
+                el.classList.remove('explode-hold', 'explode-hold-lite');
+            });
             this.bombMode = mode;
+            // 新モードが有効なら保持中レーンを再開始
+            if (mode !== 'OFF') {
+                // PLAY MODE: _heldLN から再開
+                if (this._heldLN) {
+                    this._heldLN.forEach((_, dl) => this._startHoldBomb(dl));
+                }
+                // AUTO MODE: _holdBombing フラグから再開
+                Object.values(this.explosionElements || {}).forEach(el => {
+                    if (el && el._holdBombing) this._startHoldBomb(el._dl);
+                });
+            }
             document.getElementById('bombABtn').classList.toggle('on',   mode === 'A');
             document.getElementById('bombBBtn').classList.toggle('on',   mode === 'B');
             document.getElementById('bombOffBtn').classList.toggle('on', mode === 'OFF');
@@ -4216,6 +4320,47 @@ class BMSViewer {
         document.getElementById('bombABtn').addEventListener('click',   () => _setBombMode('A'));
         document.getElementById('bombBBtn').addEventListener('click',   () => _setBombMode('B'));
         document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
+
+        // ノーツ高さ（IIDXモード）
+        const _noteHeightMap  = { 'veryshort': 10, 'short': 15, 'normal': 20, 'long': 25 };
+        const _noteHeightBtns = { 'veryshort': 'noteHVeryShortBtn', 'short': 'noteHShortBtn', 'normal': 'noteHNormalBtn', 'long': 'noteHLongBtn' };
+        const _setNoteHeight = (key) => {
+            document.documentElement.style.setProperty('--note-height', _noteHeightMap[key] + 'px');
+            Object.keys(_noteHeightBtns).forEach(k => {
+                document.getElementById(_noteHeightBtns[k]).classList.toggle('on', k === key);
+            });
+        };
+        document.getElementById('noteHVeryShortBtn').addEventListener('click', () => _setNoteHeight('veryshort'));
+        document.getElementById('noteHShortBtn').addEventListener('click',     () => _setNoteHeight('short'));
+        document.getElementById('noteHNormalBtn').addEventListener('click',    () => _setNoteHeight('normal'));
+        document.getElementById('noteHLongBtn').addEventListener('click',      () => _setNoteHeight('long'));
+
+        // レーン横幅スケール
+        const _laneBaseWidths = {
+            '--scratch-width': 128, '--white-lane-width': 88, '--black-lane-width': 56,
+            '--pm-white-w': 88, '--pm-yellow-w': 76, '--pm-green-w': 88, '--pm-blue-w': 76, '--pm-red-w': 88
+        };
+        const _laneWBtns = [50,60,70,80,90,100];
+        const _setLaneScale = (pct) => {
+            const r = pct / 100;
+            const root = document.documentElement;
+            Object.entries(_laneBaseWidths).forEach(([k, v]) => root.style.setProperty(k, (v * r) + 'px'));
+            _laneWBtns.forEach(p => document.getElementById('laneW' + p + 'Btn').classList.toggle('on', p === pct));
+            // ボム・リング位置 + SUD+カバー幅を再計算（レイアウト反映後）
+            requestAnimationFrame(() => {
+                const lanesC = document.querySelector('.lanes-container');
+                if (lanesC) {
+                    Array.from(lanesC.querySelectorAll('.lane')).forEach((lane, i) => {
+                        const cx = lane.offsetLeft + lane.offsetWidth / 2 - 80;
+                        if (this.explosionElements && this.explosionElements[i]) this.explosionElements[i].style.left = cx + 'px';
+                        if (this.ringElements      && this.ringElements[i])      this.ringElements[i].style.left      = cx + 'px';
+                    });
+                }
+                this._sudUpdateCoverDOM();
+                this._liftUpdateCoverDOM();
+            });
+        };
+        _laneWBtns.forEach(p => document.getElementById('laneW' + p + 'Btn').addEventListener('click', () => _setLaneScale(p)));
 
         // モード選択（AUTO PLAY / PLAY MODE / WAVオート）
         // mode: 'auto' | 'play' | 'autoWav'
@@ -4951,9 +5096,10 @@ class BMSViewer {
         const green = Math.round(175300 / (bpm * this.hiSpeed));
         let greenVal = green;
         const effH   = 940;
-        const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx));
-        if (this.sudEnabled) {
-            if (this.sudMode === 'A' || this.sudMode === 'C') {
+        const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
+        const visEff = Math.max(0, Math.min(effH, effH - this.sudCoverPx - liftPx));
+        if (this.sudEnabled || this.liftEnabled) {
+            if (!this.sudEnabled || this.sudMode === 'A' || this.sudMode === 'C') {
                 greenVal = Math.round(this.targetGreenNum || green);
             } else if (this.sudMode === 'B') {
                 greenVal = visEff >= effH ? green : Math.round(green * (visEff / effH));
@@ -5553,13 +5699,13 @@ class BMSViewer {
             Array.from(c.querySelectorAll('.lane')).forEach((lane, i) => {
                 const expl = document.createElement('div');
                 expl.className = 'lane-explosion';
-                expl.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 40) + 'px';
+                expl.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 80) + 'px';
                 c.appendChild(expl);
                 this.explosionElements[i] = expl;
                 // 拡散リング
                 const ring = document.createElement('div');
                 ring.className = 'lane-ring';
-                ring.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 40) + 'px';
+                ring.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 80) + 'px';
                 c.appendChild(ring);
                 this.ringElements[i] = ring;
             });
@@ -6068,15 +6214,14 @@ class BMSViewer {
         }
 
         // LN発光筒アニメーション: チャージノーツA / PM_POP_FACE 8フレームごとにframe1/frame2を切替
-        // PM_POP_FACEは判定中（dimMask非表示）のときだけアニメーション、判定前はframe1固定
+        // 判定ライン通過前（dimMask表示中）はアニメーションせずframe1固定
         if ((this.chargeStyle === 'A' || this.chargeStyle === 'PM_POP_FACE') && this.lnElements && this.lnElements.length) {
             this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
             if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
                 const isF2 = this._lnAnimFrameCount === 8;
-                const isPopFace = this.chargeStyle === 'PM_POP_FACE';
                 for (const el of this.lnElements) {
-                    // PM_POP_FACEは判定中（dimMaskがnone）の筒のみf2に切替、判定前はf1固定
-                    const active = !isPopFace || (el._dimMask && el._dimMask.style.display === 'none');
+                    // dimMaskが非表示（判定ライン通過中）のときのみアニメーション
+                    const active = !el._dimMask || el._dimMask.style.display === 'none';
                     el.classList.toggle('ln-anim-f2', isF2 && active);
                 }
             }
@@ -6187,15 +6332,39 @@ class BMSViewer {
         } catch(e) {}
     }
 
+    /* ============================================================ SUD+ / LIFT 共通 */
+
+    // SUD+ と LIFT の合算カバー量を 1-1000 スケールで返す
+    _calcWhiteNum() {
+        const sudPx  = this.sudEnabled  ? this.sudCoverPx  : 0;
+        const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
+        return Math.max(1, Math.round((sudPx + liftPx) / 940 * 1000));
+    }
+
+    // 両カバーの白数字表示を一括更新
+    _syncWhiteNums() {
+        const wn = this._calcWhiteNum();
+        const sv = document.getElementById('sudCoverVal');
+        if (sv) sv.textContent = wn;
+        const lv = document.getElementById('liftCoverVal');
+        if (lv) lv.textContent = wn;
+        const hw = document.getElementById('sudWhiteNum');
+        if (hw) hw.textContent = wn;
+    }
+
     /* ============================================================ SUD+ */
 
     // SUD+のHS計算（モードA: 有効ゾーンへの食い込みに応じて調整）
     _calcAdjustedHS(bpm, gn) {
         const baseHS = 175300 / (bpm * gn);
+        const effH   = 940;
+        const liftPx = this.liftEnabled ? this.liftCoverPx : 0;
         if (this.sudEnabled && (this.sudMode === 'A' || this.sudMode === 'C')) {
-            const effH     = 940; // SUD+有効ゾーン（0px基準）
-            const laneH    = 940;
-            const visEff   = Math.max(1, Math.min(effH, laneH - this.sudCoverPx));
+            const visEff = Math.max(1, Math.min(effH, effH - this.sudCoverPx - liftPx));
+            return Math.max(0.01, baseHS * (visEff / effH));
+        }
+        if (this.liftEnabled) {
+            const visEff = Math.max(1, Math.min(effH, effH - liftPx));
             return Math.max(0.01, baseHS * (visEff / effH));
         }
         return Math.max(0.01, baseHS);
@@ -6226,8 +6395,7 @@ class BMSViewer {
         if (!cover) return;
         if (!this.sudEnabled) {
             cover.style.display = 'none';
-            const wn = document.getElementById('sudWhiteNum');
-            if (wn) wn.textContent = 'OFF';
+            this._syncWhiteNums();
             return;
         }
         const lc = document.getElementById('lanesContainer');
@@ -6240,14 +6408,11 @@ class BMSViewer {
         const containerEl = document.querySelector('.container');
         const scale = containerEl ? containerEl.getBoundingClientRect().width / containerEl.offsetWidth : 1;
         cover.style.display = 'block';
-        cover.style.top    = (lcRect.top  - paRect.top ) / scale + 'px';
+        cover.style.top    = Math.max(0, (lcRect.top  - paRect.top ) / scale) + 'px';
         cover.style.left   = (lcRect.left - paRect.left) / scale + 1 + 'px';
         cover.style.width  = lcRect.width / scale - 2 + 'px';
         cover.style.height = this.sudCoverPx + 'px';
-        const wn = document.getElementById('sudWhiteNum');
-        if (wn) wn.textContent = String(this.sudCoverPx).padStart(3, '0');
-        const cv = document.getElementById('sudCoverVal');
-        if (cv) cv.textContent = Math.round(this.sudCoverPx / 940 * 1000);
+        this._syncWhiteNums();
         // カバー内緑数字: BPM変化に追従する実際の可視緑数字
         const cg = this._elCoverGreen || (this._elCoverGreen = document.getElementById('sudCoverGreen'));
         const cgr = this._elCoverGreenRange || (this._elCoverGreenRange = document.getElementById('sudCoverGreenRange'));
@@ -6343,6 +6508,114 @@ class BMSViewer {
         }, { passive: true });
     }
 
+    /* ============================================================ LIFT */
+
+    _liftUpdateCoverDOM() {
+        const cover = document.getElementById('liftCover');
+        const lc    = document.getElementById('lanesContainer');
+        const pa    = document.querySelector('.play-area');
+        if (!cover || !lc || !pa) return;
+
+        // lanes-container の translateY を更新（LIFT量だけ上シフト）
+        lc.style.transform = this.liftEnabled
+            ? `translateX(-50%) translateY(-${this.liftCoverPx}px)`
+            : 'translateX(-50%)';
+
+        if (!this.liftEnabled) {
+            cover.style.display = 'none';
+            this._syncWhiteNums();
+            // 判定テキスト・PMジャッジ positioner をデフォルト位置に戻す
+            const jp = document.querySelector('.play-judge-positioner');
+            if (jp) jp.style.bottom = '';
+            document.querySelectorAll('.pm-judge-positioner').forEach(el => {
+                el.style.bottom = (parseInt(el.dataset.baseBottom || 180)) + 'px';
+            });
+            return;
+        }
+
+        const containerEl = document.querySelector('.container');
+        const scale = containerEl ? containerEl.getBoundingClientRect().width / containerEl.offsetWidth : 1;
+        // lanes-containerの水平位置を基準にカバー幅を合わせる
+        const lcRect = lc.getBoundingClientRect();
+        const paRect = pa.getBoundingClientRect();
+
+        cover.style.display = 'block';
+        cover.style.left   = (lcRect.left - paRect.left) / scale + 1 + 'px';
+        cover.style.width  = lcRect.width / scale - 2 + 'px';
+        cover.style.height = this.liftCoverPx + 'px';
+        this._syncWhiteNums();
+
+        // 判定テキスト positioner を LIFT 量だけ上げる
+        const jp = document.querySelector('.play-judge-positioner');
+        if (jp) jp.style.bottom = (180 + this.liftCoverPx) + 'px';
+        document.querySelectorAll('.pm-judge-positioner').forEach(el => {
+            const base = parseInt(el.dataset.baseBottom || 180);
+            el.style.bottom = (base + this.liftCoverPx) + 'px';
+        });
+
+        // 数字表示
+        const info = cover.querySelector('.lift-cover-info');
+        if (info) info.style.opacity = '1';
+    }
+
+    _liftShowInfoTemp() {
+        const info = document.querySelector('.lift-cover-info');
+        if (!info) return;
+        info.style.opacity = '1';
+        clearTimeout(this._liftInfoTimer);
+        this._liftInfoTimer = setTimeout(() => { info.style.opacity = '0'; }, 1000);
+    }
+
+    _setLiftCoverPx(px, rebuild = true) {
+        const MIN = 0, MAX = 900;
+        this.liftCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
+        this._liftUpdateCoverDOM();
+        this._sudUpdateCoverDOM(); // SUD+カバー幅も再整合
+        if (rebuild && this.liftEnabled) this._reapplyHS();
+        else if (rebuild) this._updateRealGreen();
+    }
+
+    _bindLiftDrag() {
+        const cover = document.getElementById('liftCover');
+        if (!cover) return;
+        let startY = 0, startH = 0, dragging = false;
+        const onMove = (y) => {
+            const scale = Math.min(window.innerWidth / 780, window.innerHeight / 1280);
+            // 上ドラッグ→カバー増、下ドラッグ→カバー減
+            this._setLiftCoverPx(startH - (y - startY) / scale, false);
+            this._liftShowInfoTemp();
+        };
+        const onEnd = () => {
+            if (!dragging) return;
+            dragging = false;
+            if (this.liftEnabled) this._reapplyHS();
+            else this._updateRealGreen();
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup',   onMouseUp);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend',  onTouchEnd);
+        };
+        const onMouseMove = (e) => { e.preventDefault(); onMove(e.clientY); };
+        const onMouseUp   = ()  => onEnd();
+        const onTouchMove = (e) => { e.preventDefault(); onMove(e.touches[0].clientY); };
+        const onTouchEnd  = ()  => onEnd();
+        cover.addEventListener('mousedown', (e) => {
+            if (!this.liftEnabled) return;
+            dragging = true; startY = e.clientY; startH = this.liftCoverPx;
+            this._liftShowInfoTemp();
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup',   onMouseUp);
+        });
+        cover.addEventListener('touchstart', (e) => {
+            if (!this.liftEnabled) return;
+            dragging = true;
+            startY = e.touches[0].clientY; startH = this.liftCoverPx;
+            this._liftShowInfoTemp();
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('touchend',  onTouchEnd);
+        }, { passive: true });
+    }
+
     _detectPassed(prevPx, curPx) {
         const events = this.noteEvents;
 
@@ -6425,7 +6698,7 @@ class BMSViewer {
     _resetEffectElements() {
         // アニメーションクラスを除去して opacity:0 に戻す
         Object.values(this.explosionElements).forEach(el => {
-            el.classList.remove('explode', 'explode-lite');
+            el.classList.remove('explode', 'explode-lite', 'explode-hold', 'explode-hold-lite');
         });
         Object.values(this.ringElements || {}).forEach(el => {
             el.classList.remove('ring-expand');
@@ -7093,6 +7366,7 @@ class BMSViewer {
             if (best.isLN && best._tailEvent) {
                 const isGoodPlus = judgment === 'PGREAT' || judgment === 'GREAT' || judgment === 'GOOD';
                 this._heldLN.set(dl, { tailEvent: best._tailEvent, pinEligible: isGoodPlus });
+                this._startHoldBomb(dl);
             }
         } else {
             // 空POOR チェック（早押し側のみ: BAD_E < delta <= POOR_E）
@@ -7128,6 +7402,7 @@ class BMSViewer {
         const held = this._heldLN.get(dl);
         if (!held) return;
         this._heldLN.delete(dl);
+        this._stopHoldBomb(dl);
 
         const tailEv = held.tailEvent;
         if (!tailEv || tailEv.judged) return;
@@ -7181,6 +7456,7 @@ class BMSViewer {
                 if (refPx < curPx - BAD_E) {
                     e.judged = true;
                     this._heldLN.delete(e.dl);
+                    this._stopHoldBomb(e.dl);
                     this._applyJudgment('POOR', e.dl, false, true); // isMiss=true
                 }
             }
@@ -7230,6 +7506,23 @@ class BMSViewer {
                 }
             }
         }
+    }
+
+    /* ── エフェクト: ホールドボム開始（LN/BSS押し中ループ） ── */
+    _startHoldBomb(dl) {
+        if (this.bombMode === 'OFF') return;
+        const el = this.explosionElements[dl];
+        if (!el) return;
+        el.classList.remove('explode', 'explode-lite', 'explode-hold', 'explode-hold-lite');
+        void el.offsetWidth;
+        el.classList.add(this.bombMode === 'B' ? 'explode-hold-lite' : 'explode-hold');
+    }
+
+    /* ── エフェクト: ホールドボム停止 ── */
+    _stopHoldBomb(dl) {
+        const el = this.explosionElements[dl];
+        if (!el) return;
+        el.classList.remove('explode-hold', 'explode-hold-lite');
     }
 
     /* ── エフェクト: 爆発リング ── */
@@ -7623,6 +7916,17 @@ class BMSViewer {
                 this._triggerBomb(el._dl, 'PGREAT');
                 this._triggerExplosion(el._dl);
             }
+            // AUTO mode hold bomb: 頭〜尾の間だけループ表示
+            if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined && this.isPlaying) {
+                const inHold = cur >= effPos && cur < el._pixelEndPos;
+                if (inHold && !el._holdBombing) {
+                    el._holdBombing = true;
+                    this._startHoldBomb(el._dl);
+                } else if (!inHold && el._holdBombing) {
+                    el._holdBombing = false;
+                    this._stopHoldBomb(el._dl);
+                }
+            }
             // LN/BSS/MSS: モードBのみ、頭が到達したら尾が到達するまでJLに固定
             if (el._headNote) {
                 const _pinHeld = this._heldLN ? this._heldLN.get(el._dl) : null;
@@ -7832,7 +8136,7 @@ class BMSViewer {
         if (!this._audioCtx) return;
         this._gateNextTime = this._audioCtx.currentTime;
         this._gateSchedulerTimer = setInterval(() => {
-            if (!this._audioCtx || !this._fx || !this._fxSettings.gate.enabled) return;
+            if (!this._audioCtx || !this._fx || (!this._fxSettings.gate.enabled && !this._gateHeld)) return;
             const bpm = this._getFxBpm();
             const intervalSec = Math.max(0.02, 60 / Math.max(1, bpm) / this._fxSettings.gate.subdiv);
             const duty = this._fxSettings.gate.duty / 100;

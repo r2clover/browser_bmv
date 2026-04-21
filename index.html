@@ -1398,9 +1398,9 @@
             gap: 8px;
             transform: translateX(-50%);
         }
-        .pm-judge-L { left: calc(50% - 246px); }
+        .pm-judge-L { left: calc(50% - var(--pm-judge-lr, 246px)); }
         .pm-judge-C { left: 50%; }
-        .pm-judge-R { left: calc(50% + 246px); }
+        .pm-judge-R { left: calc(50% + var(--pm-judge-lr, 246px)); }
         .pm-judge-label {
             font-size: 52px; font-weight: 800;
             background: linear-gradient(to bottom, #ff00aa 0%, #ffffff 100%);
@@ -2076,7 +2076,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.956</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.958</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6473,7 +6473,8 @@ class BMSViewer {
         const _pph = Math.round(36 * this._effH / 940);
         root.style.setProperty('--pm-pop-h',     _pph + 'px');
         root.style.setProperty('--pm-pop-end-h', Math.round(_pph / 2) + 'px');
-        root.style.setProperty('--pm-pop-r',     Math.round(24 * this._effH / 940) + 'px');
+        root.style.setProperty('--pm-pop-r',      Math.round(24  * this._effH / 940) + 'px');
+        root.style.setProperty('--pm-judge-lr',   Math.round(246 * this._effH / 940) + 'px');
 
         // SUD/LIFT カバーpx を比率で変換
         if (oldEffH !== this._effH) {
@@ -6487,8 +6488,9 @@ class BMSViewer {
         const jhi = document.getElementById('judgeHeightInput');
         if (jhi) { jhi.value = newJH; }
 
-        // 判定文字サイズ
-        const newJS = isHigh ? 120 : 62;
+        // 判定文字サイズ（PMモードは専用サイズ）
+        const _jsBase = this.currentSide === 'PM' ? 52 : 120;
+        const newJS = Math.round(_jsBase * this._effH / 940);
         const jsi = document.getElementById('judgeSizeInput');
         if (jsi) {
             jsi.value = newJS;

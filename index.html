@@ -223,7 +223,7 @@
         .play-area.gauge-dead .lane { background:#1a0000 !important; }
         .play-area.gauge-dead .lane.scratch,.play-area.gauge-dead .lane.black-key { background:#110000 !important; }
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
-        .lane { width:var(--white-lane-width); height:var(--eff-h); position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
+        .lane { width:var(--white-lane-width); height:var(--eff-h); position:relative; z-index:11; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
         .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
         .play-area.bga-active .lane.scratch,
@@ -2076,7 +2076,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.958</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.960</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -4212,8 +4212,6 @@ class BMSViewer {
             if (isPM) {
                 _setNotesStyle('PM_POP_LITE');
                 _setChargeStyle('PM_POP_LITE');
-                document.getElementById('judgeSizeInput').value = Math.round(52 * this._effH / 940);
-                _applyJudgeSize();
                 this.lnHeadPin = true;
                 document.getElementById('lnModeBBtn').classList.add('on');
                 document.getElementById('lnModeABtn').classList.remove('on');
@@ -4232,8 +4230,6 @@ class BMSViewer {
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.chargeStyle)) _setChargeStyle('A');
                 if (_isPmGaugeType(this._gaugeType)) _setGaugeType('NORMAL');
-                document.getElementById('judgeSizeInput').value = Math.round(120 * this._effH / 940);
-                _applyJudgeSize();
                 // SUD+デフォルト: ON, モードC
                 this.sudEnabled = true;
                 this.sudMode = 'C';
@@ -4244,6 +4240,8 @@ class BMSViewer {
                 if (this.bmsData) this._reapplyHS();
                 else this._sudUpdateCoverDOM();
             }
+            // 判定文字サイズ・pm-judge-lr をレーン幅込みで再適用
+            this._applyLaneWidths();
             // モード切替時にLANEオプションをリセット
             const laneDefault = isPM ? '123456789' : '1234567';
             const swapEl = document.getElementById('swapInput');
@@ -6430,6 +6428,17 @@ class BMSViewer {
         const r = this._currentLaneScale / 100;
         const root = document.documentElement;
         Object.entries(this._laneBaseWidths).forEach(([k, v]) => root.style.setProperty(k, (v * r) + 'px'));
+        // --pm-judge-lr: レーン幅に比例
+        root.style.setProperty('--pm-judge-lr', Math.round(246 * this._effH / 940 * r) + 'px');
+        // 判定文字サイズ: レーン幅に比例
+        const jsBase = this.currentSide === 'PM' ? 52 : 120;
+        const newJS = Math.round(jsBase * this._effH / 940 * r);
+        const jsi = document.getElementById('judgeSizeInput');
+        if (jsi) {
+            jsi.value = newJS;
+            document.querySelectorAll('.great-label,.great-combo,.pm-judge-label,.pm-judge-combo,.play-judge-label,.play-judge-combo')
+                .forEach(el => { el.style.fontSize = newJS + 'px'; });
+        }
     }
 
     _applyResMode(mode) {
@@ -6474,8 +6483,6 @@ class BMSViewer {
         root.style.setProperty('--pm-pop-h',     _pph + 'px');
         root.style.setProperty('--pm-pop-end-h', Math.round(_pph / 2) + 'px');
         root.style.setProperty('--pm-pop-r',      Math.round(24  * this._effH / 940) + 'px');
-        root.style.setProperty('--pm-judge-lr',   Math.round(246 * this._effH / 940) + 'px');
-
         // SUD/LIFT カバーpx を比率で変換
         if (oldEffH !== this._effH) {
             this.sudCoverPx  = Math.round(this.sudCoverPx  * this._effH / oldEffH);
@@ -6487,16 +6494,6 @@ class BMSViewer {
         this._judgeBaseHeight = newJH;
         const jhi = document.getElementById('judgeHeightInput');
         if (jhi) { jhi.value = newJH; }
-
-        // 判定文字サイズ（PMモードは専用サイズ）
-        const _jsBase = this.currentSide === 'PM' ? 52 : 120;
-        const newJS = Math.round(_jsBase * this._effH / 940);
-        const jsi = document.getElementById('judgeSizeInput');
-        if (jsi) {
-            jsi.value = newJS;
-            document.querySelectorAll('.great-label,.great-combo,.pm-judge-label,.pm-judge-combo,.play-judge-label,.play-judge-combo')
-                .forEach(el => { el.style.fontSize = newJS + 'px'; });
-        }
 
         // positioner 位置をリセット
         const liftOff = this.liftEnabled ? this.liftCoverPx : 0;

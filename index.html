@@ -1032,6 +1032,8 @@
             font-size:12px; font-weight:bold; cursor:pointer; min-height:26px;
         }
         .fx-subdiv-btn.on { border-color:#4af; background:#001833; color:#4af; }
+        /* ── クォンタイズ移動ハイライト ── */
+        .quant-moved { box-shadow: inset 0 0 0 2px #f00 !important; }
         /* ── リッチノーツ（軽量版） ── */
         .note {
             position:absolute; width:calc(100% - 2px); left:1px;
@@ -1531,23 +1533,23 @@
         .help-panel {
             position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
             background:#1e1e1e; border:1px solid #444; border-radius:10px;
-            width:min(92vw,480px); max-height:80vh;
+            width:min(96vw,500px); max-height:88vh;
             display:flex; flex-direction:column;
             box-shadow:0 8px 32px rgba(0,0,0,0.7);
         }
         .help-header {
             display:flex; justify-content:space-between; align-items:center;
-            padding:12px 16px; border-bottom:1px solid #333;
-            font-size:15px; font-weight:bold; color:#fff;
+            padding:10px 14px; border-bottom:1px solid #333;
+            font-size:14px; font-weight:bold; color:#fff;
         }
         .help-close {
-            background:none; border:none; color:#aaa; font-size:20px;
+            background:none; border:none; color:#aaa; font-size:18px;
             cursor:pointer; padding:0 4px; line-height:1;
         }
         .help-close:hover { color:#fff; }
         .help-body {
-            padding:14px 16px; overflow-y:auto; flex:1;
-            font-size:12px; color:#ccc; line-height:1.7;
+            padding:12px 14px; overflow-y:auto; flex:1;
+            font-size:13px; color:#ccc; line-height:1.7;
             white-space:pre-wrap; word-break:break-word;
         }
         .help-body .help-h1 { color:#ffdd44; font-weight:bold; margin-top:10px; }
@@ -1566,21 +1568,21 @@
             transform:translate(-50%,-50%);
             background:#1e1e1e; border:1px solid #555;
             border-radius:12px; padding:0;
-            min-width:500px; max-width:92%;
-            max-height:88%;
+            min-width:300px; max-width:96vw;
+            max-height:88vh;
             display:flex; flex-direction:column;
             z-index:1;
         }
         .detail-panel-header {
             display:flex; justify-content:space-between; align-items:center;
             flex-shrink:0;
-            padding:16px 20px; border-bottom:1px solid #333;
-            color:#fff; font-weight:bold; font-size:24px;
+            padding:10px 16px; border-bottom:1px solid #333;
+            color:#fff; font-weight:bold; font-size:16px;
         }
         /* スクロール可能なボディ部分 */
         .detail-body {
             overflow-y:auto; flex:1;
-            padding:16px 20px 20px;
+            padding:10px 14px 16px;
             overscroll-behavior:contain;
         }
         /* スクロールバーのスタイル（Webkit） */
@@ -1588,45 +1590,54 @@
         .detail-body::-webkit-scrollbar-track { background:transparent; }
         .detail-body::-webkit-scrollbar-thumb { background:#444; border-radius:3px; }
         .detail-body::-webkit-scrollbar-thumb:hover { background:#666; }
-        .song-info-row { display:flex; align-items:baseline; gap:8px; padding:8px 20px; border-bottom:1px solid #2a2a2a; }
+        .song-info-row { display:flex; align-items:baseline; gap:8px; padding:6px 14px; border-bottom:1px solid #2a2a2a; }
         .song-info-row:last-child { border-bottom:none; }
-        .song-info-label { flex-shrink:0; font-size:18px; color:#888; width:180px; }
-        .song-info-value { font-size:20px; color:#fff; word-break:break-all; }
+        .song-info-label { flex-shrink:0; font-size:13px; color:#888; width:110px; }
+        .song-info-value { font-size:14px; color:#fff; word-break:break-all; }
         .detail-close {
             background:none; border:none; color:#aaa;
-            font-size:36px; line-height:1; cursor:pointer; padding:2px 8px;
+            font-size:20px; line-height:1; cursor:pointer; padding:2px 6px;
         }
         .detail-section {
             display:flex; align-items:center; gap:8px;
-            margin-bottom:14px; flex-wrap:wrap;
+            margin-bottom:10px; flex-wrap:wrap;
         }
         .detail-section.nowrap {
             flex-wrap:nowrap;
         }
         .detail-section:last-child { margin-bottom:0; }
         .detail-label {
-            font-size:18px; color:#aaa; min-width:88px;
+            font-size:13px; color:#aaa; min-width:80px;
         }
         /* 詳細ボタン */
         #detailBtn { letter-spacing:0.05em; }
-        /* detail-panel内ボタンを2x対応サイズに上書き */
+        /* detail-panel内ボタンサイズ */
         .detail-panel .btn,
-        .detail-panel .fx-btn { font-size:18px; min-height:38px; padding:4px 14px; }
-        .detail-panel .loop-btn { font-size:22px; min-height:40px; }
-        .detail-panel .loop-input { font-size:18px; height:38px; width:68px; }
-        .detail-panel .loop-sep { font-size:20px; }
+        .detail-panel .fx-btn { font-size:13px; min-height:28px; padding:2px 10px; }
+        .detail-panel .loop-btn { font-size:14px; min-height:28px; }
+        .detail-panel .loop-input { font-size:13px; height:28px; width:52px; }
+        .detail-panel .loop-sep { font-size:14px; }
+        /* ── #detailOverlay フルスクリーン上書き ── */
+        #detailOverlay { display:none; flex-direction:column; z-index:1900; }
+        #detailOverlay.open { display:flex; }
+        #detailOverlay .detail-backdrop { display:none; }
+        #detailOverlay .detail-panel {
+            position:static; top:auto; left:auto; transform:none;
+            width:100%; min-width:0; max-width:none; max-height:none;
+            flex:1; min-height:0; border-radius:0; border:none;
+        }
     
         /* ── 音量スライダー ── */
         .vol-row { display:flex; align-items:center; gap:6px; width:100%; margin-top:2px; }
-        .vol-label { font-size:18px; color:#aaa; min-width:52px; }
+        .vol-label { font-size:13px; color:#aaa; min-width:40px; }
         .vol-slider { -webkit-appearance:none; appearance:none; flex:1; height:6px; border-radius:3px; background:#444; outline:none; cursor:pointer; }
-        .vol-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#4caf50; cursor:pointer; }
-        .vol-val { font-size:18px; color:#aaa; min-width:46px; text-align:right; }
+        .vol-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#4caf50; cursor:pointer; }
+        .vol-val { font-size:13px; color:#aaa; min-width:38px; text-align:right; }
     
         /* ── ピッチコントローラー ── */
         .pitch-row { display:flex; align-items:center; gap:5px; margin-top:2px; }
-        .pitch-label { font-size:18px; color:#aaa; min-width:52px; }
-        .pitch-btn { padding:4px 12px; border:none; background:#444; color:#ccc; border-radius:4px; font-size:22px; cursor:pointer; line-height:1.4; }
+        .pitch-label { font-size:13px; color:#aaa; min-width:40px; }
+        .pitch-btn { padding:2px 10px; border:none; background:#444; color:#ccc; border-radius:4px; font-size:16px; cursor:pointer; line-height:1.4; }
         .pitch-btn:active { background:#666; }
         .pitch-val { font-size:12px; color:#fff; min-width:32px; text-align:center; font-weight:bold; }
             /* ── オートレーンカバー ── */
@@ -1808,6 +1819,166 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="error" id="error"></div>
     </div>
 
+
+    <!-- EFFECT/EQ Popup -->
+
+<!-- 曲情報
+    <!-- EFFECT/EQ Popup -->
+
+
+    <!-- BMS選択モーダル -->
+    <div id="bmsSelectOverlay" style="display:none;position:fixed;inset:0;z-index:2000;">
+        <div id="bmsSelectBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.78);"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                    background:#1e1e1e;border:1px solid #555;border-radius:12px;
+                    padding:24px 28px;min-width:700px;max-width:96vw;max-height:92vh;
+                    display:flex;flex-direction:column;z-index:1;">
+            <div style="font-size:24px;font-weight:bold;color:#fff;margin-bottom:18px;text-align:center;">
+                📁 読み込む BMS ファイルを選択
+            </div>
+            <div id="bmsSelectList" style="overflow-y:auto;flex:1;margin-bottom:16px;"></div>
+            <button id="bmsSelectCancel" class="btn btn-secondary" style="width:100%;font-size:20px;min-height:48px;">キャンセル</button>
+        </div>
+    </div>
+
+    <div class="play-area-wrapper" id="playAreaWrapper">
+    <div class="play-area">
+        <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
+        <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
+        <div class="loading" id="loading" style="display:none;">読み込み中...</div>
+        <div class="great-positioner">
+            <div class="great-display" id="greatDisplay">
+                <span class="great-label" id="greatLabel">GREAT</span>
+                <span class="great-combo" id="greatCombo">0</span>
+            </div>
+        </div>
+        <!-- プレイモード判定表示（IIDX_play） -->
+        <div class="play-judge-positioner">
+            <div class="play-judge-display" id="playJudgeDisplay">
+                <span class="play-judge-label" id="playJudgeLabel"></span>
+                <span class="play-judge-combo" id="playJudgeCombo"></span>
+            </div>
+        </div>
+        <!-- PM 判定文字 (左/中/右 3ポジション) -->
+        <div class="pm-judge-positioner pm-judge-L" id="pmJudge_L">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_L">0</span>
+        </div>
+        <div class="pm-judge-positioner pm-judge-C" id="pmJudge_C">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_C">0</span>
+        </div>
+        <div class="pm-judge-positioner pm-judge-R" id="pmJudge_R">
+            <span class="pm-judge-label">COOL!!</span>
+            <span class="pm-judge-combo" id="pmJudgeCombo_R">0</span>
+        </div>
+        <div class="lanes-container" id="lanesContainer"></div>
+        <div id="sudCover" class="sud-cover">
+            <div class="sud-cover-info">
+                <span id="sudCoverVal"></span>
+                <div id="sudCoverGreenWrap">
+                    <span id="sudCoverGreenRange"></span>
+                    <span id="sudCoverGreen"></span>
+                </div>
+            </div>
+        </div>
+        <div id="liftCover" class="lift-cover">
+            <div class="lift-cover-info">
+                <span id="liftCoverVal"></span>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- play-footer: グルーブゲージ + ステータスバー -->
+    <div class="play-footer">
+        <!-- グルーブゲージ -->
+        <div class="groove-gauge-area">
+            <div class="fs-gauge-wrap"><span id="fastSlowDisplay" class="fs-gauge-disp"></span></div>
+            <div class="groove-gauge-track">
+                <div class="groove-gauge-bar" id="grooveGaugeBar"></div>
+            </div>
+            <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
+        </div>
+        <!-- ステータスバー 2行 -->
+        <div class="status-bar" id="statusBar">
+            <!-- 行1: ゲージ・判定カウント -->
+            <div class="status-row">
+                <span id="fsSLStatus"><span style="color:#4af;">F</span><span id="fsCount">0</span>&nbsp;<span style="color:#f44;">S</span><span id="slCount">0</span>&nbsp;</span><span style="color:#ff69b4;">PG</span><span id="pgCount">0</span>
+                &nbsp;<span style="color:#ffee00;">GR</span><span id="grCount">0</span>
+                &nbsp;<span style="color:#dc143c;">GD</span><span id="gdCount">0</span>
+                &nbsp;<span style="color:#4488ff;">BD</span><span id="bdCount">0</span>
+                &nbsp;<span style="color:#aaaaaa;">PR</span><span id="prCount">0</span>
+            </div>
+            <!-- 行2: スコア・BPM・TIME・小節 -->
+            <div class="status-row">
+                <span style="display:none;">Total:<span id="totalNotes">0</span></span>
+                <span>SCORE:<span id="scoreDisplay">0</span></span>
+                <span>BPM:<span id="bpmDisplay">0</span></span>
+                <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
+                <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
+                <span style="color:#ccc;"><span style="color:#ccc;">TIME</span><span id="statusElapsed">0:00</span></span>
+                <span>小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span></span>
+                <span id="loopStatus"></span>
+            </div>
+        </div>
+        <!-- 非表示スパン（JS互換用） -->
+        <div style="display:none;" aria-hidden="true">
+            <span id="exScore">0</span>
+            <span id="achievementPct">0.00</span>
+            <span id="gaugePctStat">22</span>
+        </div>
+    </div>
+
+    <!-- シークバー -->
+    <div class="seek-wrap" id="seekWrap">
+        <div class="seek-inner">
+            <div class="seek-track" id="seekTrack">
+                <div class="seek-fill"       id="seekFill"      style="width:0%"></div>
+                <div class="seek-loop-range" id="seekLoopRange"></div>
+                <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- コントロールフッター: SPEED + LANE -->
+    <div class="ctrl-footer">
+        <!-- SPEED 行 -->
+        <div class="controls" style="margin-bottom:5px;">
+            <span class="hs-label" style="white-space:nowrap;">SPEED</span>
+            <div class="green-box">
+                <button class="green-pm-btn" id="greenMinus">－</button>
+                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="225">
+                <button class="green-pm-btn" id="greenPlus">＋</button>
+            </div>
+            <div class="hs-control">
+                <span class="hs-label">HS</span>
+                <span class="hs-value" id="hsValue">—</span>
+            </div>
+            <button class="saracho-btn" id="sarachoBtn">GC</button>
+            <button class="rs-btn" id="rsBtn">RS</button>
+            <span id="footerGreenNum" style="margin-left:auto; font-size:10px; color:#00e84c; font-family:'Courier New',monospace; font-weight:bold; text-align:right; white-space:nowrap;">—</span>
+        </div>
+        <!-- LANE 行 -->
+        <div class="loop-row">
+            <div class="swap-control">
+                <span class="swap-label">LANE</span>
+                <input class="swap-input" id="swapInput"
+                       type="text" inputmode="numeric"
+                       maxlength="9" value="1234567"
+                       placeholder="1234567">
+            </div>
+            <button class="rm-btn random" id="randomBtn">R</button>
+            <button class="rm-btn mirror" id="mirrorBtn">M</button>
+            <button class="rm-btn" id="sRandomBtn">S</button>
+            <button class="rm-btn" id="hRandomBtn">H</button>
+            <button class="rm-btn" id="quantize16Btn">Q16</button>
+            <button class="rm-btn" id="quantize8Btn">Q8</button>
+        </div>
+    </div>
+</div>
+</div><!-- /#appScaler -->
+
         <!-- 説明モーダル -->
     <div class="help-overlay" id="helpOverlay">
         <div class="help-backdrop" id="helpBackdrop"></div>
@@ -1819,8 +1990,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="help-body" id="helpBody"></div>
         </div>
     </div>
-
-    <!-- EFFECT/EQ Popup -->
 
 <!-- 曲情報 オーバーレイ -->
     <div class="detail-overlay" id="songInfoOverlay">
@@ -1840,7 +2009,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.965</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.968</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -1865,6 +2034,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="quantizeWavOffBtn">元の譜面</button>
                 <button class="fx-btn on" id="quantizeWavOnBtn">クォンタイズ後</button>
             </div>
+            <!-- クォンタイズ移動ハイライト -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">移動ノーツ</span>
+                <button class="fx-btn on" id="quantHighlightOffBtn">通常</button>
+                <button class="fx-btn"   id="quantHighlightOnBtn">赤枠表示</button>
+            </div>
             <!-- IIDX コントローラー（IIDXモード時のみ表示） -->
             <div class="detail-section nowrap" id="iidxControllerSection" style="display:none;">
                 <span class="detail-label">コントローラー</span>
@@ -1872,6 +2047,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"   id="gpPremiumBtn">ENTRY/PREMIUM</button>
                 <button class="fx-btn"   id="gpPs2Btn">PS2</button>
                 <button class="fx-btn on" id="gpPhoenixBtn">PHOENIX WAN</button>
+            </div>
+            <!-- 解像度 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">解像度</span>
+                <button class="fx-btn"    id="resHighBtn">HIGH</button>
+                <button class="fx-btn on" id="resLowBtn">LOW</button>
+            </div>
+            <!-- レーン横幅 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">レーン幅</span>
+                <button class="fx-btn"    id="laneW50Btn">50%</button>
+                <button class="fx-btn"    id="laneW60Btn">60%</button>
+                <button class="fx-btn"    id="laneW70Btn">70%</button>
+                <button class="fx-btn"    id="laneW80Btn">80%</button>
+                <button class="fx-btn on" id="laneW90Btn">90%</button>
+                <button class="fx-btn"    id="laneW100Btn">100%</button>
             </div>
             <!-- GROOVE GAUGE タイプ選択 -->
             <div class="detail-section nowrap">
@@ -2008,22 +2199,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <span style="font-size:11px; color:#888;">px</span>
                 </div>
                 <span style="font-size:10px; color:#666;">※pmライトは変更不可</span>
-            </div>
-            <!-- 解像度 -->
-            <div class="detail-section nowrap">
-                <span class="detail-label">解像度</span>
-                <button class="fx-btn"    id="resHighBtn">HIGH</button>
-                <button class="fx-btn on" id="resLowBtn">LOW</button>
-            </div>
-            <!-- レーン横幅 -->
-            <div class="detail-section nowrap">
-                <span class="detail-label">レーン幅</span>
-                <button class="fx-btn"    id="laneW50Btn">50%</button>
-                <button class="fx-btn"    id="laneW60Btn">60%</button>
-                <button class="fx-btn"    id="laneW70Btn">70%</button>
-                <button class="fx-btn"    id="laneW80Btn">80%</button>
-                <button class="fx-btn on" id="laneW90Btn">90%</button>
-                <button class="fx-btn"    id="laneW100Btn">100%</button>
             </div>
             <!-- ノーツ高さ（IIDXモード） -->
             <div class="detail-section nowrap">
@@ -2233,159 +2408,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
     </div>
 
-
-    <!-- BMS選択モーダル -->
-    <div id="bmsSelectOverlay" style="display:none;position:fixed;inset:0;z-index:2000;">
-        <div id="bmsSelectBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.78);"></div>
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-                    background:#1e1e1e;border:1px solid #555;border-radius:12px;
-                    padding:24px 28px;min-width:700px;max-width:96vw;max-height:92vh;
-                    display:flex;flex-direction:column;z-index:1;">
-            <div style="font-size:24px;font-weight:bold;color:#fff;margin-bottom:18px;text-align:center;">
-                📁 読み込む BMS ファイルを選択
-            </div>
-            <div id="bmsSelectList" style="overflow-y:auto;flex:1;margin-bottom:16px;"></div>
-            <button id="bmsSelectCancel" class="btn btn-secondary" style="width:100%;font-size:20px;min-height:48px;">キャンセル</button>
-        </div>
-    </div>
-
-    <div class="play-area-wrapper" id="playAreaWrapper">
-    <div class="play-area">
-        <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
-        <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
-        <div class="loading" id="loading" style="display:none;">読み込み中...</div>
-        <div class="great-positioner">
-            <div class="great-display" id="greatDisplay">
-                <span class="great-label" id="greatLabel">GREAT</span>
-                <span class="great-combo" id="greatCombo">0</span>
-            </div>
-        </div>
-        <!-- プレイモード判定表示（IIDX_play） -->
-        <div class="play-judge-positioner">
-            <div class="play-judge-display" id="playJudgeDisplay">
-                <span class="play-judge-label" id="playJudgeLabel"></span>
-                <span class="play-judge-combo" id="playJudgeCombo"></span>
-            </div>
-        </div>
-        <!-- PM 判定文字 (左/中/右 3ポジション) -->
-        <div class="pm-judge-positioner pm-judge-L" id="pmJudge_L">
-            <span class="pm-judge-label">COOL!!</span>
-            <span class="pm-judge-combo" id="pmJudgeCombo_L">0</span>
-        </div>
-        <div class="pm-judge-positioner pm-judge-C" id="pmJudge_C">
-            <span class="pm-judge-label">COOL!!</span>
-            <span class="pm-judge-combo" id="pmJudgeCombo_C">0</span>
-        </div>
-        <div class="pm-judge-positioner pm-judge-R" id="pmJudge_R">
-            <span class="pm-judge-label">COOL!!</span>
-            <span class="pm-judge-combo" id="pmJudgeCombo_R">0</span>
-        </div>
-        <div class="lanes-container" id="lanesContainer"></div>
-        <div id="sudCover" class="sud-cover">
-            <div class="sud-cover-info">
-                <span id="sudCoverVal"></span>
-                <div id="sudCoverGreenWrap">
-                    <span id="sudCoverGreenRange"></span>
-                    <span id="sudCoverGreen"></span>
-                </div>
-            </div>
-        </div>
-        <div id="liftCover" class="lift-cover">
-            <div class="lift-cover-info">
-                <span id="liftCoverVal"></span>
-            </div>
-        </div>
-    </div>
-    </div>
-
-    <!-- play-footer: グルーブゲージ + ステータスバー -->
-    <div class="play-footer">
-        <!-- グルーブゲージ -->
-        <div class="groove-gauge-area">
-            <div class="fs-gauge-wrap"><span id="fastSlowDisplay" class="fs-gauge-disp"></span></div>
-            <div class="groove-gauge-track">
-                <div class="groove-gauge-bar" id="grooveGaugeBar"></div>
-            </div>
-            <span class="groove-gauge-label" id="grooveGaugePct">22%</span>
-        </div>
-        <!-- ステータスバー 2行 -->
-        <div class="status-bar" id="statusBar">
-            <!-- 行1: ゲージ・判定カウント -->
-            <div class="status-row">
-                <span id="fsSLStatus"><span style="color:#4af;">F</span><span id="fsCount">0</span>&nbsp;<span style="color:#f44;">S</span><span id="slCount">0</span>&nbsp;</span><span style="color:#ff69b4;">PG</span><span id="pgCount">0</span>
-                &nbsp;<span style="color:#ffee00;">GR</span><span id="grCount">0</span>
-                &nbsp;<span style="color:#dc143c;">GD</span><span id="gdCount">0</span>
-                &nbsp;<span style="color:#4488ff;">BD</span><span id="bdCount">0</span>
-                &nbsp;<span style="color:#aaaaaa;">PR</span><span id="prCount">0</span>
-            </div>
-            <!-- 行2: スコア・BPM・TIME・小節 -->
-            <div class="status-row">
-                <span style="display:none;">Total:<span id="totalNotes">0</span></span>
-                <span>SCORE:<span id="scoreDisplay">0</span></span>
-                <span>BPM:<span id="bpmDisplay">0</span></span>
-                <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
-                <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
-                <span style="color:#ccc;"><span style="color:#ccc;">TIME</span><span id="statusElapsed">0:00</span></span>
-                <span>小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span></span>
-                <span id="loopStatus"></span>
-            </div>
-        </div>
-        <!-- 非表示スパン（JS互換用） -->
-        <div style="display:none;" aria-hidden="true">
-            <span id="exScore">0</span>
-            <span id="achievementPct">0.00</span>
-            <span id="gaugePctStat">22</span>
-        </div>
-    </div>
-
-    <!-- シークバー -->
-    <div class="seek-wrap" id="seekWrap">
-        <div class="seek-inner">
-            <div class="seek-track" id="seekTrack">
-                <div class="seek-fill"       id="seekFill"      style="width:0%"></div>
-                <div class="seek-loop-range" id="seekLoopRange"></div>
-                <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- コントロールフッター: SPEED + LANE -->
-    <div class="ctrl-footer">
-        <!-- SPEED 行 -->
-        <div class="controls" style="margin-bottom:5px;">
-            <span class="hs-label" style="white-space:nowrap;">SPEED</span>
-            <div class="green-box">
-                <button class="green-pm-btn" id="greenMinus">－</button>
-                <input class="green-input" id="greenInput" type="number" inputmode="decimal" min="1" value="225">
-                <button class="green-pm-btn" id="greenPlus">＋</button>
-            </div>
-            <div class="hs-control">
-                <span class="hs-label">HS</span>
-                <span class="hs-value" id="hsValue">—</span>
-            </div>
-            <button class="saracho-btn" id="sarachoBtn">GC</button>
-            <button class="rs-btn" id="rsBtn">RS</button>
-            <span id="footerGreenNum" style="margin-left:auto; font-size:10px; color:#00e84c; font-family:'Courier New',monospace; font-weight:bold; text-align:right; white-space:nowrap;">—</span>
-        </div>
-        <!-- LANE 行 -->
-        <div class="loop-row">
-            <div class="swap-control">
-                <span class="swap-label">LANE</span>
-                <input class="swap-input" id="swapInput"
-                       type="text" inputmode="numeric"
-                       maxlength="9" value="1234567"
-                       placeholder="1234567">
-            </div>
-            <button class="rm-btn random" id="randomBtn">R</button>
-            <button class="rm-btn mirror" id="mirrorBtn">M</button>
-            <button class="rm-btn" id="sRandomBtn">S</button>
-            <button class="rm-btn" id="hRandomBtn">H</button>
-            <button class="rm-btn" id="quantize16Btn">Q16</button>
-            <button class="rm-btn" id="quantize8Btn">Q8</button>
-        </div>
-    </div>
-</div>
-</div><!-- /#appScaler -->
 
 <!-- EFFECT/EQ Popup (transform の影響外に配置) -->
 <div id="fxOverlay" style="display:none;">
@@ -2953,9 +2975,10 @@ class BMSViewer {
         this.wavBgm2Enabled   = true;  // BGM2 WAV ON/OFF (position>=2)
         this.wavKeyEnabled    = true;  // KEY WAV ON/OFF
         // クォンタイズ
-        this.quantizeMode    = null;   // null | '16' | '8'
-        this.quantizeWav     = true;   // false=ビジュアルのみ, true=WAVも適用
-        this._quantizeMap    = null;   // Map<note, quantizedPosition>
+        this.quantizeMode      = null;   // null | '16' | '8'
+        this.quantizeWav       = true;   // false=ビジュアルのみ, true=WAVも適用
+        this._quantizeMap      = null;   // Map<note, quantizedPosition>
+        this.quantizeHighlight = false;  // 移動ノーツに赤枠表示
 
         this.noteEvents      = [];
         this.bombElements    = {};
@@ -4044,7 +4067,18 @@ class BMSViewer {
             document.getElementById('quantizeWavOnBtn').classList.add('on');
             document.getElementById('quantizeWavOffBtn').classList.remove('on');
         });
-
+        document.getElementById('quantHighlightOffBtn').addEventListener('click', () => {
+            this.quantizeHighlight = false;
+            document.getElementById('quantHighlightOffBtn').classList.add('on');
+            document.getElementById('quantHighlightOnBtn').classList.remove('on');
+            if (this.bmsData) this.renderNotes();
+        });
+        document.getElementById('quantHighlightOnBtn').addEventListener('click', () => {
+            this.quantizeHighlight = true;
+            document.getElementById('quantHighlightOnBtn').classList.add('on');
+            document.getElementById('quantHighlightOffBtn').classList.remove('on');
+            if (this.bmsData) this.renderNotes();
+        });
 
         // 区間
         const on = (id, fn) => document.getElementById(id).addEventListener('click', fn);
@@ -5908,6 +5942,10 @@ class BMSViewer {
                 else el.classList.add('black-key');
             }
             el._pixelPos=px; el.style.bottom='0'; el.style.translate='0px '+(-(px-this.currentPixelPos))+'px';
+            if (this.quantizeHighlight && this._quantizeMap) {
+                const qp = this._quantizeMap.get(note);
+                if (qp !== undefined && Math.abs(qp - note.position) > 1e-9) el.classList.add('quant-moved');
+            }
             lanes[dl].appendChild(el); this.noteElements.push(el);
         });
 
@@ -5963,6 +6001,10 @@ class BMSViewer {
             el.appendChild(dimMask);
             el._dimMask = dimMask;
             el._dl = dl;
+            if (this.quantizeHighlight && this._quantizeMap) {
+                const qp = this._quantizeMap.get(note);
+                if (qp !== undefined && Math.abs(qp - note.position) > 1e-9) el.classList.add('quant-moved');
+            }
             lanes[dl].appendChild(el); this.noteElements.push(el); this.lnElements.push(el);
         });
 

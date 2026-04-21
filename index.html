@@ -9,7 +9,8 @@
     <style>
         :root { --scratch-width:57.6px; --white-lane-width:39.6px; --black-lane-width:25.2px; --note-height:10px;
                 --pm-white-w:39.6px; --pm-yellow-w:34.2px; --pm-green-w:39.6px; --pm-blue-w:34.2px; --pm-red-w:39.6px;
-                --eff-h:470px; --lane-h:940px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px; }
+                --eff-h:470px; --lane-h:940px; --explosion-sz:80px; --explosion-offset:-40px; --bomb-h:200px;
+                --pm-pop-h:18px; --pm-pop-end-h:9px; --pm-pop-r:12px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
             height:100%;
@@ -1146,23 +1147,23 @@
         .charge-pm-beat-pop .cn-pm-red-start-cap,    .charge-pm-beat-pop .cn-pm-red-end-cap { display:none !important; }
         /* ── PM ノーツ（pm_pop / ポップ君）── */
         .notes-pm-pop .note.pm-white, .notes-pm-pop .ln-note-start.pm-white, .notes-pm-pop .ln-note-end.pm-white {
-            height:36px !important; border-radius:24px;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r);
             box-shadow:inset 0 0 0 1px rgba(140,140,140,0.9);
             background:linear-gradient(to bottom,#666 0%,#999 10%,#aaa 25%,#ccc 32%,#fff 35%,#fff 65%,#ccc 68%,#aaa 75%,#999 90%,#666 100%); }
         .notes-pm-pop .note.pm-yellow, .notes-pm-pop .ln-note-start.pm-yellow, .notes-pm-pop .ln-note-end.pm-yellow {
-            height:36px !important; border-radius:24px;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r);
             box-shadow:inset 0 0 0 1px rgba(150,150,0,0.9);
             background:linear-gradient(to bottom,#989800 0%,#c0c000 10%,#e0e000 25%,#fafa02 32%,#fff 35%,#fff 65%,#fafa02 68%,#e0e000 75%,#c0c000 90%,#989800 100%); }
         .notes-pm-pop .note.pm-green, .notes-pm-pop .ln-note-start.pm-green, .notes-pm-pop .ln-note-end.pm-green {
-            height:36px !important; border-radius:24px;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r);
             box-shadow:inset 0 0 0 1px rgba(0,140,45,0.9);
             background:linear-gradient(to bottom,#025c00 0%,#038500 10%,#04a800 25%,#04c000 32%,#fff 35%,#fff 65%,#04c000 68%,#04a800 75%,#038500 90%,#025c00 100%); }
         .notes-pm-pop .note.pm-blue, .notes-pm-pop .ln-note-start.pm-blue, .notes-pm-pop .ln-note-end.pm-blue {
-            height:36px !important; border-radius:24px;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r);
             box-shadow:inset 0 0 0 1px rgba(40,90,180,0.9);
             background:linear-gradient(to bottom,#003db0 0%,#0052cc 10%,#005de8 25%,#0065f7 32%,#fff 35%,#fff 65%,#0065f7 68%,#005de8 75%,#0052cc 90%,#003db0 100%); }
         .notes-pm-pop .note.pm-red, .notes-pm-pop .ln-note-start.pm-red, .notes-pm-pop .ln-note-end.pm-red {
-            height:36px !important; border-radius:24px;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r);
             box-shadow:inset 0 0 0 1px rgba(160,20,20,0.9);
             background:linear-gradient(to bottom,#cc0000 0%,#dd2222 10%,#ee3333 25%,#ff5555 32%,#fff 35%,#fff 65%,#ff5555 68%,#ee3333 75%,#dd2222 90%,#cc0000 100%); }
         .notes-pm-pop .note          { transform:translateY(50%) !important; }
@@ -1172,7 +1173,7 @@
         .notes-pm-pop .ln-note-start.pm-green,
         .notes-pm-pop .ln-note-start.pm-blue,
         .notes-pm-pop .ln-note-start.pm-red {
-            height:36px !important; border-radius:24px !important;
+            height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r) !important;
             background-size:100% 100% !important; background-position:0% 0% !important;
             transform:translateY(50%) !important;
         }
@@ -1182,7 +1183,7 @@
         .notes-pm-pop .ln-note-end.pm-green,
         .notes-pm-pop .ln-note-end.pm-blue,
         .notes-pm-pop .ln-note-end.pm-red {
-            height:18px !important; border-radius:24px 24px 0 0 !important;
+            height:var(--pm-pop-end-h) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important;
             background-size:100% !important; transform:none !important;
         }
         .notes-pm-pop .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
@@ -1208,9 +1209,9 @@
         .charge-pm-pop-face .ln-note-end.pm-blue::before,
         .charge-pm-pop-face .ln-note-end.pm-red::before {
             content:''; position:absolute;
-            width:8px; height:8px; border-radius:50%;
+            width:calc(var(--pm-pop-h) * 0.222); height:calc(var(--pm-pop-h) * 0.222); border-radius:50%;
             background:radial-gradient(circle at 68% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
-            top:3px; left:calc(35% - 4px); z-index:1; pointer-events:none;
+            top:calc(var(--pm-pop-h) * 0.083); left:calc(35% - var(--pm-pop-h) * 0.111); z-index:1; pointer-events:none;
         }
         /* 右目 (::after) - 黒目を左寄りにして寄り目 */
         .notes-pm-pop-face .note.pm-white::after,
@@ -1229,9 +1230,9 @@
         .charge-pm-pop-face .ln-note-end.pm-blue::after,
         .charge-pm-pop-face .ln-note-end.pm-red::after {
             content:''; position:absolute;
-            width:8px; height:8px; border-radius:50%;
+            width:calc(var(--pm-pop-h) * 0.222); height:calc(var(--pm-pop-h) * 0.222); border-radius:50%;
             background:radial-gradient(circle at 32% 50%, #111 0%, #1d1d1d 46%, #fff 56%, #fff 100%);
-            top:3px; right:calc(35% - 4px); z-index:1; pointer-events:none;
+            top:calc(var(--pm-pop-h) * 0.083); right:calc(35% - var(--pm-pop-h) * 0.111); z-index:1; pointer-events:none;
         }
         /* ── pm_pop-face LN 終点ノーツ: 目を非表示 ── */
         .charge-pm-pop-face .ln-note-end.pm-white::before,  .charge-pm-pop-face .ln-note-end.pm-white::after,
@@ -1245,7 +1246,7 @@
         .charge-pm-pop-face .ln-note-end.pm-green,
         .charge-pm-pop-face .ln-note-end.pm-blue,
         .charge-pm-pop-face .ln-note-end.pm-red {
-            height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important;
+            height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
         .charge-pm-pop-face .ln-note-end.pm-white  { background:linear-gradient(to bottom,#555 0%,#888 35%,#aaa 70%,#bbb 100%) !important; }
@@ -1315,32 +1316,32 @@
         /* ── PM ポップ君風ライト ノーツ ── */
         .notes-pm-pop-lite .note.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-white,
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#ddd calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#ddd calc(50% + 2px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r); box-shadow:none; background:linear-gradient(to bottom,#ddd calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% + var(--pm-pop-h) * 0.167),#ddd calc(50% + var(--pm-pop-h) * 0.056)); }
         .notes-pm-pop-lite .note.pm-yellow,
         .notes-pm-pop-lite .ln-note-start.pm-yellow,
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#fafa02 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#fafa02 calc(50% + 2px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r); box-shadow:none; background:linear-gradient(to bottom,#fafa02 calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% + var(--pm-pop-h) * 0.167),#fafa02 calc(50% + var(--pm-pop-h) * 0.056)); }
         .notes-pm-pop-lite .note.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-green,
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#04c000 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#04c000 calc(50% + 2px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r); box-shadow:none; background:linear-gradient(to bottom,#04c000 calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% + var(--pm-pop-h) * 0.167),#04c000 calc(50% + var(--pm-pop-h) * 0.056)); }
         .notes-pm-pop-lite .note.pm-blue,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#0065f7 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#0065f7 calc(50% + 2px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r); box-shadow:none; background:linear-gradient(to bottom,#0065f7 calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% + var(--pm-pop-h) * 0.167),#0065f7 calc(50% + var(--pm-pop-h) * 0.056)); }
         .notes-pm-pop-lite .note.pm-red,
         .notes-pm-pop-lite .ln-note-start.pm-red,
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:36px !important; border-radius:24px; box-shadow:none; background:linear-gradient(to bottom,#ff5555 calc(50% - 6px),rgba(255,255,255,0.85) calc(50% - 6px),rgba(255,255,255,0.85) calc(50% + 6px),#ff5555 calc(50% + 2px)); }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r); box-shadow:none; background:linear-gradient(to bottom,#ff5555 calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% - var(--pm-pop-h) * 0.167),rgba(255,255,255,0.85) calc(50% + var(--pm-pop-h) * 0.167),#ff5555 calc(50% + var(--pm-pop-h) * 0.056)); }
         .notes-pm-pop-lite .note { transform:translateY(50%) !important; }
         /* LN 始点: 通常ノーツと同じ */
         .notes-pm-pop-lite .ln-note-start.pm-white,
         .notes-pm-pop-lite .ln-note-start.pm-yellow,
         .notes-pm-pop-lite .ln-note-start.pm-green,
         .notes-pm-pop-lite .ln-note-start.pm-blue,
-        .notes-pm-pop-lite .ln-note-start.pm-red   { height:36px !important; border-radius:24px !important; transform:translateY(50%) !important; }
+        .notes-pm-pop-lite .ln-note-start.pm-red   { height:var(--pm-pop-h) !important; border-radius:var(--pm-pop-r) !important; transform:translateY(50%) !important; }
         /* LN 終点: 上半分・ストライプなし */
-        .notes-pm-pop-lite .ln-note-end.pm-white   { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#ddd !important;    transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#fafa02 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-green   { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#04c000 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#0065f7 !important; transform:none !important; }
-        .notes-pm-pop-lite .ln-note-end.pm-red     { height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important; background:#ff5555 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-white   { height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important; background:#ddd !important;    transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-yellow  { height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important; background:#fafa02 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-green   { height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important; background:#04c000 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-blue    { height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important; background:#0065f7 !important; transform:none !important; }
+        .notes-pm-pop-lite .ln-note-end.pm-red     { height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important; background:#ff5555 !important; transform:none !important; }
         /* LN チューブ: 判定中はノーツ色より少し明るい色 */
         .charge-pm-pop-lite .note-ln.ln-pm-white  { background:#eeeeee; }
         .charge-pm-pop-lite .note-ln.ln-pm-yellow { background:#ffff66; }
@@ -1359,7 +1360,7 @@
         .charge-pm-pop-lite .ln-note-end.pm-green,
         .charge-pm-pop-lite .ln-note-end.pm-blue,
         .charge-pm-pop-lite .ln-note-end.pm-red {
-            height:18px !important; top:-18px !important; border-radius:24px 24px 0 0 !important;
+            height:var(--pm-pop-end-h) !important; top:calc(var(--pm-pop-end-h) * -1) !important; border-radius:var(--pm-pop-r) var(--pm-pop-r) 0 0 !important;
             box-shadow:none !important; transform:none !important;
         }
         .charge-pm-pop-lite .ln-note-end.pm-white  { background:#ddd !important; }
@@ -2075,7 +2076,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.953</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.956</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -4211,7 +4212,7 @@ class BMSViewer {
             if (isPM) {
                 _setNotesStyle('PM_POP_LITE');
                 _setChargeStyle('PM_POP_LITE');
-                document.getElementById('judgeSizeInput').value = 52;
+                document.getElementById('judgeSizeInput').value = Math.round(52 * this._effH / 940);
                 _applyJudgeSize();
                 this.lnHeadPin = true;
                 document.getElementById('lnModeBBtn').classList.add('on');
@@ -4231,7 +4232,7 @@ class BMSViewer {
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.notesStyle))  _setNotesStyle('A');
                 if (['PM_POP_FACE','PM_POP_LITE','PM_BEAT_POP','PM_BEAT_C'].includes(this.chargeStyle)) _setChargeStyle('A');
                 if (_isPmGaugeType(this._gaugeType)) _setGaugeType('NORMAL');
-                document.getElementById('judgeSizeInput').value = 120;
+                document.getElementById('judgeSizeInput').value = Math.round(120 * this._effH / 940);
                 _applyJudgeSize();
                 // SUD+デフォルト: ON, モードC
                 this.sudEnabled = true;
@@ -5756,17 +5757,18 @@ class BMSViewer {
         { const lanes = c.querySelectorAll('.lane'); if (lanes.length) lanes[lanes.length-1].style.borderRight = 'none'; }
         // 爆発リング要素を lanes-container 直接子として配置
         requestAnimationFrame(() => {
+            const expHalf = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--explosion-sz')) / 2;
             this.explosionElements = {};
             Array.from(c.querySelectorAll('.lane')).forEach((lane, i) => {
                 const expl = document.createElement('div');
                 expl.className = 'lane-explosion';
-                expl.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 80) + 'px';
+                expl.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - expHalf) + 'px';
                 c.appendChild(expl);
                 this.explosionElements[i] = expl;
                 // 拡散リング
                 const ring = document.createElement('div');
                 ring.className = 'lane-ring';
-                ring.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - 80) + 'px';
+                ring.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - expHalf) + 'px';
                 c.appendChild(ring);
                 this.ringElements[i] = ring;
             });
@@ -6466,6 +6468,12 @@ class BMSViewer {
         // ノーツ高さを解像度スケール
         const _nhMap = { veryshort:10, short:15, normal:20, long:25 };
         root.style.setProperty('--note-height', Math.round((_nhMap[this._noteHeightKey] || 20) * this._effH / 940) + 'px');
+
+        // pm-pop ノーツ寸法を解像度スケール
+        const _pph = Math.round(36 * this._effH / 940);
+        root.style.setProperty('--pm-pop-h',     _pph + 'px');
+        root.style.setProperty('--pm-pop-end-h', Math.round(_pph / 2) + 'px');
+        root.style.setProperty('--pm-pop-r',     Math.round(24 * this._effH / 940) + 'px');
 
         // SUD/LIFT カバーpx を比率で変換
         if (oldEffH !== this._effH) {

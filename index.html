@@ -962,14 +962,14 @@
         .fx-btn:disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
         /* ── EFFECT/EQ Popup ──────────────────────────────────────────── */
         #fxOverlay {
-            display:flex; align-items:center; justify-content:center;
+            display:flex; flex-direction:column;
             position:fixed; inset:0; z-index:2000;
             background:rgba(0,0,0,0.65); backdrop-filter:blur(2px);
         }
         .fx-popup {
             position:relative; z-index:1;
-            background:#1c1c1c; border:1px solid #444; border-radius:8px;
-            width:min(1200px, 96vw); height:99vh;
+            background:#1c1c1c; border:none; border-radius:0;
+            width:100%; flex:1; min-height:0;
             display:flex; flex-direction:column;
             box-shadow:0 10px 40px rgba(0,0,0,0.9);
             font-size:20px; color:#ccc;
@@ -1821,227 +1821,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     </div>
 
     <!-- EFFECT/EQ Popup -->
-    <div id="fxOverlay" style="display:none;">
-        <div class="fx-popup">
-            <div class="fx-popup-hdr">
-                <span>EFFECT / EQ</span>
-                <button class="fx-popup-close-btn" id="fxOverlayClose">✕</button>
-            </div>
-            <div class="fx-popup-body">
-                <div class="fx-sec-title">EFFECT</div>
-                <!-- Gate -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxGateBtn">OFF</button>
-                        <button class="fx-hold-btn" id="fxGateHoldBtn">HOLD</button>
-                        <span class="fx-name">GATE</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Interval</span>
-                        <div class="fx-subdiv-wrap">
-                            <button class="fx-subdiv-btn" data-fx="gate" data-div="2">1/8</button>
-                            <button class="fx-subdiv-btn" data-fx="gate" data-div="3">1/12</button>
-                            <button class="fx-subdiv-btn on" data-fx="gate" data-div="4">1/16</button>
-                            <button class="fx-subdiv-btn" data-fx="gate" data-div="6">1/24</button>
-                            <button class="fx-subdiv-btn" data-fx="gate" data-div="8">1/32</button>
-                        </div>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Duty Cycle</span>
-                        <input type="range" class="fx-range" id="fxGateDuty" min="10" max="90" value="50">
-                        <span class="fx-val" id="fxGateDutyVal">50%</span>
-                    </div>
-                </div>
-                <!-- Repeater -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxRepBtn">OFF</button>
-                        <button class="fx-hold-btn" id="fxRepHoldBtn">HOLD</button>
-                        <span class="fx-name">REPEATER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Interval</span>
-                        <div class="fx-subdiv-wrap">
-                            <button class="fx-subdiv-btn" data-fx="rep" data-div="2">1/8</button>
-                            <button class="fx-subdiv-btn" data-fx="rep" data-div="3">1/12</button>
-                            <button class="fx-subdiv-btn on" data-fx="rep" data-div="4">1/16</button>
-                            <button class="fx-subdiv-btn" data-fx="rep" data-div="6">1/24</button>
-                            <button class="fx-subdiv-btn" data-fx="rep" data-div="8">1/32</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- LPF -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxLpfBtn">OFF</button>
-                        <span class="fx-name">LOW PASS FILTER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Cutoff</span>
-                        <input type="range" class="fx-range" id="fxLpfFreq" min="0" max="100" value="77">
-                        <span class="fx-val" id="fxLpfFreqVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Resonance</span>
-                        <input type="range" class="fx-range" id="fxLpfQ" min="0" max="100" value="5">
-                        <span class="fx-val" id="fxLpfQVal">—</span>
-                    </div>
-                </div>
-                <!-- HPF -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxHpfBtn">OFF</button>
-                        <span class="fx-name">HIGH PASS FILTER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Cutoff</span>
-                        <input type="range" class="fx-range" id="fxHpfFreq" min="0" max="100" value="39">
-                        <span class="fx-val" id="fxHpfFreqVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Resonance</span>
-                        <input type="range" class="fx-range" id="fxHpfQ" min="0" max="100" value="5">
-                        <span class="fx-val" id="fxHpfQVal">—</span>
-                    </div>
-                </div>
-                <!-- BPF -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxBpfBtn">OFF</button>
-                        <span class="fx-name">BAND PASS FILTER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Center Freq</span>
-                        <input type="range" class="fx-range" id="fxBpfFreq" min="0" max="100" value="57">
-                        <span class="fx-val" id="fxBpfFreqVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Bandwidth</span>
-                        <input type="range" class="fx-range" id="fxBpfQ" min="0" max="100" value="5">
-                        <span class="fx-val" id="fxBpfQVal">—</span>
-                    </div>
-                </div>
-                <!-- Flanger -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxFlangerBtn">OFF</button>
-                        <span class="fx-name">FLANGER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Rate</span>
-                        <input type="range" class="fx-range" id="fxFlangerRate" min="0" max="100" value="5">
-                        <span class="fx-val" id="fxFlangerRateVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Depth</span>
-                        <input type="range" class="fx-range" id="fxFlangerDepth" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxFlangerDepthVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Feedback</span>
-                        <input type="range" class="fx-range" id="fxFlangerFb" min="0" max="95" value="50">
-                        <span class="fx-val" id="fxFlangerFbVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Mix</span>
-                        <input type="range" class="fx-range" id="fxFlangerMix" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxFlangerMixVal">—</span>
-                    </div>
-                </div>
-                <!-- Phaser -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxPhaserBtn">OFF</button>
-                        <span class="fx-name">PHASER</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Rate</span>
-                        <input type="range" class="fx-range" id="fxPhaserRate" min="0" max="100" value="5">
-                        <span class="fx-val" id="fxPhaserRateVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Depth</span>
-                        <input type="range" class="fx-range" id="fxPhaserDepth" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxPhaserDepthVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Mix</span>
-                        <input type="range" class="fx-range" id="fxPhaserMix" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxPhaserMixVal">—</span>
-                    </div>
-                </div>
-                <!-- Echo -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxEchoBtn">OFF</button>
-                        <span class="fx-name">ECHO / DELAY</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Time</span>
-                        <input type="range" class="fx-range" id="fxEchoTime" min="0" max="100" value="34">
-                        <span class="fx-val" id="fxEchoTimeVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Feedback</span>
-                        <input type="range" class="fx-range" id="fxEchoFb" min="0" max="95" value="40">
-                        <span class="fx-val" id="fxEchoFbVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Mix</span>
-                        <input type="range" class="fx-range" id="fxEchoMix" min="0" max="100" value="35">
-                        <span class="fx-val" id="fxEchoMixVal">—</span>
-                    </div>
-                </div>
-                <!-- Reverb -->
-                <div class="fx-block">
-                    <div class="fx-block-hdr">
-                        <button class="fx-toggle" id="fxReverbBtn">OFF</button>
-                        <span class="fx-name">REVERB</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Room Size</span>
-                        <input type="range" class="fx-range" id="fxReverbRoom" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxReverbRoomVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Damping</span>
-                        <input type="range" class="fx-range" id="fxReverbDamp" min="0" max="100" value="50">
-                        <span class="fx-val" id="fxReverbDampVal">—</span>
-                    </div>
-                    <div class="fx-row">
-                        <span class="fx-lbl">Mix</span>
-                        <input type="range" class="fx-range" id="fxReverbMix" min="0" max="100" value="30">
-                        <span class="fx-val" id="fxReverbMixVal">—</span>
-                    </div>
-                </div>
-                <!-- EQ -->
-                <div class="fx-sec-title">EQ</div>
-                <div class="fx-block">
-                    <div class="fx-row">
-                        <button class="fx-toggle" id="fxEqLowBtn">OFF</button>
-                        <span class="fx-lbl" style="margin-left:6px;width:36px;">LOW</span>
-                        <span class="fx-eq-note">200Hz shelf</span>
-                        <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqLow" min="-12" max="12" value="0" step="1"></div>
-                        <span class="fx-val" id="fxEqLowVal">+0.0 dB</span>
-                    </div>
-                    <div class="fx-row">
-                        <button class="fx-toggle" id="fxEqMidBtn">OFF</button>
-                        <span class="fx-lbl" style="margin-left:6px;width:36px;">MID</span>
-                        <span class="fx-eq-note">1kHz peak</span>
-                        <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqMid" min="-12" max="12" value="0" step="1"></div>
-                        <span class="fx-val" id="fxEqMidVal">+0.0 dB</span>
-                    </div>
-                    <div class="fx-row">
-                        <button class="fx-toggle" id="fxEqHighBtn">OFF</button>
-                        <span class="fx-lbl" style="margin-left:6px;width:36px;">HIGH</span>
-                        <span class="fx-eq-note">6kHz shelf</span>
-                        <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqHigh" min="-12" max="12" value="0" step="1"></div>
-                        <span class="fx-val" id="fxEqHighVal">+0.0 dB</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
 <!-- 曲情報 オーバーレイ -->
     <div class="detail-overlay" id="songInfoOverlay">
@@ -2061,7 +1840,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.962</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.963</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2607,6 +2386,229 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     </div>
 </div>
 </div><!-- /#appScaler -->
+
+<!-- EFFECT/EQ Popup (transform の影響外に配置) -->
+<div id="fxOverlay" style="display:none;">
+    <div class="fx-popup">
+        <div class="fx-popup-hdr">
+            <span>EFFECT / EQ</span>
+            <button class="fx-popup-close-btn" id="fxOverlayClose">✕</button>
+        </div>
+        <div class="fx-popup-body">
+            <div class="fx-sec-title">EFFECT</div>
+            <!-- Gate -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxGateBtn">OFF</button>
+                    <button class="fx-hold-btn" id="fxGateHoldBtn">HOLD</button>
+                    <span class="fx-name">GATE</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Interval</span>
+                    <div class="fx-subdiv-wrap">
+                        <button class="fx-subdiv-btn" data-fx="gate" data-div="2">1/8</button>
+                        <button class="fx-subdiv-btn" data-fx="gate" data-div="3">1/12</button>
+                        <button class="fx-subdiv-btn on" data-fx="gate" data-div="4">1/16</button>
+                        <button class="fx-subdiv-btn" data-fx="gate" data-div="6">1/24</button>
+                        <button class="fx-subdiv-btn" data-fx="gate" data-div="8">1/32</button>
+                    </div>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Duty Cycle</span>
+                    <input type="range" class="fx-range" id="fxGateDuty" min="10" max="90" value="50">
+                    <span class="fx-val" id="fxGateDutyVal">50%</span>
+                </div>
+            </div>
+            <!-- Repeater -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxRepBtn">OFF</button>
+                    <button class="fx-hold-btn" id="fxRepHoldBtn">HOLD</button>
+                    <span class="fx-name">REPEATER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Interval</span>
+                    <div class="fx-subdiv-wrap">
+                        <button class="fx-subdiv-btn" data-fx="rep" data-div="2">1/8</button>
+                        <button class="fx-subdiv-btn" data-fx="rep" data-div="3">1/12</button>
+                        <button class="fx-subdiv-btn on" data-fx="rep" data-div="4">1/16</button>
+                        <button class="fx-subdiv-btn" data-fx="rep" data-div="6">1/24</button>
+                        <button class="fx-subdiv-btn" data-fx="rep" data-div="8">1/32</button>
+                    </div>
+                </div>
+            </div>
+            <!-- LPF -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxLpfBtn">OFF</button>
+                    <span class="fx-name">LOW PASS FILTER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Cutoff</span>
+                    <input type="range" class="fx-range" id="fxLpfFreq" min="0" max="100" value="77">
+                    <span class="fx-val" id="fxLpfFreqVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Resonance</span>
+                    <input type="range" class="fx-range" id="fxLpfQ" min="0" max="100" value="5">
+                    <span class="fx-val" id="fxLpfQVal">—</span>
+                </div>
+            </div>
+            <!-- HPF -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxHpfBtn">OFF</button>
+                    <span class="fx-name">HIGH PASS FILTER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Cutoff</span>
+                    <input type="range" class="fx-range" id="fxHpfFreq" min="0" max="100" value="39">
+                    <span class="fx-val" id="fxHpfFreqVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Resonance</span>
+                    <input type="range" class="fx-range" id="fxHpfQ" min="0" max="100" value="5">
+                    <span class="fx-val" id="fxHpfQVal">—</span>
+                </div>
+            </div>
+            <!-- BPF -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxBpfBtn">OFF</button>
+                    <span class="fx-name">BAND PASS FILTER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Center Freq</span>
+                    <input type="range" class="fx-range" id="fxBpfFreq" min="0" max="100" value="57">
+                    <span class="fx-val" id="fxBpfFreqVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Bandwidth</span>
+                    <input type="range" class="fx-range" id="fxBpfQ" min="0" max="100" value="5">
+                    <span class="fx-val" id="fxBpfQVal">—</span>
+                </div>
+            </div>
+            <!-- Flanger -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxFlangerBtn">OFF</button>
+                    <span class="fx-name">FLANGER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Rate</span>
+                    <input type="range" class="fx-range" id="fxFlangerRate" min="0" max="100" value="5">
+                    <span class="fx-val" id="fxFlangerRateVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Depth</span>
+                    <input type="range" class="fx-range" id="fxFlangerDepth" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxFlangerDepthVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Feedback</span>
+                    <input type="range" class="fx-range" id="fxFlangerFb" min="0" max="95" value="50">
+                    <span class="fx-val" id="fxFlangerFbVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Mix</span>
+                    <input type="range" class="fx-range" id="fxFlangerMix" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxFlangerMixVal">—</span>
+                </div>
+            </div>
+            <!-- Phaser -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxPhaserBtn">OFF</button>
+                    <span class="fx-name">PHASER</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Rate</span>
+                    <input type="range" class="fx-range" id="fxPhaserRate" min="0" max="100" value="5">
+                    <span class="fx-val" id="fxPhaserRateVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Depth</span>
+                    <input type="range" class="fx-range" id="fxPhaserDepth" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxPhaserDepthVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Mix</span>
+                    <input type="range" class="fx-range" id="fxPhaserMix" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxPhaserMixVal">—</span>
+                </div>
+            </div>
+            <!-- Echo -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxEchoBtn">OFF</button>
+                    <span class="fx-name">ECHO / DELAY</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Time</span>
+                    <input type="range" class="fx-range" id="fxEchoTime" min="0" max="100" value="34">
+                    <span class="fx-val" id="fxEchoTimeVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Feedback</span>
+                    <input type="range" class="fx-range" id="fxEchoFb" min="0" max="95" value="40">
+                    <span class="fx-val" id="fxEchoFbVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Mix</span>
+                    <input type="range" class="fx-range" id="fxEchoMix" min="0" max="100" value="35">
+                    <span class="fx-val" id="fxEchoMixVal">—</span>
+                </div>
+            </div>
+            <!-- Reverb -->
+            <div class="fx-block">
+                <div class="fx-block-hdr">
+                    <button class="fx-toggle" id="fxReverbBtn">OFF</button>
+                    <span class="fx-name">REVERB</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Room Size</span>
+                    <input type="range" class="fx-range" id="fxReverbRoom" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxReverbRoomVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Damping</span>
+                    <input type="range" class="fx-range" id="fxReverbDamp" min="0" max="100" value="50">
+                    <span class="fx-val" id="fxReverbDampVal">—</span>
+                </div>
+                <div class="fx-row">
+                    <span class="fx-lbl">Mix</span>
+                    <input type="range" class="fx-range" id="fxReverbMix" min="0" max="100" value="30">
+                    <span class="fx-val" id="fxReverbMixVal">—</span>
+                </div>
+            </div>
+            <!-- EQ -->
+            <div class="fx-sec-title">EQ</div>
+            <div class="fx-block">
+                <div class="fx-row">
+                    <button class="fx-toggle" id="fxEqLowBtn">OFF</button>
+                    <span class="fx-lbl" style="margin-left:6px;width:36px;">LOW</span>
+                    <span class="fx-eq-note">200Hz shelf</span>
+                    <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqLow" min="-12" max="12" value="0" step="1"></div>
+                    <span class="fx-val" id="fxEqLowVal">+0.0 dB</span>
+                </div>
+                <div class="fx-row">
+                    <button class="fx-toggle" id="fxEqMidBtn">OFF</button>
+                    <span class="fx-lbl" style="margin-left:6px;width:36px;">MID</span>
+                    <span class="fx-eq-note">1kHz peak</span>
+                    <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqMid" min="-12" max="12" value="0" step="1"></div>
+                    <span class="fx-val" id="fxEqMidVal">+0.0 dB</span>
+                </div>
+                <div class="fx-row">
+                    <button class="fx-toggle" id="fxEqHighBtn">OFF</button>
+                    <span class="fx-lbl" style="margin-left:6px;width:36px;">HIGH</span>
+                    <span class="fx-eq-note">6kHz shelf</span>
+                    <div class="fx-eq-wrap"><input type="range" class="fx-range" id="fxEqHigh" min="-12" max="12" value="0" step="1"></div>
+                    <span class="fx-val" id="fxEqHighVal">+0.0 dB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 /* ======================================================

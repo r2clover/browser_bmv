@@ -1461,20 +1461,6 @@
 
         .loop-overlay { position:absolute; left:0; width:100%; background:transparent; border:none; z-index:2; pointer-events:none; }
 
-        /* ── ボムエフェクト ── */
-        .bomb {
-            position:absolute; bottom:-20px; left:50%;
-            transform:translateX(-50%);
-            width:130%; height:140px;
-            pointer-events:none; opacity:0;
-            background:radial-gradient(ellipse at bottom,
-                rgba(60,160,255,0.95) 0%,
-                rgba(20,100,255,0.55) 35%,
-                transparent 70%);
-            border-radius:50%;
-            z-index:15;
-        }
-
         /* ── play-footer: ゲージ + ステータスバー ── */
         .play-footer {
             flex-shrink:0; background:#0a0a0a; border-top:1px solid #2a2a2a;
@@ -1501,7 +1487,6 @@
             font-size:10px; color:#00dd66; min-width:34px; text-align:right;
             font-variant-numeric:tabular-nums;
         }
-        .groove-gauge-spacer { min-width:34px; }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
         .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; letter-spacing:0.5px; }
@@ -2076,7 +2061,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.961</span>
+                <span style="font-size:10px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.962</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2977,12 +2962,12 @@ class BMSViewer {
         this.ringElements      = {};
         this.lastProcessedPx = 0;
         // 解像度モード
-        this._resMode          = 'LOW';
         this._effH             = 470;
         this._displayScale     = 2;
         this._currentLaneScale = 90;
         this._laneBaseWidths   = { '--scratch-width':64,'--white-lane-width':44,'--black-lane-width':28,'--pm-white-w':44,'--pm-yellow-w':38,'--pm-green-w':44,'--pm-blue-w':38,'--pm-red-w':44 };
         this._noteHeightKey    = 'normal';
+        this._noteHeightMap    = { veryshort:10, short:15, normal:20, long:25 };
         // SUD+
         this.sudEnabled    = false;
         this.sudMode       = 'A';
@@ -4362,11 +4347,10 @@ class BMSViewer {
         document.getElementById('bombOffBtn').addEventListener('click', () => _setBombMode('OFF'));
 
         // ノーツ高さ（IIDXモード）
-        const _noteHeightMap  = { 'veryshort': 10, 'short': 15, 'normal': 20, 'long': 25 };
         const _noteHeightBtns = { 'veryshort': 'noteHVeryShortBtn', 'short': 'noteHShortBtn', 'normal': 'noteHNormalBtn', 'long': 'noteHLongBtn' };
         const _setNoteHeight = (key) => {
             this._noteHeightKey = key;
-            document.documentElement.style.setProperty('--note-height', Math.round(_noteHeightMap[key] * this._effH / 940) + 'px');
+            document.documentElement.style.setProperty('--note-height', Math.round(this._noteHeightMap[key] * this._effH / 940) + 'px');
             Object.keys(_noteHeightBtns).forEach(k => {
                 document.getElementById(_noteHeightBtns[k]).classList.toggle('on', k === key);
             });
@@ -5119,7 +5103,7 @@ class BMSViewer {
         };
 
         // 初期解像度モードを適用
-        this._applyResMode(this._resMode);
+        this._applyResMode('LOW');
     }
 
     /* ============================================================ RS 処理 */
@@ -5836,6 +5820,7 @@ class BMSViewer {
         this._computeScratchAssistColors();
         const container=document.getElementById('lanesContainer');
         const lanes=document.querySelectorAll('.lane');
+        const _qp=(n)=> this._quantizeMap ? (this._quantizeMap.get(n)??n.position) : n.position;
 
         // バーライン（lanesContainer直下に一本線として配置）
         for (let b=0;b<=this.maxBars;b++) {
@@ -5909,7 +5894,6 @@ class BMSViewer {
         }).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if(dl<0||dl>=this.laneCount) return;
-            const _qp=(n)=> this._quantizeMap ? (this._quantizeMap.get(n)??n.position) : n.position;
             const px=this._pos2px(_qp(note));
             const el=document.createElement('div'); el.className='note';
             if (this.currentSide === 'PM') {
@@ -5930,8 +5914,7 @@ class BMSViewer {
         this.bmsData.notes.filter(n => ['ln','bss'].includes(n.type) && !n.dpBgm).forEach(note => {
             const { dl, swappedLane } = applyLane(note);
             if(dl<0||dl>=this.laneCount) return;
-            const _qp2=(n)=> this._quantizeMap ? (this._quantizeMap.get(n)??n.position) : n.position;
-            const startPx = this._pos2px(_qp2(note));
+            const startPx = this._pos2px(_qp(note));
             const endPx   = this._pos2px(note.endPosition);
             const height  = Math.max(endPx - startPx, 4);
             const el = document.createElement('div'); el.className='note-ln';
@@ -6443,7 +6426,6 @@ class BMSViewer {
 
     _applyResMode(mode) {
         const oldEffH = this._effH;
-        this._resMode = mode;
         const isHigh = (mode === 'HIGH');
         this._effH = isHigh ? 940 : 470;
         const root = document.documentElement;
@@ -6472,11 +6454,10 @@ class BMSViewer {
         root.style.setProperty('--bomb-h', (isHigh ? 400 : 200) + 'px');
 
         // --pm-beam-h
-        document.querySelector('.play-area')?.style.setProperty('--pm-beam-h', (isHigh ? 1175 : 500) + 'px');
+        pa?.style.setProperty('--pm-beam-h', (isHigh ? 1175 : 500) + 'px');
 
         // ノーツ高さを解像度スケール
-        const _nhMap = { veryshort:10, short:15, normal:20, long:25 };
-        root.style.setProperty('--note-height', Math.round((_nhMap[this._noteHeightKey] || 20) * this._effH / 940) + 'px');
+        root.style.setProperty('--note-height', Math.round((this._noteHeightMap[this._noteHeightKey] || 20) * this._effH / 940) + 'px');
 
         // pm-pop ノーツ寸法を解像度スケール
         const _pph = Math.round(36 * this._effH / 940);
@@ -6688,9 +6669,9 @@ class BMSViewer {
             this._syncWhiteNums();
             // 判定テキスト・PMジャッジ positioner をデフォルト位置に戻す
             const jp = document.querySelector('.play-judge-positioner');
-            if (jp) jp.style.bottom = (this._judgeBaseHeight || 180) + 'px';
+            if (jp) jp.style.bottom = (this._judgeBaseHeight) + 'px';
             document.querySelectorAll('.pm-judge-positioner').forEach(el => {
-                el.style.bottom = (parseInt(el.dataset.baseBottom) || this._judgeBaseHeight || 180) + 'px';
+                el.style.bottom = (parseInt(el.dataset.baseBottom) || this._judgeBaseHeight) + 'px';
             });
             return;
         }
@@ -6710,9 +6691,9 @@ class BMSViewer {
 
         // 判定テキスト positioner を LIFT 量だけ上げる
         const jp = document.querySelector('.play-judge-positioner');
-        if (jp) jp.style.bottom = ((this._judgeBaseHeight || 180) + this.liftCoverPx) + 'px';
+        if (jp) jp.style.bottom = ((this._judgeBaseHeight) + this.liftCoverPx) + 'px';
         document.querySelectorAll('.pm-judge-positioner').forEach(el => {
-            const base = parseInt(el.dataset.baseBottom) || this._judgeBaseHeight || 180;
+            const base = parseInt(el.dataset.baseBottom) || this._judgeBaseHeight;
             el.style.bottom = (base + this.liftCoverPx) + 'px';
         });
 

@@ -186,12 +186,19 @@
 
         /* シークバー */
         .seek-wrap {
-            background:#0d0d0d; padding:12px 0;
+            background:#0d0d0d; padding:8px 0;
             border-top:1px solid #222; touch-action:none; user-select:none; flex-shrink:0;
         }
         .seek-inner {
-            max-width:720px; margin:0 auto; padding:0 20px;
+            max-width:720px; margin:0 auto; padding:0 8px;
+            display:flex; align-items:center; gap:6px;
         }
+        .seek-bar-btn {
+            background:none; border:1px solid #444; color:#aaa;
+            border-radius:4px; padding:3px 10px; font-size:14px; line-height:1;
+            cursor:pointer; flex-shrink:0; touch-action:manipulation;
+        }
+        .seek-bar-btn:active { background:#333; color:#fff; }
         .seek-track {
             width:100%; height:10px; background:#2a2a2a;
             border-radius:5px; position:relative; cursor:pointer;
@@ -962,14 +969,14 @@
         .fx-btn:disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
         /* ── EFFECT/EQ Popup ──────────────────────────────────────────── */
         #fxOverlay {
-            display:flex; flex-direction:column;
+            display:flex; flex-direction:column; align-items:center;
             position:fixed; inset:0; z-index:2000;
             background:rgba(0,0,0,0.65); backdrop-filter:blur(2px);
         }
         .fx-popup {
             position:relative; z-index:1;
             background:#1c1c1c; border:none; border-radius:0;
-            width:100%; flex:1; min-height:0;
+            width:calc(780px * var(--app-scale,1)); flex:1; min-height:0;
             display:flex; flex-direction:column;
             box-shadow:0 10px 40px rgba(0,0,0,0.9);
             font-size:14px; color:#ccc;
@@ -1618,12 +1625,12 @@
         .detail-panel .loop-input { font-size:11px; height:22px; width:44px; }
         .detail-panel .loop-sep { font-size:12px; }
         /* ── #detailOverlay フルスクリーン上書き ── */
-        #detailOverlay { display:none; flex-direction:column; z-index:1900; }
+        #detailOverlay { display:none; flex-direction:column; align-items:center; z-index:1900; }
         #detailOverlay.open { display:flex; }
         #detailOverlay .detail-backdrop { display:none; }
         #detailOverlay .detail-panel {
             position:static; top:auto; left:auto; transform:none;
-            width:100%; min-width:0; max-width:none; max-height:none;
+            width:calc(780px * var(--app-scale,1)); min-width:0; max-width:none; max-height:none;
             flex:1; min-height:0; border-radius:0; border:none;
         }
     
@@ -1933,11 +1940,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <!-- シークバー -->
     <div class="seek-wrap" id="seekWrap">
         <div class="seek-inner">
-            <div class="seek-track" id="seekTrack">
+            <button class="seek-bar-btn" id="seekBackBtn">←</button>
+            <div class="seek-track" id="seekTrack" style="flex:1;">
                 <div class="seek-fill"       id="seekFill"      style="width:0%"></div>
                 <div class="seek-loop-range" id="seekLoopRange"></div>
                 <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
             </div>
+            <button class="seek-bar-btn" id="seekFwdBtn">→</button>
         </div>
     </div>
 
@@ -2009,7 +2018,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.969</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.971</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -4754,6 +4763,8 @@ class BMSViewer {
             track.addEventListener('pointerup',     () => { isSeeking = false; });
             track.addEventListener('pointercancel', () => { isSeeking = false; });
         }
+        document.getElementById('seekBackBtn').addEventListener('click', () => this._seekBars(-3));
+        document.getElementById('seekFwdBtn') .addEventListener('click', () => this._seekBars(+3));
 
         // S-RANDOM / H-RANDOM ボタン
         document.getElementById('sRandomBtn').addEventListener('click', () => this._toggleSRandom('s'));
@@ -8019,6 +8030,25 @@ class BMSViewer {
         } else {
             lr.style.display = 'none';
         }
+    }
+
+    /* ── 小節線ジャンプ ── */
+    _seekBars(delta) {
+        if (!this.barStartPx || this.barStartPx.length === 0) return;
+        let cur = 0;
+        for (let i = 0; i < this.barStartPx.length; i++) {
+            if (this.barStartPx[i] <= this.currentPixelPos + 1) cur = i;
+            else break;
+        }
+        const target = Math.max(0, Math.min(this.barStartPx.length - 1, cur + delta));
+        this.currentPixelPos = this.barStartPx[target];
+        this._syncCombo();
+        this._resetPlayCounters();
+        this._resetEffectElements();
+        this._updatePositions();
+        this._updateBgaImage();
+        this._updateSeekBar();
+        if (this.isPlaying) this._startAudio();
     }
 
     /* ── シーク処理 ── */

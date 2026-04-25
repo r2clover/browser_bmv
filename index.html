@@ -2015,7 +2015,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.972</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.973</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6933,7 +6933,10 @@ class BMSViewer {
         // ── ズーム抑制（double-tap / pinch） ────────────────────────
         let _lastTapMs = 0;
         document.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) { e.preventDefault(); return; } // pinchズーム抑制
+            if (e.touches.length > 1) { // pinchズーム抑制（fxOverlay内はマルチタッチ許可）
+                if (!document.getElementById('fxOverlay').contains(e.target)) e.preventDefault();
+                return;
+            }
             const now = Date.now();
             if (now - _lastTapMs < 300) e.preventDefault(); // double-tapズーム抑制
             _lastTapMs = now;

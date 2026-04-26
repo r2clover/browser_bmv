@@ -2015,7 +2015,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.975</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.976</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3492,6 +3492,15 @@ class BMSViewer {
     async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}, pendingMp4Entries=null) {
         if (this.isPlaying){this.isPlaying=false;cancelAnimationFrame(this.animFrameId);}
         this._stopAudio();
+        // AudioContextを閉じて内部デコード済みバッファ・LFOノードをすべて解放
+        if (this._audioCtx) {
+            this._audioCtx.close().catch(() => {});
+            this._audioCtx    = null;
+            this._fxChainInput= null;
+            this._fx          = null;
+            this._keyGainNode = null;
+            this._keyDirectGain = null;
+        }
         this.wavBuffers={};
         this._pendingMp4Entries = pendingMp4Entries; // BGA ON 時まで遅延ロード
 

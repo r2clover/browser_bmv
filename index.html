@@ -2015,7 +2015,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.973</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.975</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2400,6 +2400,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     <button class="fx-btn"  id="judgeOffsetVisualReset" style="font-size:10px;letter-spacing:0.05em;">RESET</button>
                     <span style="font-size:10px;color:#888;">(-300〜+300ms)</span>
                 </div>
+            </div>
+            <!-- マナーモード -->
+            <div class="detail-section">
+                <span class="detail-label">マナーモード</span>
+                <button class="fx-btn on" id="muteNormalBtn">通常</button>
+                <button class="fx-btn"   id="muteBypassBtn">DAC/外部出力</button>
+            </div>
+            <!-- バックグラウンド再生 -->
+            <div class="detail-section">
+                <span class="detail-label">バックグラウンド再生</span>
+                <button class="fx-btn on" id="bgPlayOffBtn">OFF</button>
+                <button class="fx-btn"   id="bgPlayOnBtn">ON</button>
             </div>
             <!-- 描画FPS -->
             <div class="detail-section nowrap">
@@ -2973,6 +2985,7 @@ class BMSViewer {
         this._pjBlinkTimer = null;
         this._pjFadeTimer  = null;
         this._pjCycleTimer = null;
+        this._bgPlayEnabled   = false;  // バックグラウンド再生
         this._targetFps       = 60;     // 描画FPS: 30/60/120/144/0(無制限)
         this._lastFrameRender = 0;      // FPSスロットル用
         this.bgaEnabled       = false; // BGA ムービー ON/OFF
@@ -4510,6 +4523,44 @@ class BMSViewer {
         for (const [type, id] of Object.entries(_gaugeTypeMap))
             document.getElementById(id).addEventListener('click', () => _setGaugeType(type));
 
+        // マナーモード無視 / バックグラウンド再生（iOS: サイレント音声でセッションをplaybackに切替）
+        const _createSilentAudio = () => {
+            const buf = new ArrayBuffer(46);
+            const v = new DataView(buf);
+            const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o+i, s.charCodeAt(i)); };
+            ws(0,'RIFF'); v.setUint32(4,38,true); ws(8,'WAVE'); ws(12,'fmt ');
+            v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+            v.setUint32(24,8000,true); v.setUint32(28,8000,true);
+            v.setUint16(32,1,true); v.setUint16(34,8,true);
+            ws(36,'data'); v.setUint32(40,2,true);
+            v.setUint8(44,128); v.setUint8(45,128);
+            const el = document.createElement('audio');
+            el.src = URL.createObjectURL(new Blob([buf], {type:'audio/wav'}));
+            el.loop = true;
+            return el;
+        };
+        this._silentAudioEl = _createSilentAudio();
+        const _updateSilentAudio = () => {
+            const need = document.getElementById('muteBypassBtn').classList.contains('on') || this._bgPlayEnabled;
+            if (need) this._silentAudioEl.play().catch(() => {});
+            else { this._silentAudioEl.pause(); this._silentAudioEl.currentTime = 0; }
+        };
+        const _setMuteBypass = (bypass) => {
+            document.getElementById('muteNormalBtn').classList.toggle('on', !bypass);
+            document.getElementById('muteBypassBtn').classList.toggle('on',  bypass);
+            _updateSilentAudio();
+        };
+        document.getElementById('muteNormalBtn').addEventListener('click', () => _setMuteBypass(false));
+        document.getElementById('muteBypassBtn').addEventListener('click', () => _setMuteBypass(true));
+        const _setBgPlay = (enabled) => {
+            this._bgPlayEnabled = enabled;
+            document.getElementById('bgPlayOffBtn').classList.toggle('on', !enabled);
+            document.getElementById('bgPlayOnBtn').classList.toggle('on',  enabled);
+            _updateSilentAudio();
+        };
+        document.getElementById('bgPlayOffBtn').addEventListener('click', () => _setBgPlay(false));
+        document.getElementById('bgPlayOnBtn').addEventListener('click',  () => _setBgPlay(true));
+
         // 描画FPS
         const _fpsIds = { 30:'fps30Btn', 60:'fps60Btn', 120:'fps120Btn', 144:'fps144Btn', 0:'fpsUnlimitedBtn' };
         const _setFps = (fps) => {
@@ -5068,6 +5119,7 @@ class BMSViewer {
         // visibilitychange: タブ/アプリが前面に戻ったとき
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
+                if (this._bgPlayEnabled) return; // バックグラウンド再生ON: 音声継続
                 // タブ非表示・アプリ切替: バックグラウンドフラグを立て音声停止
                 this._wasInBackground = true;
                 if (this.isPlaying) {

@@ -2015,7 +2015,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.976</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.977</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2046,13 +2046,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="quantHighlightOffBtn">通常</button>
                 <button class="fx-btn"   id="quantHighlightOnBtn">赤枠表示</button>
             </div>
-            <!-- IIDX コントローラー（IIDXモード時のみ表示） -->
+            <!-- コントローラー -->
             <div class="detail-section nowrap" id="iidxControllerSection" style="display:none;">
                 <span class="detail-label">コントローラー</span>
                 <button class="fx-btn"    id="gpIidxOffBtn">OFF</button>
                 <button class="fx-btn"   id="gpPremiumBtn">ENTRY/PREMIUM</button>
                 <button class="fx-btn"   id="gpPs2Btn">PS2</button>
                 <button class="fx-btn on" id="gpPhoenixBtn">PHOENIX WAN</button>
+                <button class="fx-btn"   id="gpAnakonBtn">アナコン</button>
             </div>
             <!-- 解像度 -->
             <div class="detail-section nowrap">
@@ -4325,7 +4326,11 @@ class BMSViewer {
             document.getElementById('pmBeamNormalBtn').style.display = isPM ? '' : 'none';
             document.getElementById('pmBeamLiteBtn').style.display   = isPM ? '' : 'none';
             document.getElementById('pmBeamLengthSection').style.display = isPM ? '' : 'none';
-            document.getElementById('iidxControllerSection').style.display = isPM ? 'none' : '';
+            document.getElementById('iidxControllerSection').style.display = '';
+            // PMモードではIIDX専用コントローラーボタンを非表示
+            ['gpPremiumBtn','gpPs2Btn','gpPhoenixBtn'].forEach(id =>
+                document.getElementById(id).style.display = isPM ? 'none' : '');
+
             document.getElementById('scrConvSection').style.display         = isPM ? 'none' : '';
             document.getElementById('scrAssistSection').style.display       = isPM ? 'none' : '';
             if (isPM) {
@@ -4468,7 +4473,7 @@ class BMSViewer {
         document.getElementById('playModeAutoWavBtn').addEventListener('click', () => _setPlayMode('autoWav'));
 
         // IIDX コントローラータイプ選択
-        const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn', PHOENIX_WAN:'gpPhoenixBtn' };
+        const _gpIidxIds = { OFF:'gpIidxOffBtn', PREMIUM:'gpPremiumBtn', PS2:'gpPs2Btn', PHOENIX_WAN:'gpPhoenixBtn', ANAKON:'gpAnakonBtn' };
         const _setGpIidx = (type) => {
             this._gpIidxType = type;
             for (const [t, id] of Object.entries(_gpIidxIds))
@@ -4921,11 +4926,15 @@ class BMSViewer {
 ・クォンタイズ後：表示とWAV再生タイミングの両方をクォンタイズします
 ・BGMはどちらの設定でもクォンタイズの対象外です
 
-<span class="help-h1">【コントローラー】（PLAY MODE・IIDXモード時のみ表示）</span>
+<span class="help-h1">【コントローラー】（PLAY MODEで使用）</span>
 ・OFF：キーボード入力のみ使用します
 ・ENTRY/PREMIUM：beatmania IIDX ENTRY / PREMIUM モデルで接続します
 ・PS2：PS2コントローラーアダプター経由で接続します
 ・PHOENIX WAN：PHOENIX WAN を INFINITASモードで接続します
+・アナコン：PS4/Xboxコントローラーで使用します
+　[IIDX 1P] SC:L1/L2 1:←/↓ 2:↑ 3:→/□ 4:△ 5:○/× 6:R1 7:R2
+　[IIDX 2P] SC:R1/R2 1:L2 2:L1 3:←/↓ 4:↑ 5:→/□ 6:△ 7:○/×
+　[ポップン] 1:←/L2 2:L1 3:↓ 4:↑ 5:→/□ 6:△ 7:× 8:R1 9:○/R2
 
 <span class="help-h1">【GROOVE GAUGE】</span>
 ・ゲージタイプを選択します（NORMAL / EASY / HARD / EX HARD / 段位認定）
@@ -7074,21 +7083,26 @@ class BMSViewer {
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
         const isPM = this.currentSide === 'PM';
         const isIidx = !isPM && this._gpIidxType !== 'OFF';
+        const isAnakon = this._gpIidxType === 'ANAKON';
         if (!isPM && !isIidx) return;
 
         for (const gp of gamepads) {
             if (!gp) continue;
             if (isPM) {
-                // PM: ボタン 0-8 → dl 0-8（左白〜右白）
-                for (let i = 0; i < 9; i++) {
-                    const btn = gp.buttons[i];
-                    if (!btn) continue;
-                    const key = `${gp.index}_b${i}`;
-                    const pressed = btn.pressed;
-                    const was = this._gpPrevButtons.get(key) || false;
-                    if (pressed && !was) this._onLanePress(i);
-                    else if (!pressed && was) this._onLaneRelease(i);
-                    this._gpPrevButtons.set(key, pressed);
+                if (isAnakon) {
+                    this._pollAnakonPm(gp);
+                } else {
+                    // PM デフォルト: ボタン 0-8 → dl 0-8（左白〜右白）
+                    for (let i = 0; i < 9; i++) {
+                        const btn = gp.buttons[i];
+                        if (!btn) continue;
+                        const key = `${gp.index}_b${i}`;
+                        const pressed = btn.pressed;
+                        const was = this._gpPrevButtons.get(key) || false;
+                        if (pressed && !was) this._onLanePress(i);
+                        else if (!pressed && was) this._onLaneRelease(i);
+                        this._gpPrevButtons.set(key, pressed);
+                    }
                 }
             } else {
                 this._pollIidxPad(gp);
@@ -7144,6 +7158,60 @@ class BMSViewer {
             this._gpPrevButtons.set(ax3key, ax3pressed);
             // AXIS3 (axes[2]) → 皿
             this._pollScratch(gp, 2, toDl(0));
+
+        } else if (this._gpIidxType === 'ANAKON') {
+            // アナコン（PS4/Xbox 標準マッピング準拠）
+            // buttons: 0=×/A  1=○/B  2=□/X  3=△/Y  4=L1  5=R1  6=L2  7=R2
+            //          12=D-Up  13=D-Down  14=D-Left  15=D-Right
+            const is2P = this.currentSide === '2P';
+            // [buttonIndex, baseDl(1P基準: 0=SC, 1-7=鍵1-7)]
+            const map1P = [
+                [4,0],[6,0],       // SC:  L1, L2
+                [14,1],[13,1],     // 1鍵: ←, ↓
+                [12,2],            // 2鍵: ↑
+                [15,3],[2,3],      // 3鍵: →, □
+                [3,4],             // 4鍵: △
+                [1,5],[0,5],       // 5鍵: ○, ×
+                [5,6],             // 6鍵: R1
+                [7,7],             // 7鍵: R2
+            ];
+            const map2P = [
+                [5,0],[7,0],       // SC:  R1, R2
+                [6,1],             // 1鍵: L2
+                [4,2],             // 2鍵: L1
+                [14,3],[13,3],     // 3鍵: ←, ↓
+                [12,4],            // 4鍵: ↑
+                [15,5],[2,5],      // 5鍵: →, □
+                [3,6],             // 6鍵: △
+                [1,7],[0,7],       // 7鍵: ○, ×
+            ];
+            for (const [bi, baseDl] of (is2P ? map2P : map1P)) _btn(bi, baseDl);
+        }
+    }
+
+    // ── アナコン PMモードポーリング ──────────────────────────────
+    _pollAnakonPm(gp) {
+        // [buttonIndex, dl(0-8: 左白1〜右白9)]
+        const map = [
+            [14,0],[6,0],   // 1: ←, L2
+            [4,1],          // 2: L1
+            [13,2],         // 3: ↓
+            [12,3],         // 4: ↑
+            [15,4],[2,4],   // 5: →, □
+            [3,5],          // 6: △
+            [0,6],          // 7: ×
+            [5,7],          // 8: R1
+            [1,8],[7,8],    // 9: ○, R2
+        ];
+        for (const [bi, dl] of map) {
+            const btn = gp.buttons[bi];
+            if (!btn) continue;
+            const key = `${gp.index}_b${bi}`;
+            const pressed = btn.pressed;
+            const was = this._gpPrevButtons.get(key) || false;
+            if (pressed && !was) this._onLanePress(dl);
+            else if (!pressed && was) this._onLaneRelease(dl);
+            this._gpPrevButtons.set(key, pressed);
         }
     }
 

@@ -2015,7 +2015,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.977</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.979</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5885,7 +5885,7 @@ class BMSViewer {
         if (!this.bmsData || !this.quantizeMode) return;
         const division = this.quantizeMode === '16' ? 16 : 8;
         const gridUnit  = 1.0 / division;
-        const EPS       = 0;
+        const EPS       = 1e-9;
         const playable  = this.bmsData.notes.filter(n =>
             n.type==='normal' || n.type==='ln' || n.type==='bss' || n.type==='mss'
         );
@@ -5905,24 +5905,41 @@ class BMSViewer {
                 if (s < 0)    s = 0;
                 return bar + s;
             });
-            for (let i = 0; i < notes.length; i++) {
-                const cand = snapped[i];
-                if (Math.abs(cand - origPos[i]) < EPS) {
-                    result.set(notes[i], origPos[i]); continue;
-                }
-                let collision = false;
+            const collides = (i, cand) => {
+                if (Math.abs(cand - origPos[i]) < EPS) return false;
                 for (let j = 0; j < notes.length; j++) {
-                    if (j===i) continue;
-                    if (Math.abs(origPos[j] - cand) < EPS) { collision=true; break; }
+                    if (j === i) continue;
+                    if (Math.abs(origPos[j] - cand) < EPS) return true;
+                    if (Math.abs(snapped[j] - origPos[j]) >= EPS &&
+                        Math.abs(snapped[j] - cand) < EPS) return true;
                 }
-                if (!collision) {
-                    for (let j = 0; j < notes.length; j++) {
-                        if (j===i) continue;
-                        if (Math.abs(snapped[j]-origPos[j]) < EPS) continue;
-                        if (Math.abs(snapped[j] - cand) < EPS) { collision=true; break; }
+                return false;
+            };
+            for (let i = 0; i < notes.length; i++) {
+                const orig = origPos[i];
+                const prim = snapped[i];
+                if (Math.abs(prim - orig) < EPS) {
+                    result.set(notes[i], orig); continue;
+                }
+                if (!collides(i, prim)) {
+                    result.set(notes[i], prim); continue;
+                }
+                // 衝突: 次に近いクォンタイズ位置（プライマリと反対側）を試す
+                const bar    = Math.floor(orig);
+                const sPrim  = prim - bar;
+                const altDir = (prim > orig) ? -1 : +1;
+                const sAlt   = sPrim + altDir * gridUnit;
+                if (sAlt >= -EPS && sAlt <= 1.0 - gridUnit + EPS) {
+                    const alt = bar + Math.max(0, Math.min(1.0 - gridUnit, sAlt));
+                    if (!collides(i, alt)) {
+                        result.set(notes[i], alt);
+                        snapped[i] = alt;
+                        continue;
                     }
                 }
-                result.set(notes[i], collision ? origPos[i] : cand);
+                // それでも衝突: 元の位置に戻す
+                result.set(notes[i], orig);
+                snapped[i] = orig;
             }
         }
         this._quantizeMap = result;

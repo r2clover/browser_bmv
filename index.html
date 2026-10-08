@@ -2015,10 +2015,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.979</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v0.985</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
+            <div class="detail-section" style="flex-wrap:wrap;">
+                <span class="detail-label">設定保存</span>
+                <button class="fx-btn" id="settingsExportBtn">書き出し</button>
+                <button class="fx-btn" id="settingsImportBtn">読み込み</button>
+                <input type="file" id="settingsFileInput" accept=".json,application/json" hidden>
+                <span id="settingsStatus" role="status" style="font-size:12px;width:100%;color:#aaa;">設定はこのブラウザに自動保存します。</span>
+                <span style="font-size:12px;width:100%;color:#aaa;">書き出したJSONは「ファイル」などに保存できます。譜面・再生位置・区間・ランダム配置は含みません。</span>
+            </div>
             <!-- HELP -->
             <div class="detail-section nowrap">
                 <button class="fx-btn" id="helpBtn" style="width:100%;">HELP</button>
@@ -2673,6 +2681,8 @@ class BMSParser {
 
     parse(text) {
         text = text.replace(/^\uFEFF/, '').replace(/\r/g, '');
+        text = this._resolveBranches(text);
+        this.resolvedText = text;
         for (let line of text.split('\n')) {
             line = line.trim();
             if (!line || line.startsWith('*')) continue;
@@ -2691,6 +2701,41 @@ class BMSParser {
             bgaEvents:  this.bgaEvents,
             isPMS:      this.isPMS
         };
+    }
+
+    // 通常の省略可能なENDRANDOMと、明示的に閉じる入れ子の両方を扱う。
+    _resolveBranches(text) {
+        const output = [], randoms = [], conditions = [];
+        const active = () => !conditions.length || conditions[conditions.length - 1].active;
+        for (const raw of text.split('\n')) {
+            const line = raw.trim();
+            const match = line.match(/^#(RANDOM|SETRANDOM|ENDRANDOM|IF|ELSEIF|ELSE|ENDIF|END)(?:\s+(.*))?$/i);
+            if (!match) { if (active()) output.push(raw); continue; }
+            const command = match[1].toUpperCase();
+            const value = /^\d+$/.test(match[2] || '') ? Number(match[2]) : NaN;
+            if (command === 'RANDOM' || command === 'SETRANDOM') {
+                const valid = Number.isSafeInteger(value) && value > 0;
+                const selected = active() && valid ? (command === 'SETRANDOM' ? value : Math.floor(Math.random() * value) + 1) : null;
+                randoms.push({selected});
+            } else if (command === 'ENDRANDOM') {
+                randoms.pop();
+            } else if (command === 'IF') {
+                const parent = active(), selected = randoms[randoms.length - 1]?.selected;
+                const matches = selected != null && selected === value;
+                conditions.push({parent, selected, matched:matches, active:parent && matches, elseSeen:false});
+            } else if (command === 'ELSEIF' || command === 'ELSE') {
+                const frame = conditions[conditions.length - 1];
+                if (!frame) continue;
+                const matches = !frame.elseSeen && !frame.matched &&
+                    (command === 'ELSE' || (frame.selected != null && frame.selected === value));
+                frame.active = frame.parent && matches;
+                frame.matched ||= matches;
+                if (command === 'ELSE') frame.elseSeen = true;
+            } else {
+                conditions.pop();
+            }
+        }
+        return output.join('\n');
     }
 
     _parseHeader(line) {
@@ -2823,12 +2868,12 @@ class BMSParser {
             const openByLane = {}, kept = [];
             for (const note of this.notes) {
                 if (note.type !== 'normal') { kept.push(note); continue; }
+                const laneKey = note.channel; // DPの1P/2Pは同じlane番号でも別々に保持する。
                 if (note._rawVal === lnobjVal) {
-                    const open = openByLane[note.lane];
-                    if (open) { open.endPosition = note.position; open.type = 'ln'; delete openByLane[note.lane]; }
+                    const open = openByLane[laneKey];
+                    if (open) { open.endPosition = note.position; open.type = 'ln'; delete openByLane[laneKey]; }
                 } else {
-                    if (openByLane[note.lane]) kept.push(openByLane[note.lane]);
-                    openByLane[note.lane] = note;
+                    openByLane[laneKey] = note;
                     kept.push(note);
                 }
             }
@@ -2906,6 +2951,9 @@ class BMSViewer {
         this.laneCount       = 8;   // PM mode: 9
         this.noteElements    = [];
         this.isPlaying       = false;
+        this._loadGeneration = 0;
+        this._isLoading      = false;
+        this._readyToPlay    = false;
         this._needAudioRestart = false; // バックグラウンド復帰時の音声再スケジュールフラグ
         this._wasInBackground  = false; // visibilitychange: hidden が発火したかどうか
         this.mirrorActive    = false;  // MIRROR ON/OFF
@@ -2917,6 +2965,8 @@ class BMSViewer {
         this._noteRandomMap  = null;   // Map<note, newLane> ノーツ単位ランダムマッピング
         // ── WAV / ZIP ──────────────────────────────────────
         this.wavBuffers    = {};   // wavId(base-62) → AudioBuffer
+        this._decodedWavCache = new WeakMap(); // 音源オブジェクト単位。同じZIPの難易度間でも共有。
+        this._zipSession = null; // 最後に開いたZIP。再選択時にも音源オブジェクトを再利用する。
         this.wavVolBGM     = 0.80;  // #00201以降のBGM音量
         this.wavVolBGM0    = 0.80;  // #00001〜#00101（小節0〜1）のBGM音量
         this.wavVolKey     = 0.80;
@@ -3036,6 +3086,188 @@ class BMSViewer {
         this._bindEvents();
         this._renderLanes();
         this._updateGrooveGauge(this._gaugeInitPct);
+        this._initSettingsStorage();
+    }
+
+    // 保存する操作を明示する。ファイルを開く・再生・HOLDなどは復元しない。
+    _settingsControls() {
+        const groups = [
+            'resHighBtn resLowBtn',
+            'laneW50Btn laneW60Btn laneW70Btn laneW80Btn laneW90Btn laneW100Btn',
+            'quantizeWavOffBtn quantizeWavOnBtn', 'quantHighlightOffBtn quantHighlightOnBtn',
+            'gpIidxOffBtn gpPremiumBtn gpPs2Btn gpPhoenixBtn gpAnakonBtn',
+            'gaugeNormalBtn gaugeEasyBtn gaugeHardBtn gaugeExHardBtn gaugeDanBtn gaugePmNormalBtn gaugePmHardBtn gaugePmEasyBtn',
+            'scrAssistOffBtn scrAssist1barBtn scrAssist2Btn scrAssist4Btn scrAssist8Btn scrAssist16Btn',
+            'sudModeABtn sudModeBBtn sudModeCBtn', 'sudNumAlwaysBtn sudNumOnOpBtn',
+            'notesStyleABtn notesStyleBBtn notesStylePMPopFaceBtn notesStylePMPopLiteBtn notesStylePMBeatPopBtn notesStylePMBeatCBtn',
+            'chargeStyleABtn chargeStyleBBtn chargeStylePMPopFaceBtn chargeStylePMPopLiteBtn chargeStylePMBeatPopBtn chargeStylePMBeatCBtn',
+            'lnModeABtn lnModeBBtn', 'beamShortBtn beamNormalBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
+            'noteHVeryShortBtn noteHShortBtn noteHNormalBtn noteHLongBtn', 'bombABtn bombBBtn bombOffBtn',
+            'bpmLineBtn bpmNumBtn bpmOffBtn', 'bgaOnBtn bgaOffBtn',
+            'judgeJustBtn judgeNormalBtn judgeSimpleBtn pmJudgeCoolBtn judgeOffBtn',
+            'autoJudgePgreatBtn autoJudgeGreatBtn', 'muteNormalBtn muteBypassBtn',
+            'bgPlayOffBtn bgPlayOnBtn', 'fps30Btn fps60Btn fps120Btn fps144Btn fpsUnlimitedBtn',
+            // PLAYは判定選択ボタンを無効化するので最後に適用する。
+            'autoPlayModeBtn playModeBtn playModeAutoWavBtn'
+        ].map(ids => ids.split(' '));
+        const toggles = ('sudBtn liftBtn rsBtn fastSlowBtn autoTimingBtn wavBgm1Btn wavBgm2Btn wavKeyBtn metronomeBtn ' +
+            'fxGateBtn fxRepBtn fxLpfBtn fxHpfBtn fxBpfBtn fxFlangerBtn fxPhaserBtn fxEchoBtn fxReverbBtn fxEqLowBtn fxEqMidBtn fxEqHighBtn').split(' ');
+        const inputs = [...document.querySelectorAll('#detailOverlay input[type=number], #detailOverlay input[type=range], #fxOverlay input[type=range]')]
+            .filter(el => !['loopStartInput','loopEndInput'].includes(el.id)).map(el => el.id);
+        inputs.push('greenInput');
+        return { groups, toggles, inputs };
+    }
+
+    _captureSettings() {
+        const { groups, toggles, inputs } = this._settingsControls();
+        const active = el => el.classList.contains('on') || el.classList.contains('active');
+        const values = Object.fromEntries(inputs.map(id => {
+            const el = document.getElementById(id);
+            let value = el.value === '' ? Number(el.defaultValue) : Number(el.value);
+            if (!Number.isFinite(value)) value = Number(el.defaultValue);
+            if (el.min !== '') value = Math.max(Number(el.min), value);
+            if (el.max !== '') value = Math.min(Number(el.max), value);
+            return [id, value];
+        }));
+        values.greenInput = this.targetGreenNum;
+        values.rsInput = this.realSpeed;
+        values.justFrameInput = this._justFrameInterval;
+        const choices = Object.fromEntries(groups.map(ids => [ids[0], ids.find(id => active(document.getElementById(id))) || ids[0]]));
+        choices.sudModeABtn = 'sudMode' + this.sudMode + 'Btn';
+        return { format:'bms-viewr-settings', schemaVersion:1, side:this.currentSide,
+            choices, toggles:Object.fromEntries(toggles.map(id => [id, active(document.getElementById(id))])), values,
+            covers:{sud:this.sudCoverPx, lift:this.liftCoverPx}, pitch:{sc:this.pitchSC, key:this.pitchKey},
+            guide:{sc:this.guideSoundLanes[0], key:this.guideSoundLanes.slice(1).every(Boolean)},
+            quantize:this.quantizeMode,
+            subdivisions:Object.fromEntries(['gate','rep'].map(fx => [fx, Number(document.querySelector(`[data-fx="${fx}"].on`)?.dataset.div || 4)])) };
+    }
+
+    _validateSettings(data) {
+        if (!data || data.format !== 'bms-viewr-settings' || data.schemaVersion !== 1) throw new Error('対応する設定ファイルではありません。');
+        const { groups, toggles, inputs } = this._settingsControls();
+        const number = (value, min, max) => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+        if (!['1P','2P','PM'].includes(data.side) || ![null,'8','16'].includes(data.quantize)) throw new Error('設定値が不正です。');
+        if (!data.choices || !data.toggles || !data.values) throw new Error('設定項目が不足しています。');
+        for (const ids of groups) if (!ids.includes(data.choices[ids[0]])) throw new Error('選択項目が不正です。');
+        for (const id of toggles) if (typeof data.toggles[id] !== 'boolean') throw new Error('ON/OFFの設定が不正です。');
+        for (const id of inputs) {
+            const el = document.getElementById(id);
+            // ゲージのminは現在のモードによって変わる。
+            const min = id === 'gaugeInitSlider' ? 0 : el.min === '' ? -100000 : Number(el.min);
+            const max = el.max === '' ? 100000 : Number(el.max);
+            if (!number(data.values[id], min, max)) throw new Error('数値設定が範囲外です: ' + id);
+        }
+        if (!number(data.covers?.sud,0,940) || !number(data.covers?.lift,0,900) ||
+            !number(data.pitch?.sc,-12,12) || !number(data.pitch?.key,-12,12) ||
+            !Number.isInteger(data.pitch.sc) || !Number.isInteger(data.pitch.key) ||
+            typeof data.guide?.sc !== 'boolean' || typeof data.guide?.key !== 'boolean' ||
+            ![2,3,4,6,8].includes(data.subdivisions?.gate) || ![2,3,4,6,8].includes(data.subdivisions?.rep)) throw new Error('設定値が不正です。');
+        return data;
+    }
+
+    _applySettings(data) {
+        this._validateSettings(data); // 検証完了まで現在の設定を変更しない。
+        if (this._isLoading) throw new Error('譜面の読み込み完了後に設定を読み込んでください。');
+        if (this.isPlaying) this._togglePlay();
+        this._restoringSettings = true;
+        try {
+            const { groups, toggles, inputs } = this._settingsControls();
+            const active = el => el.classList.contains('on') || el.classList.contains('active');
+            // 判定選択を操作できる状態にし、依存する設定から順に既存の操作を適用する。
+            if (this.isPlayMode) document.getElementById('autoPlayModeBtn').click();
+            if (this.currentSide !== data.side) document.querySelector(`.side-btn[data-side="${data.side}"]`).click();
+            for (const ids of groups.slice(0,-1)) {
+                const el = document.getElementById(data.choices[ids[0]]);
+                if (!active(el) || ids[0] === 'sudModeABtn') el.click();
+            }
+            for (const id of toggles) {
+                const el = document.getElementById(id);
+                if (active(el) !== data.toggles[id]) el.click();
+            }
+            this._setSudCoverPx(data.covers.sud, false);
+            this._setLiftCoverPx(data.covers.lift, false);
+            for (const id of inputs) {
+                const el = document.getElementById(id);
+                if (el.disabled) continue;
+                el.value = data.values[id];
+                el.dispatchEvent(new Event('input', {bubbles:true}));
+                el.dispatchEvent(new Event('change', {bubbles:true}));
+            }
+            for (const [part, val] of Object.entries(data.pitch)) {
+                const upper = part === 'sc' ? 'SC' : 'Key';
+                this['pitch' + upper] = val;
+                document.getElementById('pitch' + upper + 'Val').textContent = (val >= 0 ? '+' : '') + val;
+            }
+            for (const part of ['sc','key']) {
+                const el = document.querySelector(`.guide-lane-btn[data-group="${part}"]`);
+                if (active(el) !== data.guide[part]) el.click();
+            }
+            if (this.quantizeMode !== data.quantize) {
+                if (this.quantizeMode) document.getElementById('quantize' + this.quantizeMode + 'Btn').click();
+                if (data.quantize) document.getElementById('quantize' + data.quantize + 'Btn').click();
+            }
+            for (const fx of ['gate','rep']) document.querySelector(`[data-fx="${fx}"][data-div="${data.subdivisions[fx]}"]`).click();
+            const mode = document.getElementById(data.choices.autoPlayModeBtn);
+            if (!active(mode)) mode.click();
+            this._reapplyHS();
+        } finally { this._restoringSettings = false; }
+    }
+
+    _saveSettings() {
+        if (this._restoringSettings || this._gateHeld || this._repHeld) return;
+        clearTimeout(this._settingsSaveTimer);
+        try {
+            const json = JSON.stringify(this._captureSettings());
+            if (json !== this._lastSavedSettings) window.localStorage.setItem('bms-viewr.settings.v1', json);
+            this._lastSavedSettings = json;
+            document.getElementById('settingsStatus').textContent = '設定をこのブラウザに自動保存しました。';
+        } catch (e) {
+            document.getElementById('settingsStatus').textContent = '自動保存を利用できません。「書き出し」で設定を保存してください。';
+        }
+    }
+
+    _initSettingsStorage() {
+        const status = document.getElementById('settingsStatus');
+        try {
+            const json = window.localStorage.getItem('bms-viewr.settings.v1');
+            if (json) {
+                this._applySettings(JSON.parse(json));
+                this._lastSavedSettings = JSON.stringify(this._captureSettings());
+                status.textContent = '保存済みの設定を復元しました。';
+            }
+        } catch (e) { status.textContent = '保存済み設定を復元できません。「読み込み」または「書き出し」を利用してください。'; }
+        const schedule = () => {
+            if (this._restoringSettings) return;
+            clearTimeout(this._settingsSaveTimer);
+            this._settingsSaveTimer = setTimeout(() => this._saveSettings(), 250);
+        };
+        for (const name of ['click','input','change','pointerup','touchend']) document.addEventListener(name, e => {
+            if (e.target.closest('#settingsExportBtn, #settingsImportBtn, #settingsFileInput')) return;
+            if (e.target.closest('#detailOverlay, #fxOverlay, .side-btn, .guide-lane-btn, #greenInput, #greenMinus, #greenPlus, #sudBtn, #sudUpBtn, #sudDownBtn, #liftBtn, #liftUpBtn, #liftDownBtn, #sudCover, #liftCover, #rsBtn, #quantize16Btn, #quantize8Btn')) schedule();
+        });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) this._saveSettings(); });
+        window.addEventListener('pagehide', () => this._saveSettings());
+        document.getElementById('settingsExportBtn').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify(this._captureSettings(), null, 2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'bms_viewr_settings.json'; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            status.textContent = '設定ファイルを書き出しました。ダウンロード先を確認してください。';
+        });
+        const fileInput = document.getElementById('settingsFileInput');
+        document.getElementById('settingsImportBtn').addEventListener('click', () => { fileInput.value = ''; fileInput.click(); });
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            try {
+                if (file.size > 100000) throw new Error('設定ファイルが大きすぎます。');
+                this._applySettings(JSON.parse(await file.text()));
+                this._lastSavedSettings = null;
+                this._saveSettings();
+                status.textContent = '設定を読み込みました。' + (this._lastSavedSettings ? '自動保存済みです。' : '自動保存は利用できません。');
+            } catch (e) { status.textContent = '読み込み失敗: ' + e.message; }
+        });
     }
 
     get pixelsPerBar() { return this.basePixelsPerBar * this.hiSpeed; }
@@ -3215,8 +3447,10 @@ class BMSViewer {
             this._initFxChain();
             // AudioContext の状態変化を監視
             // iOS Safari はバックグラウンド移行時に 'interrupted' にする
-            this._audioCtx.onstatechange = () => {
-                const state = this._audioCtx.state;
+            const audioCtx = this._audioCtx;
+            audioCtx.onstatechange = () => {
+                if (audioCtx !== this._audioCtx) return;
+                const state = audioCtx.state;
                 if ((state === 'suspended' || state === 'interrupted') && this.isPlaying) {
                     // 自動 resume を試みる（ユーザー操作なしでは効かない場合もある）
                     this._audioCtx.resume().catch(() => {});
@@ -3259,6 +3493,7 @@ class BMSViewer {
         this._perfToAC   = acNow - perfNow;  // perf → AC 変換オフセット
         this.audioPlayT0 = acNow;            // 遅延ゼロ: 今この瞬間を開始点に
         this.audioPlayStart = perfNow;       // 映像側タイマー基準点
+        this._lastDrawTimestamp = perfNow * 1000;
         this.audioStartSec  = this._px2sec(this.currentPixelPos);
 
         const rs     = Math.max(0.1, this.realSpeed);
@@ -3364,55 +3599,145 @@ class BMSViewer {
     }
 
     /* ── WAVデコード (base-62対応・大文字小文字区別) ── */
-    async _decodeWavFiles(wavFileMap) {
+    async _decodeWavFiles(wavFileMap, bmsPath = '', loadId = this._loadGeneration) {
         this._ensureAudioCtx();
+        const audioCtx = this._audioCtx;
+        const buffers = this.wavBuffers;
+        const isCurrent = () => loadId === this._loadGeneration;
         const wavDefs  = (this.bmsData&&this.bmsData.wavDefs)||{};
-        const ids      = Object.keys(wavDefs);
+        // 定義だけで未使用の音源は展開・デコードしない。
+        const used = new Set();
+        for (const note of this.bmsData.notes || []) if (note._rawVal) used.add(note._rawVal);
+        for (const event of this.bmsData.bgmEvents || []) if (event.wavId) used.add(event.wavId);
+        const ids = Object.keys(wavDefs).filter(id => !this.bmsData.notes || used.has(id));
+        const cache = this._decodedWavCache || (this._decodedWavCache = new WeakMap());
         const total    = ids.length;
         const statusEl = document.getElementById('wavStatus');
         const setStatus = (txt,color)=>{
-            if(!statusEl)return;
+            if(!statusEl || !isCurrent())return;
             statusEl.style.display='inline';
             statusEl.style.color=color;
             statusEl.textContent=txt;
         };
         setStatus(`WAV 0/${total}`,'#FFD700');
 
-        // ファイルマップ正規化: 拡張子なし小文字キー → ArrayBuffer
-        const norm = s=>s.toLowerCase().replace(/\\/g,'/');
-        const fileIndex={};
+        // ZIP内の譜面の所在を基準に解決する（Windowsの区切り、./、../にも対応）。
+        const norm = s => {
+            const parts = [];
+            for (const part of s.replace(/\\/g, '/').toLowerCase().split('/')) {
+                if (!part || part === '.') continue;
+                if (part === '..') parts.pop();
+                else parts.push(part);
+            }
+            return parts.join('/');
+        };
+        const stem = s => s.replace(/\.[^/.]+$/, '');
+        const chartPath = norm(bmsPath);
+        const chartDir = chartPath.includes('/') ? chartPath.slice(0, chartPath.lastIndexOf('/') + 1) : '';
+        const fileIndex = new Map();
+        const stemIndex = new Map();
+        const baseIndex = new Map();
         for (const [name,buf] of Object.entries(wavFileMap)) {
-            const key=norm(name).replace(/\.[^.]+$/,'');
-            if(!fileIndex[key]) fileIndex[key]=buf;
-            const base=key.split('/').pop();
-            if(!fileIndex[base]) fileIndex[base]=buf;
+            const key = norm(name);
+            fileIndex.set(key, buf);
+            if (!stemIndex.has(stem(key))) stemIndex.set(stem(key), buf);
+            const base = stem(key).split('/').pop();
+            // 古い譜面向けのファイル名だけの照合は、候補が一意の場合に限る。
+            baseIndex.set(base, baseIndex.has(base) ? null : buf);
         }
 
-        let done=0;
-        for (const id of ids) {
+        let done=0, next=0;
+        // 同じリソースを別ID・別ロードが同時要求しても展開とデコードは1回。
+        const pending = this._pendingWavDecodes || (this._pendingWavDecodes = new WeakMap());
+        const worker = async () => {
+        while (next < ids.length) {
+            if (!isCurrent()) return;
+            const id = ids[next++];
             const filename = wavDefs[id];
-            const key = norm(filename).replace(/\.[^.]+$/,'');
-            const ab  = fileIndex[key] || fileIndex[key.split('/').pop()];
-            if (ab) {
+            const relativeKey = norm(chartDir + filename);
+            const rootKey = norm(filename);
+            // 同じフォルダーの音源を優先し、拡張子違いの音源も従来通り許容する。
+            const resource = fileIndex.get(relativeKey) || stemIndex.get(stem(relativeKey))
+                || fileIndex.get(rootKey) || stemIndex.get(stem(rootKey))
+                || baseIndex.get(stem(rootKey).split('/').pop());
+            if (resource) {
                 try {
-                    const decoded = await this._audioCtx.decodeAudioData(ab.slice(0));
-                    this.wavBuffers[id] = decoded;
+                    let decoded = cache.get(resource);
+                    while (!decoded && isCurrent()) {
+                        let job = pending.get(resource);
+                        if (!job) {
+                            job = (async () => {
+                                const fromZip = typeof resource.async === 'function';
+                                const ab = fromZip ? await resource.async('arraybuffer') : resource.slice(0);
+                                if (!isCurrent()) return null;
+                                const result = await audioCtx.decodeAudioData(ab);
+                                cache.set(resource, result);
+                                return result;
+                            })();
+                            pending.set(resource, job);
+                        }
+                        try { decoded = await job; }
+                        finally { if (pending.get(resource) === job) pending.delete(resource); }
+                        // 前ロードの展開中に中断された共有ジョブは、現ロードで再試行する。
+                    }
+                    if (!isCurrent()) return;
+                    buffers[id] = decoded;
                 } catch(e) { /* デコード失敗は無視 */ }
             }
             done++;
             if (done%20===0||done===total)
                 setStatus(`WAV ${done}/${total}`,'#FFD700');
         }
-        const loaded = Object.keys(this.wavBuffers).length;
+        };
+        // iPhoneの一時メモリを抑えるため、同時処理数は2件に限定する。
+        await Promise.all([worker(), worker()]);
+        if (!isCurrent()) return;
+        const loaded = Object.keys(buffers).length;
         setStatus(loaded>0?`♪ WAV ${loaded}/${total}`:'WAV 0件',
                   loaded>0?'#4caf50':'#888');
     }
 
     /* ── ZIP 読み込み ── */
-    async _loadZip(zipFile) {
+    _beginLoad() {
+        const loadId = ++this._loadGeneration;
+        this._isLoading = true;
+        this.isPlaying = false;
+        cancelAnimationFrame(this.animFrameId);
+        this._stopAudio();
+        this.audioPlayStart = 0;
+        const btn = document.getElementById('playBtn');
+        btn.disabled = true;
+        btn.textContent = '再生';
+        btn.style.opacity = '0.45';
+        btn.style.cursor = 'not-allowed';
+        btn.classList.replace('btn-success', 'btn-secondary');
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error').textContent = '';
+        document.getElementById('bmsSelectOverlay').style.display = 'none';
+        return loadId;
+    }
+
+    _finishLoad(loadId) {
+        if (loadId !== this._loadGeneration) return;
+        this._isLoading = false;
+        document.getElementById('loading').style.display = 'none';
+        const btn = document.getElementById('playBtn');
+        btn.disabled = !this._readyToPlay;
+        btn.style.opacity = this._readyToPlay ? '' : '0.45';
+        btn.style.cursor = this._readyToPlay ? '' : 'not-allowed';
+        if (this._readyToPlay) btn.classList.replace('btn-secondary', 'btn-success');
+    }
+
+    _failLoad(loadId, err) {
+        if (loadId !== this._loadGeneration) return;
+        document.getElementById('error').textContent = 'エラー: ' + err.message;
+        this._finishLoad(loadId);
+    }
+
+    async _loadZip(zipFile, loadId = this._beginLoad()) {
         const statusEl = document.getElementById('wavStatus');
         const setStatus=(txt,color)=>{
-            if(!statusEl)return;
+            if(!statusEl || loadId !== this._loadGeneration)return;
             statusEl.style.display='inline';statusEl.style.color=color;statusEl.textContent=txt;
         };
         document.getElementById('loading').style.display='block';
@@ -3420,21 +3745,27 @@ class BMSViewer {
         setStatus('ZIP展開中...','#FFD700');
         try {
             if (!window.JSZip) throw new Error('JSZipが読み込まれていません（オフライン？）');
-            const zip     = await JSZip.loadAsync(zipFile, { decodeFileName: _decodeZipFilename });
+            const fileKey = typeof zipFile.name === 'string' && Number.isFinite(zipFile.lastModified)
+                ? JSON.stringify([zipFile.name, zipFile.size, zipFile.lastModified]) : null;
+            const previous = this._zipSession;
+            const reuse = previous && (previous.source === zipFile || (fileKey && previous.fileKey === fileKey));
+            const zip = reuse ? previous.zip : await JSZip.loadAsync(zipFile, { decodeFileName: _decodeZipFilename });
+            if (loadId !== this._loadGeneration) return;
             const entries = Object.values(zip.files).filter(f=>!f.dir);
             const bmsEntries = entries.filter(f=>/\.(bms|bme|pms)$/i.test(f.name));
-            const wavEntries = entries.filter(f=>/\.(wav|ogg|mp3)$/i.test(f.name));
+            const wavEntries = entries.filter(f=>/\.(wav|ogg|mp3|flac)$/i.test(f.name));
             const mp4Entries = entries.filter(f=>/\.mp4$/i.test(f.name));
             const imgEntries = entries.filter(f=>/\.(bmp|png|jpg|jpeg|gif)$/i.test(f.name));
             if (!bmsEntries.length) throw new Error('ZIP内にBMS/BME/PMSファイルが見つかりません');
+            if (!reuse) {
+                this._zipSession = { source: zipFile, fileKey, zip };
+                this._decodedWavCache = new WeakMap();
+            }
 
-            setStatus(`音源 ${wavEntries.length}件展開中...`,'#FFD700');
+            setStatus('譜面読み込み中...','#FFD700');
             const wavFileMap={};
             for (const e of wavEntries) {
-                const buf=await e.async('arraybuffer');
-                wavFileMap[e.name]=buf;
-                const base=e.name.split('/').pop();
-                if(base!==e.name) wavFileMap[base]=buf;
+                wavFileMap[e.name]=e; // 音源は譜面選択後、参照されたファイルだけ展開する。
             }
 
             // mp4 は BGA ON 時まで展開しない（遅延ロード）
@@ -3442,6 +3773,7 @@ class BMSViewer {
             const imageFileMap={};
             for (const e of imgEntries) {
                 const buf=await e.async('arraybuffer');
+                if (loadId !== this._loadGeneration) return;
                 imageFileMap[e.name]=buf;
                 const base=e.name.split('/').pop();
                 if(base!==e.name) imageFileMap[base]=buf;
@@ -3449,20 +3781,21 @@ class BMSViewer {
 
             if (bmsEntries.length===1) {
                 const buf=await bmsEntries[0].async('arraybuffer');
+                if (loadId !== this._loadGeneration) return;
                 const text=await this._decodeTextBuf(buf);
-                await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, mp4Entries);
+                if (loadId !== this._loadGeneration) return;
+                await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, mp4Entries, bmsEntries[0].name, loadId);
             } else {
                 document.getElementById('loading').style.display='none';
-                this._showBmsSelector(bmsEntries, wavFileMap, imageFileMap, mp4Entries);
+                this._showBmsSelector(bmsEntries, wavFileMap, imageFileMap, mp4Entries, loadId);
             }
         } catch(err) {
-            document.getElementById('error').textContent='エラー: '+err.message;
-            document.getElementById('loading').style.display='none';
+            this._failLoad(loadId, err);
             setStatus('エラー','#ff4444');
         }
     }
 
-    _showBmsSelector(bmsEntries, wavFileMap, imageFileMap={}, pendingMp4Entries=[]) {
+    _showBmsSelector(bmsEntries, wavFileMap, imageFileMap={}, pendingMp4Entries=[], loadId=this._loadGeneration) {
         const overlay=document.getElementById('bmsSelectOverlay');
         const list   =document.getElementById('bmsSelectList');
         list.innerHTML='';
@@ -3474,15 +3807,19 @@ class BMSViewer {
                              +'font-size:20px;min-height:48px;padding:8px 16px;';
             btn.textContent=entry.name;
             btn.addEventListener('click', async()=>{
+                if (loadId !== this._loadGeneration) return;
+                loadId = this._beginLoad();
+                const selectionId = loadId;
                 overlay.style.display='none';
                 document.getElementById('loading').style.display='block';
                 try {
                     const buf=await entry.async('arraybuffer');
+                    if (selectionId !== this._loadGeneration) return;
                     const text=await this._decodeTextBuf(buf);
-                    await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, pendingMp4Entries);
+                    if (selectionId !== this._loadGeneration) return;
+                    await this._loadBmsContent(text, wavFileMap, {}, imageFileMap, pendingMp4Entries, entry.name, selectionId);
                 } catch(err) {
-                    document.getElementById('error').textContent='エラー: '+err.message;
-                    document.getElementById('loading').style.display='none';
+                    this._failLoad(selectionId, err);
                 }
             });
             list.appendChild(btn);
@@ -3490,99 +3827,103 @@ class BMSViewer {
         overlay.style.display='block';
     }
 
-    async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}, pendingMp4Entries=null) {
-        if (this.isPlaying){this.isPlaying=false;cancelAnimationFrame(this.animFrameId);}
-        this._stopAudio();
-        // AudioContextを閉じて内部デコード済みバッファ・LFOノードをすべて解放
-        if (this._audioCtx) {
-            this._audioCtx.close().catch(() => {});
-            this._audioCtx    = null;
-            this._fxChainInput= null;
-            this._fx          = null;
-            this._keyGainNode = null;
-            this._keyDirectGain = null;
-        }
-        this.wavBuffers={};
-        this._pendingMp4Entries = pendingMp4Entries; // BGA ON 時まで遅延ロード
+    async _loadBmsContent(text, wavFileMap, videoFileMap={}, imageFileMap={}, pendingMp4Entries=null, bmsPath='', loadId=this._beginLoad()) {
+        if (loadId !== this._loadGeneration) return;
+        this._readyToPlay = false;
+        try {
+            if (this.isPlaying){this.isPlaying=false;cancelAnimationFrame(this.animFrameId);}
+            this._stopAudio();
+            // AudioContextを閉じて内部デコード済みバッファ・LFOノードをすべて解放
+            if (this._audioCtx) {
+                this._audioCtx.close().catch(() => {});
+                this._audioCtx    = null;
+                this._fxChainInput= null;
+                this._fx          = null;
+                this._keyGainNode = null;
+                this._keyDirectGain = null;
+            }
+            this.wavBuffers={};
+            this._pendingMp4Entries = pendingMp4Entries; // BGA ON 時まで遅延ロード
 
-        this.bmsText = text; // 再パース用に保存
-        this._crossModeType = null; // 新規ロード時はクロスモードリセット
-        const parser=new BMSParser();
-        // #PLAYER 3 の判定: DP BMS (ch16-19/21-29あり) と PMS を区別
-        {
-            const _pm = text.match(/^#PLAYER\s+(\d+)/im);
-            const _playerNum = _pm ? parseInt(_pm[1]) : 0;
-            const _hasDPChannels = /^#\d{3}(?:21|2[6-9]):/im.test(text);
-            parser.isPMS = _playerNum === 3 && !_hasDPChannels;
-        }
-        this.bmsData=parser.parse(text);
-        this._applyDPMerge(this.bmsData);
-        // #PLAYER 3 (PMS) を検出したら自動でPMモードへ
-        if (parser.isPMS && this.currentSide !== 'PM') {
-            this.currentSide = 'PM';
-            this.laneCount   = 9;
-            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
-            if (this._updateStylesForMode) this._updateStylesForMode('PM');
-        }
-        // DP BMS (#PLAYER 3 with DP channels) を検出したら自動でIIDX(1P)モードへ
-        if (((parser.playerNum === 3 && !parser.isPMS) || this.bmsData.isDPChart) && this.currentSide !== '1P') {
-            this.currentSide = '1P';
-            this.laneCount   = 8;
-            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='1P'));
-            if (this._updateStylesForMode) this._updateStylesForMode('1P');
-        }
-        // 7鍵 BMS/BME (#PLAYER 1) を検出したら自動で2Pモードへ
-        if (parser.playerNum === 1 && !this.bmsData.isDPChart && this.currentSide !== '2P') {
-            this.currentSide = '2P';
-            this.laneCount   = 8;
-            document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='2P'));
-            if (this._updateStylesForMode) this._updateStylesForMode('2P');
-        }
-        if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
+            this._crossModeType = null; // 新規ロード時はクロスモードリセット
+            const parser=new BMSParser();
+            text = parser._resolveBranches(text.replace(/^\uFEFF/, '').replace(/\r/g, ''));
+            this.bmsText = text; // 分岐選択後を保存。サイド変更時にも同じ譜面・音源を維持する。
+            // #PLAYER 3 の判定: DP BMS (ch16-19/21-29あり) と PMS を区別
+            {
+                const _pm = text.match(/^#PLAYER\s+(\d+)/im);
+                const _playerNum = _pm ? parseInt(_pm[1]) : 0;
+                const _hasDPChannels = /^#\d{3}(?:21|2[6-9]):/im.test(text);
+                parser.isPMS = _playerNum === 3 && !_hasDPChannels;
+            }
+            this.bmsData=parser.parse(text);
+            this._applyDPMerge(this.bmsData);
+            // #PLAYER 3 (PMS) を検出したら自動でPMモードへ
+            if (parser.isPMS && this.currentSide !== 'PM') {
+                this.currentSide = 'PM';
+                this.laneCount   = 9;
+                document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='PM'));
+                if (this._updateStylesForMode) this._updateStylesForMode('PM');
+            }
+            // DP BMS (#PLAYER 3 with DP channels) を検出したら自動でIIDX(1P)モードへ
+            if (((parser.playerNum === 3 && !parser.isPMS) || this.bmsData.isDPChart) && this.currentSide !== '1P') {
+                this.currentSide = '1P';
+                this.laneCount   = 8;
+                document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='1P'));
+                if (this._updateStylesForMode) this._updateStylesForMode('1P');
+            }
+            // 7鍵 BMS/BME (#PLAYER 1) を検出したら自動で2Pモードへ
+            if (parser.playerNum === 1 && !this.bmsData.isDPChart && this.currentSide !== '2P') {
+                this.currentSide = '2P';
+                this.laneCount   = 8;
+                document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side==='2P'));
+                if (this._updateStylesForMode) this._updateStylesForMode('2P');
+            }
+            if (!this.bmsData.headers.bpm) this.bmsData.headers.bpm=130;
 
-        const nb=this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
-        const cb=this.bmsData.bpmChanges.map(c=>Math.floor(c.position));
-        this.maxBars=Math.max(0,...nb,...cb)+2;
-        this.loopStart=0; this.loopEnd=this.maxBars;
-        this.currentPixelPos=0; this.loopEnabled=false;
-        {
-            const gnEl=document.getElementById('greenInput');
-            const gn=(gnEl?parseFloat(gnEl.value):0)||225;
-            const bpm=(this.bmsData.headers.bpm||130)*this.realSpeed;
-            this.targetGreenNum = gn;
-            this.hiSpeed = this._calcAdjustedHS(bpm, gn);
-            const lbl='×'+this.hiSpeed.toFixed(2);
-            document.getElementById('hsValue').textContent  =lbl;
-        }
-        this._precompute();
-        this._syncLoopInputs();
-        this._renderLanes();
-        // BMSロード時: スクラッチ変換 → S/H-RANDOM の順で再生成
-        if (this.allScrActive || this.noScrActive) {
-            this._buildScratchConvertMap();
-        }
-        if (this.sRandomActive || this.hRandomActive) {
-            this._buildNoteRandomMap(this.hRandomActive);
-        }
-        this.renderNotes();
-        this._updateUI();
-        this._updateRealGreen();
-        this._refreshLoopUI(false);
-        document.getElementById('loading').style.display  ='none';
-        const _pb = document.getElementById('playBtn');
-        _pb.disabled = false;
-        _pb.style.opacity = '';
-        _pb.style.cursor  = '';
-        _pb.classList.replace('btn-secondary', 'btn-success');
+            const nb=this.bmsData.notes.map(n=>Math.floor(n.endPosition??n.position));
+            const cb=this.bmsData.bpmChanges.map(c=>Math.floor(c.position));
+            this.maxBars=Math.max(0,...nb,...cb)+2;
+            this.loopStart=0; this.loopEnd=this.maxBars;
+            this.currentPixelPos=0; this.loopEnabled=false;
+            {
+                const gnEl=document.getElementById('greenInput');
+                const gn=(gnEl?parseFloat(gnEl.value):0)||225;
+                const bpm=(this.bmsData.headers.bpm||130)*this.realSpeed;
+                this.targetGreenNum = gn;
+                this.hiSpeed = this._calcAdjustedHS(bpm, gn);
+                const lbl='×'+this.hiSpeed.toFixed(2);
+                document.getElementById('hsValue').textContent  =lbl;
+            }
+            this._precompute();
+            this._syncLoopInputs();
+            this._renderLanes();
+            // BMSロード時: スクラッチ変換 → S/H-RANDOM の順で再生成
+            if (this.allScrActive || this.noScrActive) {
+                this._buildScratchConvertMap();
+            }
+            if (this.sRandomActive || this.hRandomActive) {
+                this._buildNoteRandomMap(this.hRandomActive);
+            }
+            this.renderNotes();
+            this._updateUI();
+            this._updateRealGreen();
+            this._refreshLoopUI(false);
+            this._loadBgaVideo(videoFileMap);
+            this._loadBgaImages(imageFileMap);
 
-        this._loadBgaVideo(videoFileMap);
-        this._loadBgaImages(imageFileMap);
-
-        if (wavFileMap&&Object.keys(wavFileMap).length>0) {
-            await this._decodeWavFiles(wavFileMap);
-        } else {
-            const st=document.getElementById('wavStatus');
-            if(st){st.style.display='none';st.textContent='';}
+            if (wavFileMap&&Object.keys(wavFileMap).length>0) {
+                await this._decodeWavFiles(wavFileMap, bmsPath, loadId);
+            } else {
+                const st=document.getElementById('wavStatus');
+                if(st){st.style.display='none';st.textContent='';}
+            }
+            if (loadId !== this._loadGeneration) return;
+            this._readyToPlay = true;
+            this._finishLoad(loadId);
+        } catch (err) {
+            this._failLoad(loadId, err);
+            throw err;
         }
     }
 
@@ -3645,11 +3986,13 @@ class BMSViewer {
     }
 
     async _loadMp4AndShowBga() {
+        const loadId = this._loadGeneration;
         const entries = this._pendingMp4Entries;
         this._pendingMp4Entries = null; // 二重ロード防止
         const videoFileMap = {};
         for (const entry of entries) {
             const buf = await entry.async('arraybuffer');
+            if (loadId !== this._loadGeneration) return;
             const name = entry.name.split('/').pop();
             videoFileMap[name] = buf;
         }
@@ -4807,8 +5150,12 @@ class BMSViewer {
         mkVolWav('volWavKey','volWavKeyVal',   v=>{ this.wavVolKey=v; if(this._keyGainNode) this._keyGainNode.gain.value=Math.max(0,v); if(this._keyDirectGain) this._keyDirectGain.gain.value=Math.max(0,v); });
         // BMS選択モーダル キャンセル
         const _bmsOvl=()=>document.getElementById('bmsSelectOverlay');
-        document.getElementById('bmsSelectCancel')?.addEventListener('click',()=>{ _bmsOvl().style.display='none'; });
-        document.getElementById('bmsSelectBackdrop')?.addEventListener('click',()=>{ _bmsOvl().style.display='none'; });
+        const cancelSelection = () => {
+            _bmsOvl().style.display='none';
+            this._finishLoad(++this._loadGeneration);
+        };
+        document.getElementById('bmsSelectCancel')?.addEventListener('click', cancelSelection);
+        document.getElementById('bmsSelectBackdrop')?.addEventListener('click', cancelSelection);
 
         // シークバー
         {
@@ -5701,6 +6048,7 @@ class BMSViewer {
     }
     _rebuildOverlay() {
         this.noteElements = this.noteElements.filter(el => { if(el._isOverlay){el.remove();return false;} return true; });
+        this._clearDrawIndex();
         if (!this.loopEnabled||!this.barStartPx.length) return;
         const sp=this.barStartPx[this.loopStart]||0;
         const ep=this.barStartPx[Math.min(this.loopEnd,this.barStartPx.length-1)]||sp;
@@ -5715,6 +6063,7 @@ class BMSViewer {
     /* ============================================================ ファイル読み込み */
     async _loadFile(e) {
         const file=e.target.files[0]; if(!file) return;
+        const loadId = this._beginLoad();
         e.target.value=''; // 同じファイルを再度選択できるようリセット
         const fname = file.name.toLowerCase();
         if (fname.endsWith('.pms')) {
@@ -5725,16 +6074,16 @@ class BMSViewer {
             if (this._updateStylesForMode) this._updateStylesForMode('PM');
         }
         if (fname.endsWith('.zip')) {
-            await this._loadZip(file);
+            await this._loadZip(file, loadId);
         } else {
             document.getElementById('loading').style.display='block';
             document.getElementById('error').textContent='';
             try {
                 const text=await this._readText(file);
-                await this._loadBmsContent(text, null);
+                if (loadId !== this._loadGeneration) return;
+                await this._loadBmsContent(text, null, {}, {}, null, '', loadId);
             } catch(err) {
-                document.getElementById('error').textContent='エラー: '+err.message;
-                document.getElementById('loading').style.display='none';
+                this._failLoad(loadId, err);
             }
         }
     }
@@ -5947,6 +6296,7 @@ class BMSViewer {
 
     renderNotes() {
         this.noteElements.forEach(el=>el.remove()); this.noteElements=[]; this.lnElements=[];
+        this._clearDrawIndex();
         if (!this.bmsData) return;
         this._computeScratchAssistColors();
         const container=document.getElementById('lanesContainer');
@@ -6221,6 +6571,7 @@ class BMSViewer {
 
     /* ============================================================ 再生 */
     _togglePlay() {
+        if (this._isLoading || !this._readyToPlay || !this.bmsData) return;
         const btn=document.getElementById('playBtn');
         if (this.isPlaying) {
             this.isPlaying=false; cancelAnimationFrame(this.animFrameId);
@@ -6247,23 +6598,6 @@ class BMSViewer {
         if (!this.isPlaying) return;
         // rAF タイムスタンプを優先（performance.now() より正確）
         const now = (rafTime !== undefined) ? rafTime : performance.now();
-
-        // FPSスロットル: 目標FPSより速い場合はフレームをスキップ
-        if (this._targetFps > 0) {
-            const minInterval = 1000 / this._targetFps;
-            if (now - this._lastFrameRender < minInterval - 1) {
-                this.animFrameId = requestAnimationFrame(t => this._animate(t));
-                return;
-            }
-            // ドリフト防止: 次フレーム期待値を minInterval ずつ進める
-            if (this._lastFrameRender === 0) {
-                this._lastFrameRender = now;
-            } else {
-                this._lastFrameRender += minInterval;
-                // 大幅に遅れた場合はリセット（タブ復帰など）
-                if (now - this._lastFrameRender > minInterval * 2) this._lastFrameRender = now;
-            }
-        }
 
         const dt  = (now - this.lastTimestamp) / 1000;
         this.lastTimestamp = now;
@@ -6340,6 +6674,25 @@ class BMSViewer {
         }
         if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos);
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
+        // FPSスロットル: 目標FPSより速い場合はフレームをスキップ
+        if (this._targetFps > 0) {
+            const minInterval = 1000 / this._targetFps;
+            if (now - this._lastFrameRender < minInterval - 1) {
+                this.animFrameId = requestAnimationFrame(t => this._animate(t));
+                return;
+            }
+            // ドリフト防止: 次フレーム期待値を minInterval ずつ進める
+            if (this._lastFrameRender === 0) {
+                this._lastFrameRender = now;
+            } else {
+                this._lastFrameRender += minInterval;
+                // 大幅に遅れた場合はリセット（タブ復帰など）
+                if (now - this._lastFrameRender > minInterval * 2) this._lastFrameRender = now;
+            }
+        }
+
+        const drawDt = this._lastDrawTimestamp ? (now - this._lastDrawTimestamp) / 1000 : 0;
+        this._lastDrawTimestamp = now;
         // シークバーは3フレームに1回更新（≈20Hz）で十分
         if (!this._sbTick) this._sbTick = 0;
         const _doSeek = (++this._sbTick >= 3);
@@ -6390,7 +6743,7 @@ class BMSViewer {
         const vid = this._bgaVideoEl;
         if (vid && vid.src && !vid.paused && this.bgaEnabled && this.audioPlayStart > 0) {
             if (!this._bgaDriftCheck) this._bgaDriftCheck = 0;
-            this._bgaDriftCheck += dt;
+            this._bgaDriftCheck += drawDt;
             if (this._bgaDriftCheck >= 10) {
                 this._bgaDriftCheck = 0;
                 const elapsed = Math.max(0, now / 1000 - this.audioPlayStart) * this.realSpeed;
@@ -6407,22 +6760,37 @@ class BMSViewer {
 
         // LN発光筒アニメーション: チャージノーツA / PM_POP_FACE 8フレームごとにframe1/frame2を切替
         // 判定ライン通過前（dimMask表示中）はアニメーションせずframe1固定
-        if ((this.chargeStyle === 'A' || this.chargeStyle === 'PM_POP_FACE') && this.lnElements && this.lnElements.length) {
-            this._lnAnimFrameCount = (this._lnAnimFrameCount + 1) % 16;
-            if (this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8) {
-                const isF2 = this._lnAnimFrameCount === 8;
-                for (const el of this.lnElements) {
-                    // dimMaskが非表示（判定ライン通過中）のときのみアニメーション
-                    const active = !el._dimMask || el._dimMaskHidden === true;
-                    el.classList.toggle('ln-anim-f2', isF2 && active);
-                }
-            }
-        }
+        this._updateLNAnimation();
 
         this.animFrameId = requestAnimationFrame(t => this._animate(t));
     }
 
     /* ── 判定ライン 拍連動グロー ── */
+    _updateLNAnimation() {
+        if (!['A','PM_POP_FACE'].includes(this.chargeStyle) || !this.lnElements?.length) return;
+        this._lnAnimFrameCount = ((this._lnAnimFrameCount || 0) + 1) % 16;
+        const phaseChanged = this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8;
+        const isF2 = this._lnAnimFrameCount >= 8;
+        const seamless = this.loopEnabled && this.loopMode === 'seamless';
+        const indexed = !seamless && this._drawIndexValid && this._drawIndexSource === this.noteElements && this._drawLastPx === this.currentPixelPos;
+        if (!indexed && !phaseChanged && this._lnAnimationSource === this.lnElements) return;
+        if (this._lnAnimationSource !== this.lnElements) {
+            this._lnAnimationSource = this.lnElements;
+            this._lnAnimationSet = new Set(this.lnElements);
+        }
+        // 通常再生は位置更新で求めた表示候補を再利用。折り返し表示は全LNを扱う。
+        const targets = indexed ? this._drawActiveRecords.map(r => r.el).filter(el => this._lnAnimationSet.has(el)) : this.lnElements;
+        for (const el of targets) {
+            const entered = el._lnAnimationTick !== (this._lnAnimationTick || 0);
+            if (phaseChanged || entered) {
+                const active = !el._dimMask || el._dimMaskHidden === true;
+                el.classList.toggle('ln-anim-f2', isF2 && active);
+            }
+            el._lnAnimationTick = (this._lnAnimationTick || 0) + 1;
+        }
+        this._lnAnimationTick = (this._lnAnimationTick || 0) + 1;
+    }
+
     _updateJLGlow() {
         const jl = this._elJudgLine;
         if (!jl) return;
@@ -6459,6 +6827,7 @@ class BMSViewer {
             e.adjPxSound  = calcAdjPx(e.px, soundSec);
             e.adjPxVisual = calcAdjPx(e.px, visualSec);
         }
+        this._buildNoteIndex();
     }
 
     _syncCombo() {
@@ -6853,7 +7222,7 @@ class BMSViewer {
         const MIN = 0, MAX = Math.round(900 * this._effH / 940);
         this.liftCoverPx = Math.max(MIN, Math.min(MAX, Math.round(px)));
         this._liftUpdateCoverDOM();
-        if (rebuild && this.liftEnabled) this._reapplyHS(this._bpmAt(this.currentPixelPos) || undefined);
+        if (rebuild && this.liftEnabled && this.bmsData) this._reapplyHS(this._bpmAt(this.currentPixelPos) || undefined);
         else if (rebuild) this._updateRealGreen();
     }
 
@@ -6899,6 +7268,7 @@ class BMSViewer {
 
     _detectPassed(prevPx, curPx) {
         const events = this.noteEvents;
+        const visualStart = this._noteLowerBound(events, prevPx, 'adjPxVisual');
 
         // ── Pass 1: 判定エフェクト ──────────────────────────────────────────
         // プレイモードでは自動判定しない（プレイヤー入力で判定）
@@ -6906,7 +7276,7 @@ class BMSViewer {
             let triggered = false;
             const bombed = new Set();
             const pmPositions = new Set();
-            for (let i = 0; i < events.length; i++) {
+            for (let i = visualStart; i < events.length; i++) {
                 const e = events[i];
                 if (e.isAutoBgm) continue; // DP BGMノーツは視覚効果なし
                 const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
@@ -6936,7 +7306,7 @@ class BMSViewer {
 
         // ── オートレーン: judged フラグのみ立てる（判定文字・カウント・ゲージなし）
         if (this.isPlayMode && this.autoLanes && this.autoLanes.size > 0) {
-            for (let i = 0; i < events.length; i++) {
+            for (let i = visualStart; i < events.length; i++) {
                 const e = events[i];
                 if (e.isAutoBgm || !this.autoLanes.has(e.dl) || e.judged) continue;
                 const _ePx = (e.adjPxVisual !== undefined) ? e.adjPxVisual : e.px;
@@ -6953,7 +7323,7 @@ class BMSViewer {
         let _clapSC = false, _clapKey = false;
         const _isNormalPlay = this.isPlayMode && !this.isAutoWavMode;
         const _pass2Ev = (_isNormalPlay && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
-        for (let i = 0; i < _pass2Ev.length; i++) {
+        for (let i = this._noteLowerBound(_pass2Ev, prevPx, 'adjPxSound'); i < _pass2Ev.length; i++) {
             const e = _pass2Ev[i];
             if (_isNormalPlay && !e.isAutoBgm && !(this.autoLanes && this.autoLanes.has(e.dl))) continue; // 通常PLAYモード: キー音はスキップ（オートレーンは除く）
             const _ePx2 = (e.adjPxSound !== undefined) ? e.adjPxSound : e.px;
@@ -7047,7 +7417,7 @@ class BMSViewer {
                 const dl = _getTouchDl(t);
                 if (dl === -1) continue;
                 this._touchLaneMap.set(t.identifier, dl);
-                this._onLanePress(dl);
+                this._onLanePress(dl, e.timeStamp);
             }
         }, { passive: false });
         _lanesContainer.addEventListener('touchend', (e) => {
@@ -7057,7 +7427,7 @@ class BMSViewer {
                 const dl = this._touchLaneMap.get(t.identifier);
                 if (dl === undefined) continue;
                 this._touchLaneMap.delete(t.identifier);
-                this._onLaneRelease(dl);
+                this._onLaneRelease(dl, e.timeStamp);
             }
         }, { passive: false });
         _lanesContainer.addEventListener('touchcancel', (e) => {
@@ -7065,7 +7435,7 @@ class BMSViewer {
                 const dl = this._touchLaneMap.get(t.identifier);
                 if (dl === undefined) continue;
                 this._touchLaneMap.delete(t.identifier);
-                if (this.isPlayMode) this._onLaneRelease(dl);
+                if (this.isPlayMode) this._onLaneRelease(dl, e.timeStamp);
             }
         });
 
@@ -7082,7 +7452,7 @@ class BMSViewer {
             // 同コードの重複押下を防ぐ（ShiftLeft/Spaceが両方SCになる場合）
             if (this._heldKeys.has(e.code)) return;
             this._heldKeys.set(e.code, dl);
-            this._onLanePress(dl);
+            this._onLanePress(dl, e.timeStamp);
         });
 
         document.addEventListener('keyup', (e) => {
@@ -7091,7 +7461,7 @@ class BMSViewer {
             if (dl === -1) return;
             e.preventDefault();
             this._heldKeys.delete(e.code);
-            this._onLaneRelease(dl);
+            this._onLaneRelease(dl, e.timeStamp);
         });
     }
 
@@ -7360,6 +7730,8 @@ class BMSViewer {
 
     // ── 判定カウント・スコア・ゲージリセット ────────────────────
     _resetPlayCounters() {
+        this._missCursor = 0;
+        this._lastMissSec = -Infinity;
         if (!this.isPlayMode) {
             // AUTO モード: 現在位置までの全PGREAT相当値を再計算
             this._recomputeAutoStats();
@@ -7393,18 +7765,13 @@ class BMSViewer {
         // judgedフラグをリセットし、現在位置より前のノーツを判定済みにマーク
         if (this.noteEvents) {
             this.noteEvents.forEach(e => { e.judged = false; });
-            const curPx   = this.currentPixelPos;
-            const pxPerMs = this._pxPerMs(curPx) || 1;
-            const BAD_L   = 210 * pxPerMs;
-            const BAD_E   = 165 * pxPerMs;
+            this._ensureNoteIndex();
+            const musicSec = this._px2sec(this.currentPixelPos);
             for (const e of this.noteEvents) {
                 if (e.isAutoBgm) continue;
-                const refPx = e.adjPxVisual ?? e.px;
-                if (!e.isEnd && refPx < curPx - BAD_L) {
+                if (e._missSec < musicSec) {
                     e.judged = true;
                     if (e._tailEvent) e._tailEvent.judged = true;
-                } else if (e.isEnd && refPx < curPx - BAD_E) {
-                    e.judged = true;
                 }
             }
         }
@@ -7670,24 +8037,88 @@ class BMSViewer {
         }, 500);
     }
 
+    _noteLowerBound(events, value, field) {
+        let lo = 0, hi = events.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if ((events[mid][field] ?? events[mid].px) < value) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
+    _buildNoteIndex() {
+        const events = this.noteEvents || [];
+        const speed = Math.max(0.1, this.realSpeed);
+        this._laneNoteIndex = new Map();
+        this._laneWavIndex = new Map();
+        this._missNoteIndex = [];
+        for (const e of events) {
+            e._judgeSec = this._px2sec(e.adjPxVisual ?? e.px);
+            if (e.isAutoBgm) continue;
+            e._missSec = e._judgeSec + (e.isEnd ? 165 : 210) * speed / 1000;
+            this._missNoteIndex.push(e);
+            if (e.isEnd) continue;
+            if (!this._laneNoteIndex.has(e.dl)) this._laneNoteIndex.set(e.dl, []);
+            this._laneNoteIndex.get(e.dl).push(e);
+            if (e.wavId) {
+                if (!this._laneWavIndex.has(e.dl)) this._laneWavIndex.set(e.dl, []);
+                this._laneWavIndex.get(e.dl).push(e);
+            }
+        }
+        for (const notes of this._laneNoteIndex.values()) notes.sort((a, b) => a._judgeSec - b._judgeSec);
+        for (const notes of this._laneWavIndex.values()) notes.sort((a, b) => a.px - b.px);
+        this._missNoteIndex.sort((a, b) => a._missSec - b._missSec);
+        this._noteIndexSource = this.noteEvents;
+        this._noteIndexLength = events.length;
+        this._noteIndexSpeed = this.realSpeed;
+        this._missCursor = 0;
+        this._lastMissSec = -Infinity;
+    }
+
+    _ensureNoteIndex() {
+        if (this._noteIndexSource !== this.noteEvents || this._noteIndexLength !== this.noteEvents.length
+            || this._noteIndexSpeed !== this.realSpeed) this._buildNoteIndex();
+    }
+
     // ── キー押下（判定） ─────────────────────────────────────────
-    _onLanePress(dl) {
+    _inputMusicSec(timeStamp = performance.now()) {
+        const now = performance.now();
+        // 古いブラウザのUNIX時刻形式もperformance.now()と同じ基準へ変換する。
+        if (timeStamp > 1e12) timeStamp -= performance.timeOrigin;
+        if (!Number.isFinite(timeStamp) || timeStamp <= 0 || timeStamp > now + 1000) timeStamp = now;
+        if (!this.isPlaying || this.audioPlayStart <= 0) return this._px2sec(this.currentPixelPos);
+        return this.audioStartSec + Math.max(0, timeStamp / 1000 - this.audioPlayStart) * this.realSpeed;
+    }
+
+    _noteDeltaMs(event, musicSec) {
+        // ピクセル差ではなく音楽時間差を使い、判定窓内のBPM変化にも対応する。
+        const noteSec = event._judgeSec ?? this._px2sec(event.adjPxVisual ?? event.px);
+        return (noteSec - musicSec) * 1000 / Math.max(0.1, this.realSpeed);
+    }
+
+    _onLanePress(dl, timeStamp) {
+        if (this._isLoading || !this.isPlaying) return;
         if (this.autoLanes && this.autoLanes.has(dl)) return; // オートレーンは入力を無視
         if (this.currentSide !== 'PM') this._triggerBomb(dl);
         if (!this.isPlayMode) return;
 
-        const curPx    = this.currentPixelPos;
-        const pxPerMs  = this._pxPerMs(curPx);
-        const BAD_E    = 165  * pxPerMs; // 早押し限界
-        const BAD_L    = 210  * pxPerMs; // 遅押し限界
-        const POOR_E   = 500  * pxPerMs; // 空POOR早押し限界
+        const musicSec = this._inputMusicSec(timeStamp);
+        const curPx = this._pos2px(this._secToPosition(musicSec));
+        const BAD_E = 165, BAD_L = 210, POOR_E = 500;
+        this._ensureNoteIndex();
+        const laneNotes = this._laneNoteIndex.get(dl) || [];
+        const speed = Math.max(0.1, this.realSpeed);
+        const first = this._noteLowerBound(laneNotes, musicSec - BAD_L * speed / 1000, '_judgeSec');
+        const lastSec = musicSec + BAD_E * speed / 1000;
 
         // BAD窓内で最近傍のノーツを探す
         let best = null, bestAbs = Infinity;
-        for (const e of this.noteEvents) {
-            if (e.dl !== dl || e.isAutoBgm || e.judged || e.isEnd) continue;
-            const refPx = e.adjPxVisual ?? e.px;
-            const delta = refPx - curPx; // 正=早押し
+        for (let i = first; i < laneNotes.length; i++) {
+            const e = laneNotes[i];
+            if (e._judgeSec > lastSec) break;
+            if (e.judged) continue;
+            const delta = this._noteDeltaMs(e, musicSec); // 正=早押し
             if (delta > BAD_E || delta < -BAD_L) continue;
             const abs = Math.abs(delta);
             if (abs < bestAbs) { bestAbs = abs; best = e; }
@@ -7697,8 +8128,7 @@ class BMSViewer {
             // WAV再生（WAVオートモードでは自動再生するためスキップ）
             if (best.wavId && this.wavBuffers[best.wavId] && !this.isAutoWavMode) this._playKeyWav(best.wavId);
             // 判定
-            const refPx      = best.adjPxVisual ?? best.px;
-            const rawDeltaMs = (refPx - curPx) / pxPerMs;
+            const rawDeltaMs = this._noteDeltaMs(best, musicSec);
             const deltaMs    = rawDeltaMs - (this.autoTimingEnabled ? this._autoTimingOffset : 0);
             const judgment = this._calcJudgment(deltaMs);
             best.judged = true;
@@ -7714,24 +8144,27 @@ class BMSViewer {
         } else {
             // 空POOR チェック（早押し側のみ: BAD_E < delta <= POOR_E）
             let emptyPoor = false;
-            for (const e of this.noteEvents) {
-                if (e.dl !== dl || e.isAutoBgm || e.judged || e.isEnd) continue;
-                const refPx = e.adjPxVisual ?? e.px;
-                const delta = refPx - curPx;
+            const poorEndSec = musicSec + POOR_E * speed / 1000;
+            for (let i = this._noteLowerBound(laneNotes, lastSec, '_judgeSec'); i < laneNotes.length; i++) {
+                const e = laneNotes[i];
+                if (e._judgeSec > poorEndSec) break;
+                if (e.judged) continue;
+                const delta = this._noteDeltaMs(e, musicSec);
                 if (delta > BAD_E && delta <= POOR_E) { emptyPoor = true; break; }
             }
             if (emptyPoor) this._applyJudgment('POOR', dl, true); // 空POOR
             else if (this.currentSide === 'PM') this._triggerBomb(dl, 'BAD'); // 判定なし空押し → BAD色ビーム
             // WAVは近傍から（WAVオートモードでは自動再生するためスキップ）
             if (!this.isAutoWavMode) {
-                const wavId = this._findNearestWavId(dl);
+                const wavId = this._findNearestWavId(dl, curPx);
                 if (wavId && this.wavBuffers[wavId]) this._playKeyWav(wavId);
             }
         }
     }
 
     // ── キー解放（LN終点判定） ───────────────────────────────────
-    _onLaneRelease(dl) {
+    _onLaneRelease(dl, timeStamp) {
+        if (this._isLoading || !this.isPlaying) return;
         if (this.autoLanes && this.autoLanes.has(dl)) return; // オートレーンは入力を無視
         if (!this.isPlayMode) return;
         // PLAYモード: キー離しでキービームを即時非表示
@@ -7750,20 +8183,17 @@ class BMSViewer {
         const tailEv = held.tailEvent;
         if (!tailEv || tailEv.judged) return;
 
-        const curPx   = this.currentPixelPos;
-        const pxPerMs = this._pxPerMs(curPx);
-        const BAD_E   = 165 * pxPerMs;
-        const BAD_L   = 210 * pxPerMs;
-        const refPx   = tailEv.adjPxVisual ?? tailEv.px;
-        const delta   = refPx - curPx; // 正=まだ先にある(早離し)
+        const musicSec = this._inputMusicSec(timeStamp);
+        const delta = this._noteDeltaMs(tailEv, musicSec);
+        const BAD_E = 165, BAD_L = 210;
 
-        if (delta > BAD_L) {
-            // 早すぎる離し → POOR
+        if (delta > BAD_E || delta < -BAD_L) {
+            // 判定窓外の離し → POOR
             tailEv.judged = true;
             this._applyJudgment('POOR', dl);
-        } else if (delta >= -BAD_E) {
+        } else {
             // 窓内 → 通常判定
-            const rawDeltaMs = delta / pxPerMs;
+            const rawDeltaMs = delta;
             const deltaMs    = rawDeltaMs - (this.autoTimingEnabled ? this._autoTimingOffset : 0);
             const judgment = this._calcJudgment(deltaMs);
             tailEv.judged  = true;
@@ -7771,52 +8201,42 @@ class BMSViewer {
             this._showFastSlow(deltaMs, judgment);
             if (this.autoTimingEnabled && judgment !== 'POOR') this._updateAutoTiming(rawDeltaMs);
         }
-        // それより遅い離しは _checkMissedNotes で処理済み
     }
 
     // ── 見逃しPOOR / LN失敗検出（animate内から呼ぶ） ────────────
     _checkMissedNotes(prevPx, curPx) {
         if (!this.noteEvents) return;
-        const pxPerMs = this._pxPerMs(curPx);
-        const BAD_L   = 210 * pxPerMs; // 遅押し限界を超えたら見逃し
-        const BAD_E   = 165 * pxPerMs;
-
-        for (const e of this.noteEvents) {
-            if (e.px > curPx) break; // noteEventsはpx昇順ソート済み。curPx超えたら以降は判定不要
+        this._ensureNoteIndex();
+        const musicSec = this._px2sec(curPx);
+        if (musicSec < this._lastMissSec) this._missCursor = 0;
+        this._lastMissSec = musicSec;
+        const events = this._missNoteIndex;
+        while (this._missCursor < events.length) {
+            const e = events[this._missCursor];
+            if (e._missSec >= musicSec) break;
+            this._missCursor++;
             if (e.isAutoBgm || e.judged || (this.autoLanes && this.autoLanes.has(e.dl))) continue;
-            const refPx = e.adjPxVisual ?? e.px;
-
-            if (!e.isEnd) {
-                // 通常ノーツ / LN始点: BAD遅押し窓を超えたらPOOR
-                if (refPx < curPx - BAD_L) {
-                    e.judged = true;
-                    // LNの場合は終点もスキップ
-                    if (e._tailEvent) e._tailEvent.judged = true;
-                    this._applyJudgment('POOR', e.dl, false, true); // isMiss=true
-                }
-            } else {
-                // LN終点: 押し続けてBAD早押し窓を超えたらPOOR
-                if (refPx < curPx - BAD_E) {
-                    e.judged = true;
-                    this._heldLN.delete(e.dl);
-                    this._stopHoldBomb(e.dl);
-                    this._applyJudgment('POOR', e.dl, false, true); // isMiss=true
-                }
+            e.judged = true;
+            if (e._tailEvent) e._tailEvent.judged = true;
+            if (e.isEnd) {
+                this._heldLN.delete(e.dl);
+                this._stopHoldBomb(e.dl);
             }
+            this._applyJudgment('POOR', e.dl, false, true);
         }
     }
 
     // 現在位置から最も近いノーツのWAVを取得
-    _findNearestWavId(dl) {
+    _findNearestWavId(dl, curPx = this.currentPixelPos) {
         if (!this.noteEvents) return null;
-        const curPx = this.currentPixelPos;
-        let bestWavId = null, bestDist = Infinity;
-        for (const e of this.noteEvents) {
-            if (e.dl !== dl || e.isEnd || !e.wavId || e.isAutoBgm) continue;
-            const dist = Math.abs(e.px - curPx);
-            if (dist < bestDist) { bestDist = dist; bestWavId = e.wavId; }
-        }
-        return bestWavId;
+        this._ensureNoteIndex();
+        const notes = this._laneWavIndex.get(dl) || [];
+        const at = this._noteLowerBound(notes, curPx, 'px');
+        const next = notes[at];
+        const prev = at > 0 ? notes[this._noteLowerBound(notes, notes[at - 1].px, 'px')] : null;
+        if (!prev) return next?.wavId ?? null;
+        if (!next || curPx - prev.px <= next.px - curPx) return prev.wavId;
+        return next.wavId;
     }
 
     _triggerBomb(dl, judgment = null) {
@@ -8219,6 +8639,69 @@ class BMSViewer {
         if (this.isPlaying) this._startAudio();
     }
 
+    _clearDrawIndex() {
+        this._lnAnimationSource = null;
+        this._lnAnimationSet = null;
+        this._drawIndexRoot = null;
+        this._drawIndexSource = null;
+        this._drawIndexLength = 0;
+        this._drawLastPx = null;
+        this._drawActiveRecords = [];
+    }
+
+    _getPositionUpdateElements(cur, seamless) {
+        if (this._drawIndexSource && (this._drawIndexSource !== this.noteElements
+            || this._drawIndexLength !== this.noteElements.length)) this._clearDrawIndex();
+        // 停止中・特殊な折り返しは従来の全件処理を使い、シークや設定変更の挙動を保つ。
+        if (!this.isPlaying || seamless) {
+            this._drawLastPx = null;
+            this._drawActiveRecords = [];
+            return this.noteElements;
+        }
+        if (this._drawIndexSource !== this.noteElements || this._drawIndexLength !== this.noteElements.length) {
+            const records = this.noteElements.map((el, order) => ({
+                el, order, start: el._pixelPos, end: el._pixelEndPos ?? el._pixelPos
+            }));
+            this._drawIndexValid = records.every(r => Number.isFinite(r.start) && Number.isFinite(r.end) && r.end >= r.start);
+            records.sort((a, b) => a.start - b.start || a.order - b.order);
+            const build = (lo, hi) => {
+                if (lo >= hi) return null;
+                const mid = (lo + hi) >>> 1;
+                const node = records[mid];
+                node.left = build(lo, mid);
+                node.right = build(mid + 1, hi);
+                node.maxEnd = Math.max(node.end, node.left?.maxEnd ?? -Infinity, node.right?.maxEnd ?? -Infinity);
+                return node;
+            };
+            this._drawIndexRoot = this._drawIndexValid ? build(0, records.length) : null;
+            this._drawIndexSource = this.noteElements;
+            this._drawIndexLength = this.noteElements.length;
+            this._drawLastPx = null;
+            this._drawActiveRecords = [];
+        }
+        if (!this._drawIndexValid || !Number.isFinite(cur)) return this.noteElements;
+        const visible = [];
+        const low = cur - 151, high = cur + 961; // 従来の境界に丸め誤差用の1px余白。LNは終点まで含める。
+        const query = node => {
+            if (!node || node.maxEnd < low) return;
+            query(node.left);
+            if (node.start > high) return;
+            if (node.end >= low) visible.push(node);
+            query(node.right);
+        };
+        query(this._drawIndexRoot);
+        const previousPx = this._drawLastPx;
+        const previousActive = this._drawActiveRecords;
+        this._drawLastPx = cur;
+        this._drawActiveRecords = visible;
+        // 初回、後退、広いジャンプでは全件同期する。
+        if (previousPx === null || cur < previousPx || cur - previousPx > 960) return this.noteElements;
+        // 画面を出た直後の要素も1回処理して、退避やLNの保持状態を従来通り更新する。
+        const targets = [...new Set([...previousActive, ...visible])];
+        targets.sort((a, b) => a.order - b.order); // 同時押し・エフェクトの処理順を変えない。
+        return targets.map(r => r.el);
+    }
+
     _updatePositions(updateSeek = true) {
         const cur=this.currentPixelPos;
         // シームレスリピート: ループ内のノートをループ終点の先にも仮想表示
@@ -8226,7 +8709,7 @@ class BMSViewer {
         const _smlsSp = _smls ? (this.barStartPx[this.loopStart] || 0) : 0;
         const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
         const _smlsSpan = _smlsEp - _smlsSp;
-        for (const el of this.noteElements) {
+        for (const el of this._getPositionUpdateElements(cur, _smls)) {
             // シームレス: ep 以降の本来の譜面は非表示にして退避
             if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay) {
                 if (el._offscreen !== true) {

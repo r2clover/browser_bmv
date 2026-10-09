@@ -2686,7 +2686,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.009</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.010</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -9339,13 +9339,14 @@ class BMSViewer {
         this._pngJudgeState = {kind:kind || previous.kind, combo:this.combo,
             forceCombo:kind === null, startMs:null, notifyMs:performance.now(), holdTick:previous?.holdTick};
         if (!this._pngJudgeDOM) {
-            const root = document.createElement('div'); root.className = 'png-judge-display';
+            const root = document.createElement('div'); root.className = 'png-judge-display'; root.style.display = 'none';
             const label = new Image(); label.alt = ''; root.appendChild(label);
             const digits = Array.from({length:5}, () => {const im = new Image(); im.alt = ''; root.appendChild(im); return im;});
             document.querySelector('.play-area').appendChild(root);
             this._pngJudgeDOM = {root,label,digits};
         }
-        this._pngJudgeDOM.root.style.display = 'none'; // First HUD frame is the next RAF.
+        // Update on the next HUD frame while retaining the last rendered HUD.
+        // Hiding here would add a blank frame on every consecutive judgment.
         this._ensurePNGJudgeAnimation();
     }
 

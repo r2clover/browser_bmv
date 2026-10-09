@@ -1825,7 +1825,7 @@
         .iidx-gauge .fs-gauge-wrap { position:absolute; bottom:2px; right:4px; }
         .iidx-gauge.gauge-side-2p .fs-gauge-wrap { right:auto; left:4px; }
         .iidx-gauge-bezel,.iidx-gauge-number-base,.iidx-gauge-lamp-base,.iidx-gauge-caption { display:none; pointer-events:none; }
-        .iidx-gauge .iidx-gauge-bezel,.iidx-gauge .iidx-gauge-number-base,.iidx-gauge .iidx-gauge-lamp-base {
+        .iidx-gauge .iidx-gauge-bezel,.iidx-gauge .iidx-gauge-number-base {
             display:block; position:absolute; top:50%; transform:translateY(-50%);
             border:1px solid #58636a; border-radius:3px;
             background-image:var(--gauge-frame-top),var(--gauge-frame-bottom),linear-gradient(#303b42,#10171b);
@@ -1833,13 +1833,13 @@
             box-shadow:0 2px 3px #000,inset 1px 0 #7b878b,inset -1px 0 #070b0d;
         }
         .iidx-gauge .iidx-gauge-bezel { left:calc(var(--iidx-gauge-left,64px) - 8px); width:calc(var(--iidx-gauge-width,652px) + 16px); height:calc(var(--iidx-gauge-width,652px) * .066815145 + 16px); }
-        .iidx-gauge-bezel::after,.iidx-gauge-number-base::after,.iidx-gauge-lamp-base::after { content:''; position:absolute; inset:5px; background:#020405; border:1px solid #080d10; box-shadow:inset 0 1px 2px #000; }
+        .iidx-gauge-bezel::after,.iidx-gauge-number-base::after { content:''; position:absolute; inset:5px; background:#020405; border:1px solid #080d10; box-shadow:inset 0 1px 2px #000; }
         .iidx-gauge .groove-gauge-track { z-index:1; }
         .iidx-gauge .iidx-gauge-number-base { left:calc(var(--iidx-gauge-number-x,36px) - var(--iidx-gauge-number-width,48px) / 2 - 4px); width:calc(var(--iidx-gauge-number-width,48px) + 8px); height:calc(var(--iidx-gauge-number-width,48px) * .261538462 + 12px); }
         .iidx-gauge-number-base::after { inset:3px; }
         .iidx-gauge #iidxGaugeNumber { z-index:1; }
-        .iidx-gauge .iidx-gauge-lamp-base { left:calc(var(--iidx-gauge-lamp-x,748px) - 20px); width:40px; height:44px; }
-        #iidxGaugeLamp { position:absolute; left:5px; top:5px; width:30px; height:34px; z-index:1; }
+        .iidx-gauge .iidx-gauge-lamp-base { display:block; position:absolute; top:50%; transform:translateY(-50%); left:calc(var(--iidx-gauge-lamp-x,32px) - 15px); width:30px; height:34px; }
+        #iidxGaugeLamp { position:absolute; left:0; top:0; width:30px; height:34px; z-index:1; }
         .iidx-gauge .iidx-gauge-caption { display:flex; justify-content:space-between; position:absolute; left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); top:calc(50% - var(--iidx-gauge-width,652px) * .033407572 - 23px); color:#929fa6; font:9px/12px Arial,sans-serif; letter-spacing:1.4px; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
         .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; letter-spacing:0.5px; }
@@ -2760,7 +2760,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.027</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.028</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -10386,17 +10386,12 @@ class BMSViewer {
         const width=Math.min(footer.offsetWidth,fullWidth*rect.width/cssWidth/footerScale),left=(footer.offsetWidth-width)/2;
         area.style.setProperty('--iidx-gauge-width',width+'px');
         area.style.setProperty('--iidx-gauge-left',left+'px');
-        area.style.setProperty('--iidx-gauge-lamp-x',(this.currentSide==='2P'?left/2:footer.offsetWidth-left/2)+'px');
-        const rail=document.getElementById('seekWrap'),fr=footer.getBoundingClientRect(),rr=rail?.getBoundingClientRect();
-        if(rr){
-            const center=(rr.left+rr.width/2-fr.left)/footerScale;
-            const space=this.currentSide==='2P'?Math.min(center-left-width,footer.offsetWidth-center):Math.min(center,left-center);
-            const numberWidth=Math.max(1,Math.min(92,space*2));
-            const towardSpace=this.currentSide==='2P'?center-left-width:left-center;
-            const inset=Math.min(12,Math.max(0,towardSpace-numberWidth/2-4));
-            area.style.setProperty('--iidx-gauge-number-x',(center+(this.currentSide==='2P'?-inset:inset))+'px');
-            area.style.setProperty('--iidx-gauge-number-width',numberWidth+'px');
-        }
+        area.style.setProperty('--iidx-gauge-lamp-x',(this.currentSide==='2P'?footer.offsetWidth-left/2:left/2)+'px');
+        // Leave 4px between the plate and bezel, and 4px at the outer screen edge.
+        const numberWidth=Math.max(1,Math.min(48,left-24)),numberOffset=12+(numberWidth+8)/2;
+        const numberX=this.currentSide==='2P'?left-numberOffset:left+width+numberOffset;
+        area.style.setProperty('--iidx-gauge-number-x',numberX+'px');
+        area.style.setProperty('--iidx-gauge-number-width',numberWidth+'px');
         area.classList.toggle('gauge-side-2p',this.currentSide==='2P');
     }
 

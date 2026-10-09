@@ -2686,7 +2686,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.010</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.011</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -9306,14 +9306,16 @@ class BMSViewer {
         this._syncGaugeFailureControl();
     }
 
-    // judge00 uses 60Hz HUD ticks; elapsed real time keeps the 120Hz durations.
+    // PGREAT follows the cabinet's 120Hz timeline, independently of display FPS.
     _pngJudgeFrame(kind, elapsedMs) {
-        const timer = 30 - Math.floor(Math.max(0, elapsedMs) * 60 / 1000 + 1e-7);
-        if (timer <= 0) return {visible:false, timer};
         if (kind === 'PGREAT') {
-            const c = Math.floor((timer % 6) / 2);
+            const timer = 60 - Math.floor(Math.max(0, elapsedMs) * 120 / 1000 + 1e-7);
+            if (timer <= 0) return {visible:false, timer};
+            const c = Math.floor((timer % 12) / 4);
             return {visible:true, timer, text:['p_great_white','p_great_pink','p_great_blue'][c], color:'grb'[c]};
         }
+        const timer = 30 - Math.floor(Math.max(0, elapsedMs) * 60 / 1000 + 1e-7);
+        if (timer <= 0) return {visible:false, timer};
         return {visible:timer % 10 >= 5, timer,
             text:{GREAT:'great_yellow',GOOD:'good',BAD:'bad',POOR:'poor'}[kind], color:'y'};
     }
@@ -9360,10 +9362,12 @@ class BMSViewer {
             if (!state) return;
             // A judgment in another RAF callback belongs to this frame's play
             // processing. Its HUD may only begin on a later frame timestamp.
-            if (state.startMs === null && now < state.notifyMs) {
+            const firstHUDMs = state.notifyMs + (state.kind === 'PGREAT' ? 1000 / 120 : 0);
+            if (state.startMs === null && now < firstHUDMs) {
                 this._pngJudgeRAF = requestAnimationFrame(tick); return;
             }
-            if (state.startMs === null) state.startMs = now;
+            // Do not stretch the opening 8.33ms white phase to a whole browser frame.
+            if (state.startMs === null) state.startMs = state.kind === 'PGREAT' ? firstHUDMs : now;
             this._drawPNGJudgment(now);
             this._pngJudgeRAF = null;
             if (now - state.startMs < 500 || this.isPlaying) this._pngJudgeRAF = requestAnimationFrame(tick);

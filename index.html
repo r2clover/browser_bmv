@@ -1815,13 +1815,15 @@
         }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
         .play-footer.iidx-gauge-footer { flex:1 0 30px; min-height:30px; display:flex; }
-        .groove-gauge-area.iidx-gauge { height:auto; min-height:30px; margin:0 auto; padding:2px 0; width:var(--iidx-gauge-width,648px); max-width:100%; }
-        .iidx-gauge .groove-gauge-track { position:relative; align-self:stretch; height:auto; min-width:0; border:0; border-radius:0; background:transparent !important; }
+        .groove-gauge-area.iidx-gauge { position:relative; height:auto; min-height:30px; margin:0; padding:2px 0; width:100%; }
+        .iidx-gauge .groove-gauge-track { position:absolute; top:2px; bottom:2px; left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); height:auto; min-width:0; border:0; border-radius:0; overflow:visible; background:transparent !important; }
         .iidx-gauge #grooveGaugeBar, .iidx-gauge #grooveGaugePct { display:none; }
         #iidxGaugeCanvas { display:none; width:100%; height:28px; }
-        .iidx-gauge #iidxGaugeCanvas { display:block; position:absolute; inset:0; height:100%; }
+        .iidx-gauge #iidxGaugeCanvas { display:block; position:absolute; top:0; left:-3.340757238%; width:106.904231626%; height:100%; }
         #iidxGaugeNumber { display:none; width:69px; height:18px; flex-shrink:0; }
-        .iidx-gauge #iidxGaugeNumber { display:block; width:92px; height:24px; }
+        .iidx-gauge #iidxGaugeNumber { display:block; position:absolute; left:var(--iidx-gauge-number-x,24px); top:calc(2px + (100% - 4px) * .234375); transform:translate(-50%,-50%); width:var(--iidx-gauge-number-width,48px); height:auto; }
+        .iidx-gauge .fs-gauge-wrap { position:absolute; bottom:2px; right:4px; }
+        .iidx-gauge.gauge-side-2p .fs-gauge-wrap { right:auto; left:4px; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
         .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; letter-spacing:0.5px; }
         .fs-gauge-disp.fs-fast { color:#4af; }
@@ -2736,7 +2738,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.019</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.020</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -10359,7 +10361,17 @@ class BMSViewer {
         const border=(parseFloat(style.borderLeftWidth)||0)+(parseFloat(style.borderRightWidth)||0);
         // Keep the gauge at the 100% lane width, including when the notes are narrowed.
         const fullWidth=(cssWidth-border)/((this._currentLaneScale || 100)/100)+border;
-        area.style.setProperty('--iidx-gauge-width',(fullWidth*rect.width/cssWidth/footerScale)+'px');
+        const width=Math.min(footer.offsetWidth,fullWidth*rect.width/cssWidth/footerScale),left=(footer.offsetWidth-width)/2;
+        area.style.setProperty('--iidx-gauge-width',width+'px');
+        area.style.setProperty('--iidx-gauge-left',left+'px');
+        const rail=document.getElementById('seekWrap'),fr=footer.getBoundingClientRect(),rr=rail?.getBoundingClientRect();
+        if(rr){
+            const center=(rr.left+rr.width/2-fr.left)/footerScale;
+            const space=this.currentSide==='2P'?Math.min(center-left-width,footer.offsetWidth-center):Math.min(center,left-center);
+            area.style.setProperty('--iidx-gauge-number-x',center+'px');
+            area.style.setProperty('--iidx-gauge-number-width',Math.max(1,Math.min(92,space*2))+'px');
+        }
+        area.classList.toggle('gauge-side-2p',this.currentSide==='2P');
     }
 
     _iidxGaugeSpec() {

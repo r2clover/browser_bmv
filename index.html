@@ -1816,7 +1816,7 @@
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
         .play-footer.iidx-gauge-footer { flex:1 0 40px; min-height:40px; display:flex; }
         .groove-gauge-area.iidx-gauge { position:relative; height:auto; min-height:40px; margin:0; padding:12px 0 2px; width:100%; }
-        .iidx-gauge .groove-gauge-track { position:absolute; top:50%; transform:translateY(-50%); left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); height:calc((100% - 14px) * .46875); min-width:0; border:0; border-radius:0; overflow:hidden; background:transparent !important; }
+        .iidx-gauge .groove-gauge-track { position:absolute; top:50%; transform:translateY(-50%); left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); height:auto; aspect-ratio:449 / 30; min-width:0; border:0; border-radius:0; overflow:hidden; background:transparent !important; }
         .iidx-gauge #grooveGaugeBar, .iidx-gauge #grooveGaugePct { display:none; }
         #iidxGaugeCanvas { display:none; width:100%; height:28px; }
         .iidx-gauge #iidxGaugeCanvas { display:block; position:absolute; top:0; left:-3.340757238%; width:106.904231626%; height:213.333333333%; }
@@ -2739,7 +2739,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.024</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.025</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

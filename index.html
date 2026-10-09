@@ -2639,7 +2639,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <div class="iidx-gauge-bezel" aria-hidden="true"></div>
             <div class="iidx-gauge-number-base" aria-hidden="true"></div>
             <div class="iidx-gauge-lamp-base" aria-hidden="true"><canvas id="iidxGaugeLamp" width="30" height="34"></canvas></div>
-            <div class="iidx-gauge-caption" aria-hidden="true"><span>GROOVE GAUGE</span><span id="iidxGaugeType">NORMAL</span></div>
+            <div class="iidx-gauge-caption" aria-hidden="true"><span>GROOVE GAUGE</span></div>
             <div class="fs-gauge-wrap"><span id="fastSlowDisplay" class="fs-gauge-disp"></span></div>
             <div class="groove-gauge-track">
                 <div class="groove-gauge-bar" id="grooveGaugeBar"></div>
@@ -2760,7 +2760,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.028</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.029</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -10431,13 +10431,13 @@ class BMSViewer {
         if(lampFrame<60 && lampFrame%4<2 && lamp.complete && lamp.naturalWidth){
             lc.save();lc.globalCompositeOperation='lighter';lc.drawImage(lamp,0,0);lc.restore();
         }
-        const type=this._gaugeType || 'NORMAL';
-        if(state.type!==type){document.getElementById('iidxGaugeType').textContent=({ASSIST_EASY:'ASSIST EASY',EXHARD:'EX-HARD',DAN:'CLASS'})[type] || type;state.type=type;}
         // Sample once per rendered HUD frame. Idle previews do not run an animation loop.
         const tick=Math.floor(now*120/1000);
         if(tick!==state.tick){state.tick=tick;state.missing=this.isPlaying?Math.floor(Math.random()*4):0;}
         const lit=Math.max(0,spec.value-state.missing*2),ctx=canvas.getContext('2d'),x=15;
         ctx.clearRect(0,0,480,64);
+        // The native 30px texture has four transparent bottom rows: center its visible 26px.
+        ctx.save();ctx.translate(0,2);
         const layer=(value,alpha,additive,draw)=>{
             ctx.save();ctx.beginPath();
             ctx.rect(x+(spec.side==='2p'?Math.floor((100-value)*4.5):0),0,spec.side==='2p'?450:Math.floor(value*4.5),30);
@@ -10452,6 +10452,7 @@ class BMSViewer {
             const dot=this._gaugeImages['playm_gauge_'+dotKind+'_dot'];
             if(dot.complete && dot.naturalWidth)ctx.drawImage(dot,x+(spec.side==='2p'?100-spec.value:spec.value-2)*4.5,0);
         }
+        ctx.restore();
         const counter=document.getElementById('iidxGaugeNumber'),nc=counter.getContext('2d');nc.clearRect(0,0,130,34);
         const digits=String(spec.value),positions=[0,25,63];
         for(let i=0;i<digits.length;i++){

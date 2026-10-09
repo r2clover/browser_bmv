@@ -1814,13 +1814,14 @@
             font-variant-numeric:tabular-nums;
         }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
-        .groove-gauge-area.iidx-gauge { height:30px; margin:0 auto; padding:0; width:var(--iidx-gauge-width,648px); max-width:100%; }
-        .iidx-gauge .groove-gauge-track { height:28px; min-width:0; border:0; border-radius:0; background:transparent !important; }
+        .play-footer.iidx-gauge-footer { flex:1 0 30px; min-height:30px; display:flex; }
+        .groove-gauge-area.iidx-gauge { height:auto; min-height:30px; margin:0 auto; padding:2px 0; width:var(--iidx-gauge-width,648px); max-width:100%; }
+        .iidx-gauge .groove-gauge-track { position:relative; align-self:stretch; height:auto; min-width:0; border:0; border-radius:0; background:transparent !important; }
         .iidx-gauge #grooveGaugeBar, .iidx-gauge #grooveGaugePct { display:none; }
         #iidxGaugeCanvas { display:none; width:100%; height:28px; }
-        .iidx-gauge #iidxGaugeCanvas { display:block; }
+        .iidx-gauge #iidxGaugeCanvas { display:block; position:absolute; inset:0; height:100%; }
         #iidxGaugeNumber { display:none; width:69px; height:18px; flex-shrink:0; }
-        .iidx-gauge #iidxGaugeNumber { display:block; }
+        .iidx-gauge #iidxGaugeNumber { display:block; width:92px; height:24px; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
         .fs-gauge-disp { font-size:11px; font-weight:bold; opacity:0; letter-spacing:0.5px; }
         .fs-gauge-disp.fs-fast { color:#4af; }
@@ -2735,7 +2736,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.018</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.019</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -10429,6 +10430,7 @@ class BMSViewer {
         if (!bar) return;
         const pm=this.currentSide==='PM'||(this._gaugeType || '').startsWith('PM_');
         bar.closest('.groove-gauge-area').classList.toggle('iidx-gauge',!pm);
+        bar.closest('.play-footer').classList.toggle('iidx-gauge-footer',!pm);
         if(!pm){
             const value=this._iidxGaugeSpec().value;
             if(label)label.textContent=value+'%';if(stat)stat.textContent=value;

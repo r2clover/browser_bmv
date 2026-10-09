@@ -2398,10 +2398,13 @@
 .png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:502; }
 .lanes-container:not(.pm-mode) { border-color:transparent; }
 .lane-fixed-frame { position:absolute; bottom:0; box-sizing:border-box; border:1px solid #fff; border-top:0; pointer-events:none; z-index:503; }
-#statusBar { padding:2px 8px; }
+#statusBar { display:none; }
 #statusBar > .status-row:first-child { display:none; }
 #statusBar > .status-row:last-child { justify-content:flex-start; gap:8px; }
-.footer-numbers { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; min-width:0; font-size:9px; line-height:1.2; white-space:nowrap; }
+.ctrl-footer { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:8px; }
+.ctrl-footer > .controls { grid-column:1; grid-row:1; }
+.ctrl-footer > .loop-row { grid-column:1; grid-row:2; }
+.footer-numbers { grid-column:2; grid-row:1 / span 2; align-self:start; display:flex; flex-direction:column; align-items:flex-end; min-width:0; font-size:9px; line-height:1.2; white-space:nowrap; }
 .footer-green-line { display:flex; gap:4px; max-width:100%; overflow:hidden; }
 .lane-live-counts { display:none; position:absolute; top:2px; z-index:504; pointer-events:none; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; font:7px/1.2 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:center; color:#eee; text-shadow:0 1px 2px #000; }
 .lane-live-counts span { background:rgba(0,0,0,.55); }
@@ -2607,9 +2610,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span style="display:none;">SCORE:<span id="scoreDisplay">0</span></span>
                 <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
                 <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
-                <span style="color:#ccc;"><span style="color:#ccc;">TIME</span><span id="statusElapsed">0:00</span></span>
-                <span>小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span></span>
-                <span id="loopStatus"></span>
             </div>
         </div>
         <!-- 非表示スパン（JS互換用） -->
@@ -2649,13 +2649,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <button class="saracho-btn" id="sarachoBtn">GC</button>
             <button class="rs-btn" id="rsBtn">RS</button>
-            <div class="footer-numbers">
-                <div class="footer-green-line">
-                    <span id="footerGreenRange" title="最低BPMでの緑数字 - 最高BPMでの緑数字" style="font-size:9px;color:#00e84c;font-family:'Courier New',monospace;"></span>
-                    <span id="footerGreenNum" style="font-size:10px;color:#00e84c;font-family:'Courier New',monospace;font-weight:bold;">—</span>
-                </div>
-                <span>BPM:<span id="bpmDisplay">0</span></span>
-            </div>
         </div>
         <!-- LANE 行 -->
         <div class="loop-row">
@@ -2672,6 +2665,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <button class="rm-btn" id="hRandomBtn">H</button>
             <button class="rm-btn" id="quantize16Btn">Q16</button>
             <button class="rm-btn" id="quantize8Btn">Q8</button>
+        </div>
+        <div class="footer-numbers">
+            <div class="footer-green-line">
+                <span id="footerGreenRange" title="最低BPMでの緑数字 - 最高BPMでの緑数字" style="font-size:9px;color:#00e84c;font-family:'Courier New',monospace;"></span>
+                <span id="footerGreenNum" style="font-size:10px;color:#00e84c;font-family:'Courier New',monospace;font-weight:bold;">—</span>
+            </div>
+            <span>BPM:<span id="bpmDisplay">0</span></span>
+            <span style="color:#ccc;">TIME <span id="statusElapsed">0:00</span></span>
+            <span>小節:<span id="positionDisplay">0</span>/<span id="totalBarsDisplay">0</span></span>
+            <span id="loopStatus"></span>
         </div>
     </div>
 </div>
@@ -2716,7 +2719,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.012</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.013</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

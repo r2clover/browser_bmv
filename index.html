@@ -2479,11 +2479,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- リアルスピード（詳細オプションへ移動） -->
             <!-- 詳細オプションボタン -->
             <button class="btn btn-secondary" id="detailBtn">詳細</button>
-            <div class="side-switch">
-                <button class="side-btn"        data-side="1P">1P</button>
-                <button class="side-btn active" data-side="2P">2P</button>
-                <button class="side-btn"        data-side="PM">pm</button>
-            </div>
             <button class="sud-btn" id="sudBtn">SUD+</button>
             <button class="sud-btn" id="sudUpBtn" title="カバーを上へ">↑</button>
             <button class="sud-btn" id="sudDownBtn" title="カバーを下へ">↓</button>
@@ -2691,7 +2686,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.006</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.007</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2710,6 +2705,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- EFFECT/EQ -->
             <div class="detail-section nowrap">
                 <button class="fx-btn" id="fxPopupBtn" style="width:100%;">EFFECT / EQ</button>
+            </div>
+            <!-- レーン配置選択 -->
+            <div class="detail-section nowrap">
+                <span class="detail-label">レーン配置</span>
+                <div class="side-switch">
+                    <button class="side-btn"        data-side="1P">1P</button>
+                    <button class="side-btn active" data-side="2P">2P</button>
+                    <button class="side-btn"        data-side="PM">pm</button>
+                </div>
             </div>
             <!-- モード選択 -->
             <div class="detail-section nowrap">

@@ -2760,7 +2760,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.029</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.030</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7827,7 +7827,9 @@ class BMSViewer {
             const elapsedSec = Math.max(0, (performance.now() / 1000 - this.audioPlayStart) * this.realSpeed + this.audioStartSec);
             const mm = Math.floor(elapsedSec / 60);
             const ss = Math.floor(elapsedSec % 60).toString().padStart(2, '0');
-            (this._elElapsed || document.getElementById('statusElapsed')).textContent = mm + ':' + ss;
+            const text=mm+':'+ss;
+            const elapsed=this._elElapsed || (this._elElapsed=document.getElementById('statusElapsed'));
+            if(elapsed.textContent!==text)elapsed.textContent=text;
         }
 
         // BGA動画ドリフト補正（10秒ごと・1秒以上のズレのみ補正）
@@ -8184,7 +8186,7 @@ class BMSViewer {
         });
         this._sudUpdateCoverDOM();
         this._liftUpdateCoverDOM();
-        if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
+        if (this._flatLaneStack()) this._syncPNGJudgeGeometry(true);
         this._updateLiveCounters(true);
         this._syncSeekGeometry();
         this._syncIIDXGaugeGeometry();
@@ -9484,11 +9486,19 @@ class BMSViewer {
             text:{GREAT:'great_yellow',GOOD:'good',BAD:'bad',POOR:'poor'}[kind], color:'y'};
     }
 
-    _syncPNGJudgeGeometry() {
+    _syncPNGJudgeGeometry(force = false) {
         const lanes = document.getElementById('lanesContainer');
         if (!lanes) return;
+        const lift=this.liftEnabled ? this.liftCoverPx : 0;
+        const key=[this._effH,this._currentLaneScale,this.currentSide,lift,this.judgeMode,this._flatLaneStack()].join('/');
+        const cached=this._pngJudgeGeometry;
+        if(!force && cached?.lanes===lanes && cached.key===key)return cached;
+        const style=getComputedStyle(lanes),clientLeft=lanes.clientLeft;
+        const stripWidth=parseFloat(style.width)-clientLeft-(parseFloat(style.borderRightWidth)||0);
         lanes.style.setProperty('--png-judge-lane-half', lanes.offsetWidth / 2 + 'px');
-        lanes.style.setProperty('--png-judge-lift', (this.liftEnabled ? this.liftCoverPx : 0) + 'px');
+        lanes.style.setProperty('--png-judge-lift', lift + 'px');
+        // Read the resulting position only when geometry changes, before the hot drawing path.
+        return this._pngJudgeGeometry={lanes,key,stripWidth,clientLeft,offsetLeft:lanes.offsetLeft};
     }
 
     _clearPNGJudgment() {
@@ -9557,17 +9567,17 @@ class BMSViewer {
         const frame = this._pngJudgeFrame(state.kind, now - state.startMs);
         dom.root.style.display = frame.visible ? 'block' : 'none';
         if (!frame.visible) return;
-        this._syncPNGJudgeGeometry();
-        const lanes = document.getElementById('lanesContainer');
+        const geometry=this._syncPNGJudgeGeometry();
+        if(!geometry)return;
         const h = this._effH || 470, laneScale = (this._currentLaneScale || 100) / 100;
         const referenceSize = Math.round(120 * h / 940 * laneScale);
         const sizeScale = (Number(document.getElementById('judgeSizeInput').value) || referenceSize) / referenceSize;
-        const stripWidth = parseFloat(getComputedStyle(lanes).width) - lanes.clientLeft - (parseFloat(getComputedStyle(lanes).borderRightWidth) || 0);
+        const stripWidth = geometry.stripWidth;
         // Preserve the source aspect ratio at 100% lane width; narrower lanes only scale X.
         const sx = stripWidth / 434 * sizeScale, sy = sx / laneScale;
         const dp = this.bmsData?.isDPChart;
         // One unit of inset at either edge: visible sprite origin is lane-left + 1.
-        const cx = lanes.offsetLeft + lanes.clientLeft + stripWidth * (dp ? 217 : this.currentSide === '2P' ? 215 : 219) / 434;
+        const cx = geometry.offsetLeft + geometry.clientLeft + stripWidth * (dp ? 217 : this.currentSide === '2P' ? 215 : 219) / 434;
         const y = 515 * h / 723 - (this.liftEnabled ? this.liftCoverPx : 0)
             + 90 * h / 470 - (this._judgeBaseHeight ?? 90 * h / 470);
         const withCombo = state.forceCombo || ['PGREAT','GREAT','GOOD'].includes(state.kind);
@@ -9578,8 +9588,11 @@ class BMSViewer {
         const place = (im, assetName, px) => {
             const asset = PNG_JUDGE_ASSETS['judge_' + assetName];
             if (im.dataset.asset !== assetName) { im.src = asset.src; im.dataset.asset = assetName; }
-            im.style.left = (cx + px * sx) + 'px'; im.style.top = y + 'px';
-            im.style.width = asset.width * sx + 'px'; im.style.height = asset.height * sy + 'px';
+            const left=cx+px*sx,width=asset.width*sx,height=asset.height*sy;
+            if(im._judgeLeft!==left){im.style.left=left+'px';im._judgeLeft=left;}
+            if(im._judgeTop!==y){im.style.top=y+'px';im._judgeTop=y;}
+            if(im._judgeWidth!==width){im.style.width=width+'px';im._judgeWidth=width;}
+            if(im._judgeHeight!==height){im.style.height=height+'px';im._judgeHeight=height;}
         };
         place(dom.label, frame.text, x);
         const base = x + str.length * 55 + w - 291;
@@ -10453,14 +10466,17 @@ class BMSViewer {
             if(dot.complete && dot.naturalWidth)ctx.drawImage(dot,x+(spec.side==='2p'?100-spec.value:spec.value-2)*4.5,0);
         }
         ctx.restore();
-        const counter=document.getElementById('iidxGaugeNumber'),nc=counter.getContext('2d');nc.clearRect(0,0,130,34);
-        const digits=String(spec.value),positions=[0,25,63];
-        for(let i=0;i<digits.length;i++){
-            const digit=this._gaugeImages['playm_gg_0'+digits[i]];
-            if(digit.complete && digit.naturalWidth)nc.drawImage(digit,positions[3-digits.length+i],3);
+        if(state.numberValue!==spec.value){
+            const counter=document.getElementById('iidxGaugeNumber'),nc=counter.getContext('2d');nc.clearRect(0,0,130,34);
+            const digits=String(spec.value),positions=[0,25,63];let ready=true;
+            for(let i=0;i<digits.length;i++){
+                const digit=this._gaugeImages['playm_gg_0'+digits[i]];
+                if(digit.complete && digit.naturalWidth)nc.drawImage(digit,positions[3-digits.length+i],3);else ready=false;
+            }
+            nc.font='bold 20px sans-serif';nc.fillStyle='#fff';nc.fillText('%',107,27);
+            if(ready)state.numberValue=spec.value;
+            canvas.setAttribute('aria-label','GROOVE GAUGE '+spec.value+'%');
         }
-        nc.font='bold 20px sans-serif';nc.fillStyle='#fff';nc.fillText('%',107,27);
-        canvas.setAttribute('aria-label','GROOVE GAUGE '+spec.value+'%');
     }
 
     _updateGrooveGauge(pct) {
@@ -10476,7 +10492,8 @@ class BMSViewer {
             const value=this._iidxGaugeSpec().value;
             if(label)label.textContent=value+'%';if(stat)stat.textContent=value;
             document.querySelector('.play-area')?.classList.toggle('gauge-dead',value===0);
-            this._drawIIDXGauge();return;
+            // During play the main HUD paints once per rendered frame, not once per note.
+            if(!this.isPlaying)this._drawIIDXGauge();return;
         }
         // pct は 2%刻みで渡される想定（_applyGauge / _resetGauge から）
         const clamped = Math.max(0, Math.min(100, pct));

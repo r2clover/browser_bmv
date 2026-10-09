@@ -1814,14 +1814,14 @@
             font-variant-numeric:tabular-nums;
         }
         .groove-gauge-bar.gauge-red ~ .groove-gauge-label { color:#ff4422; }
-        .play-footer.iidx-gauge-footer { flex:1 0 30px; min-height:30px; display:flex; }
-        .groove-gauge-area.iidx-gauge { position:relative; height:auto; min-height:30px; margin:0; padding:2px 0; width:100%; }
-        .iidx-gauge .groove-gauge-track { position:absolute; top:2px; bottom:2px; left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); height:auto; min-width:0; border:0; border-radius:0; overflow:visible; background:transparent !important; }
+        .play-footer.iidx-gauge-footer { flex:1 0 40px; min-height:40px; display:flex; }
+        .groove-gauge-area.iidx-gauge { position:relative; height:auto; min-height:40px; margin:0; padding:12px 0 2px; width:100%; }
+        .iidx-gauge .groove-gauge-track { position:absolute; top:12px; bottom:2px; left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); height:auto; min-width:0; border:0; border-radius:0; overflow:visible; background:transparent !important; }
         .iidx-gauge #grooveGaugeBar, .iidx-gauge #grooveGaugePct { display:none; }
         #iidxGaugeCanvas { display:none; width:100%; height:28px; }
         .iidx-gauge #iidxGaugeCanvas { display:block; position:absolute; top:0; left:-3.340757238%; width:106.904231626%; height:100%; }
         #iidxGaugeNumber { display:none; width:69px; height:18px; flex-shrink:0; }
-        .iidx-gauge #iidxGaugeNumber { display:block; position:absolute; left:var(--iidx-gauge-number-x,24px); top:calc(2px + (100% - 4px) * .234375); transform:translate(-50%,-50%); width:var(--iidx-gauge-number-width,48px); height:auto; }
+        .iidx-gauge #iidxGaugeNumber { display:block; position:absolute; left:var(--iidx-gauge-number-x,24px); top:calc(12px + (100% - 14px) * .234375); transform:translate(-50%,-50%); width:var(--iidx-gauge-number-width,48px); height:auto; }
         .iidx-gauge .fs-gauge-wrap { position:absolute; bottom:2px; right:4px; }
         .iidx-gauge.gauge-side-2p .fs-gauge-wrap { right:auto; left:4px; }
         .fs-gauge-wrap { min-width:34px; display:flex; align-items:center; justify-content:flex-end; }
@@ -2369,11 +2369,11 @@
 
 
 
-/* PNG judge00: ordinary alpha, above covers and below bombs. */
+/* PNG judge00: ordinary alpha, above covers/frame and below bombs. */
 .png-judge-display { position:absolute; inset:0; z-index:501; pointer-events:none; display:none; }
 .png-judge-display img { position:absolute; max-width:none; opacity:0.9; }
 .judge-png-default .play-judge-positioner,.judge-png-default .great-positioner { display:none; }
-.judge-png-default .lane-explosion,.judge-png-default .lane-ring { z-index:502; }
+.judge-png-default .lane-explosion,.judge-png-default .lane-ring { z-index:506; }
 /* Remove only this container's stacking context so bombs can overlap the HUD,
    while notes remain below covers. Left/bottom preserve centering and LIFT. */
 .judge-png-default .lanes-container { transform:none !important; left:calc(50% - var(--png-judge-lane-half, 0px)); bottom:var(--png-judge-lift, 0px); }
@@ -2412,9 +2412,10 @@
 .lift-cover:not(.cover-iidx) .lift-cover-green-wrap { display:none; }
 .png-lane-covers .lanes-container { transform:none !important; left:calc(50% - var(--png-judge-lane-half,0px)); bottom:var(--png-judge-lift,0px); }
 .png-lane-covers .play-judge-positioner,.png-lane-covers .great-positioner { z-index:501; }
-.png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:502; }
+.png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:506; }
 .lanes-container:not(.pm-mode) { border-color:transparent; }
 .lane-fixed-frame { position:absolute; bottom:0; box-sizing:border-box; border:1px solid #fff; border-top:0; pointer-events:none; z-index:503; }
+.play-area .play-judge-positioner,.play-area .great-positioner,.play-area .png-judge-display { z-index:505; }
 #statusBar { display:none; }
 #statusBar > .status-row:first-child { display:none; }
 #statusBar > .status-row:last-child { justify-content:flex-start; gap:8px; }
@@ -2738,7 +2739,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.020</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.021</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">

@@ -186,35 +186,42 @@
 
         /* シークバー */
         .seek-wrap {
-            background:#0d0d0d; padding:8px 0;
-            border-top:1px solid #222; touch-action:none; user-select:none; flex-shrink:0;
+            position:absolute; top:0; bottom:0; right:4px; width:40px; padding:8px 0;
+            touch-action:none; user-select:none; z-index:600;
         }
         .seek-inner {
-            max-width:720px; margin:0 auto; padding:0 8px;
-            display:flex; align-items:center; gap:6px;
+            height:100%; display:flex; flex-direction:column; align-items:center; gap:8px;
         }
         .seek-bar-btn {
             background:none; border:1px solid #444; color:#aaa;
-            border-radius:4px; padding:3px 10px; font-size:14px; line-height:1;
+            border-radius:4px; padding:5px 0; width:100%; font-size:14px; line-height:1;
             cursor:pointer; flex-shrink:0; touch-action:manipulation;
         }
         .seek-bar-btn:active { background:#333; color:#fff; }
+        .seek-wrap.seek-left { left:4px; right:auto; }
+        .seek-wrap.seek-horizontal { position:static; width:auto; padding:8px 0; background:#0d0d0d; border-top:1px solid #222; flex-shrink:0; }
+        .seek-horizontal .seek-inner { height:auto; max-width:720px; margin:0 auto; padding:0 8px; flex-direction:row; gap:6px; }
+        .seek-horizontal .seek-bar-btn { width:auto; padding:3px 10px; font-size:14px; }
+        .seek-horizontal .seek-track { height:10px; background:#2a2a2a; border-radius:5px; }
+        .seek-horizontal .seek-track::before { display:none; }
+        .seek-horizontal .seek-fill { left:0; transform:none; background:linear-gradient(to right,#1565C0,#2196F3); }
+        .seek-horizontal .seek-loop-range { transform:none; border:0; border-left:2px solid #00ff88; border-right:2px solid #ff4466; }
         .seek-track {
-            width:100%; height:10px; background:#2a2a2a;
-            border-radius:5px; position:relative; cursor:pointer;
+            width:100%; min-height:0; position:relative; cursor:pointer; touch-action:none;
         }
+        .seek-track::before { content:''; position:absolute; top:0; bottom:0; left:50%; width:8px; transform:translateX(-50%); background:#2a2a2a; border-radius:5px; pointer-events:none; }
         .seek-fill {
-            height:100%; background:linear-gradient(to right,#1565C0,#2196F3);
-            border-radius:5px; pointer-events:none; max-width:100%;
+            position:absolute; top:0; left:50%; transform:translateX(-50%); width:8px;
+            background:linear-gradient(to bottom,#1565C0,#2196F3); border-radius:5px; pointer-events:none; max-height:100%;
         }
         .seek-loop-range {
-            position:absolute; top:0; height:100%;
+            position:absolute; left:50%; transform:translateX(-50%); width:8px;
             background:rgba(0,255,136,.18);
-            border-left:2px solid #00ff88; border-right:2px solid #ff4466;
+            border-top:2px solid #00ff88; border-bottom:2px solid #ff4466;
             pointer-events:none; display:none;
         }
         .seek-thumb {
-            position:absolute; top:50%; transform:translate(-50%,-50%);
+            position:absolute; left:50%; transform:translate(-50%,-50%);
             width:16px; height:16px; background:#fff; border-radius:50%;
             box-shadow:0 0 5px rgba(0,0,0,.6); pointer-events:none;
         }
@@ -2406,6 +2413,7 @@
 .ctrl-footer > .loop-row { grid-column:1; grid-row:2; }
 .footer-numbers { grid-column:2; grid-row:1 / span 2; align-self:start; display:flex; flex-direction:column; align-items:flex-end; min-width:0; font-size:9px; line-height:1.2; white-space:nowrap; }
 .footer-green-line { display:flex; gap:4px; max-width:100%; overflow:hidden; }
+.footer-numbers #positionDisplay,.footer-numbers #totalBarsDisplay { min-width:0; text-align:right; }
 .lane-live-counts { display:none; position:absolute; top:2px; z-index:504; pointer-events:none; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; font:7px/1.2 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:center; color:#eee; text-shadow:0 1px 2px #000; }
 .lane-live-counts span { background:rgba(0,0,0,.55); }
 .lane-live-counts b { display:block; font-size:9px; }
@@ -2582,6 +2590,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
         </div>
     </div>
+        <!-- 縦シークバー: 上が先頭、下が曲末 -->
+        <div class="seek-wrap" id="seekWrap">
+            <div class="seek-inner">
+                <button class="seek-bar-btn" id="seekBackBtn" title="3小節戻る" aria-label="3小節戻る">↑</button>
+                <div class="seek-track" id="seekTrack" style="flex:1;" role="slider" tabindex="0" aria-label="再生位置" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="seek-fill" id="seekFill" style="height:0%"></div>
+                    <div class="seek-loop-range" id="seekLoopRange"></div>
+                    <div class="seek-thumb" id="seekThumb" style="top:0%"></div>
+                </div>
+                <button class="seek-bar-btn" id="seekFwdBtn" title="3小節進む" aria-label="3小節進む">↓</button>
+            </div>
+        </div>
     </div>
 
     <!-- play-footer: グルーブゲージ + ステータスバー -->
@@ -2617,19 +2637,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span id="exScore">0</span>
             <span id="achievementPct">0.00</span>
             <span id="gaugePctStat">22</span>
-        </div>
-    </div>
-
-    <!-- シークバー -->
-    <div class="seek-wrap" id="seekWrap">
-        <div class="seek-inner">
-            <button class="seek-bar-btn" id="seekBackBtn">←</button>
-            <div class="seek-track" id="seekTrack" style="flex:1;">
-                <div class="seek-fill"       id="seekFill"      style="width:0%"></div>
-                <div class="seek-loop-range" id="seekLoopRange"></div>
-                <div class="seek-thumb"      id="seekThumb"     style="left:0%"></div>
-            </div>
-            <button class="seek-bar-btn" id="seekFwdBtn">→</button>
         </div>
     </div>
 
@@ -2719,7 +2726,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.013</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.016</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6097,16 +6104,22 @@ class BMSViewer {
         {
             const track = document.getElementById('seekTrack');
             let isSeeking = false;
-            const doSeek = e => { if (this.bmsData) this._seekTo(e.clientX); };
             track.addEventListener('pointerdown', e => {
                 if (!this.bmsData) return;
                 isSeeking = true;
                 track.setPointerCapture(e.pointerId);
-                this._seekTo(e.clientX);
+                e.preventDefault();this._seekTo(this.currentSide==='PM'?e.clientX:e.clientY);
             });
-            track.addEventListener('pointermove', e => { if (isSeeking) this._seekTo(e.clientX); });
+            track.addEventListener('pointermove', e => { if (isSeeking) this._seekTo(this.currentSide==='PM'?e.clientX:e.clientY); });
             track.addEventListener('pointerup',     () => { isSeeking = false; });
             track.addEventListener('pointercancel', () => { isSeeking = false; });
+            track.addEventListener('lostpointercapture', () => { isSeeking = false; });
+            track.addEventListener('keydown',e=>{
+                if(!this.bmsData)return;
+                const back=this.currentSide==='PM'?'ArrowLeft':'ArrowUp',forward=this.currentSide==='PM'?'ArrowRight':'ArrowDown';
+                if(e.code===back||e.code===forward){e.preventDefault();e.stopPropagation();this._seekBars(e.code===back?-1:1);}
+                else if(e.code==='Home'||e.code==='End'){e.preventDefault();e.stopPropagation();const r=track.getBoundingClientRect();this._seekTo(this.currentSide==='PM'?(e.code==='Home'?r.left:r.right):(e.code==='Home'?r.top:r.bottom));}
+            });
         }
         document.getElementById('seekBackBtn').addEventListener('click', () => this._seekBars(-3));
         document.getElementById('seekFwdBtn') .addEventListener('click', () => this._seekBars(+3));
@@ -7547,7 +7560,7 @@ class BMSViewer {
     /* ============================================================ 再生 */
     _initResults() {
         this.judgeCounterEnabled=false;
-        const labels=['P-GREAT','GREAT','GOOD','BAD','POOR','FAST','SLOW'];
+        const labels=['P-GREAT','GREAT','GOOD','BAD','POOR','FAST','SLOW','SCORE'];
         const host=document.getElementById('laneLiveCounts');
         for(const [i,label] of labels.entries()){
             const cell=document.createElement('span');cell.append(label);
@@ -7576,7 +7589,7 @@ class BMSViewer {
         host.style.width=parseFloat(getComputedStyle(lane).width)-lane.clientLeft-parseFloat(getComputedStyle(lane).borderRightWidth)+'px';
         host.style.fontSize=7*h+'px';host.style.top=2*h+'px';
         }
-        this._judgeCounts().forEach((value,i)=>{
+        [...this._judgeCounts(),this._score||0].forEach((value,i)=>{
             const el=document.getElementById('liveJudgeCount'+i);if(el.textContent!==String(value))el.textContent=value;
             el.style.fontSize=9*h+'px';
         });
@@ -8135,6 +8148,7 @@ class BMSViewer {
         this._liftUpdateCoverDOM();
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
         this._updateLiveCounters(true);
+        this._syncSeekGeometry();
     }
 
     _applyLaneWidths() {
@@ -10417,19 +10431,47 @@ class BMSViewer {
     }
 
     /* ── シークバー更新 ── */
+    _syncSeekLayout() {
+        const rail=document.getElementById('seekWrap'),track=document.getElementById('seekTrack');
+        if(rail.dataset.layout===this.currentSide)return;
+        rail.dataset.layout=this.currentSide;
+        const horizontal=this.currentSide==='PM',wrapper=document.querySelector('.play-area-wrapper');
+        rail.classList.toggle('seek-horizontal',horizontal);rail.classList.toggle('seek-left',this.currentSide==='1P');
+        if(horizontal&&rail.parentElement===wrapper){document.querySelector('.ctrl-footer').before(rail);rail.style.width='';for(const btn of rail.querySelectorAll('.seek-bar-btn'))btn.style.fontSize='';}
+        else if(!horizontal&&rail.parentElement!==wrapper)wrapper.append(rail);
+        track.setAttribute('aria-orientation',horizontal?'horizontal':'vertical');
+        document.getElementById('seekBackBtn').textContent=horizontal?'←':'↑';document.getElementById('seekFwdBtn').textContent=horizontal?'→':'↓';
+    }
+
+    _syncSeekGeometry() {
+        this._syncSeekLayout();
+        if(this.currentSide==='PM'){this._updateSeekBar();return;}
+        const wrapper=document.querySelector('.play-area-wrapper'),lane=document.getElementById('lanesContainer'),rail=document.getElementById('seekWrap');
+        if(!wrapper||!lane||!rail)return;
+        const wr=wrapper.getBoundingClientRect(),lr=lane.getBoundingClientRect(),scale=wr.width/wrapper.offsetWidth;
+        const margin=(this.currentSide==='1P'?lr.left-wr.left:wr.right-lr.right)/scale;
+        const width=Math.max(8,Math.min(40,margin-8));
+        rail.style.width=width+'px';
+        for(const btn of rail.querySelectorAll('.seek-bar-btn'))btn.style.fontSize=Math.min(14,width)+'px';
+        this._updateSeekBar();
+    }
+
     _updateSeekBar() {
+        this._syncSeekLayout();
         if (!this.bmsData || this.totalPx <= 0) return;
         const pct = Math.min(1, this.currentPixelPos / this.totalPx) * 100;
-        (this._elSeekFill  || document.getElementById('seekFill')).style.width = pct + '%';
-        (this._elSeekThumb || document.getElementById('seekThumb')).style.left = pct + '%';
+        const horizontal=this.currentSide==='PM',fill=this._elSeekFill||document.getElementById('seekFill'),thumb=this._elSeekThumb||document.getElementById('seekThumb');
+        fill.style.width=horizontal?pct+'%':'8px';fill.style.height=horizontal?'100%':pct+'%';
+        thumb.style.left=horizontal?pct+'%':'50%';thumb.style.top=horizontal?'50%':pct+'%';
+        document.getElementById('seekTrack').setAttribute('aria-valuenow',String(Math.round(pct)));
         // seekLabelLeft/Right は削除済み（Phase1レイアウト変更）
         // ループ区間オーバーレイ
         const lr = this._elSeekLoop || document.getElementById('seekLoopRange');
         if (this.loopEnabled && this.barStartPx.length) {
             const sp = (this.barStartPx[this.loopStart] || 0) / this.totalPx * 100;
             const ep = (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || 0) / this.totalPx * 100;
-            lr.style.left    = sp + '%';
-            lr.style.width   = Math.max(0, ep - sp) + '%';
+            lr.style.top=horizontal?'0px':sp+'%';lr.style.left=horizontal?sp+'%':'50%';
+            lr.style.height=horizontal?'100%':Math.max(0,ep-sp)+'%';lr.style.width=horizontal?Math.max(0,ep-sp)+'%':'8px';
             lr.style.display = 'block';
         } else {
             lr.style.display = 'none';
@@ -10458,10 +10500,10 @@ class BMSViewer {
     }
 
     /* ── シーク処理 ── */
-    _seekTo(clientX) {
+    _seekTo(coordinate) {
         const track = document.getElementById('seekTrack');
         const rect  = track.getBoundingClientRect();
-        let pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        let pct = Math.max(0, Math.min(1, this.currentSide==='PM'?(coordinate-rect.left)/rect.width:(coordinate-rect.top)/rect.height));
         let targetPx = pct * this.totalPx;
         // ループON時は区間内にクランプ
         if (this.loopEnabled && this.barStartPx.length) {
@@ -10797,6 +10839,7 @@ class BMSViewer {
     _switchSide(side) {
         this._clearInputState();
         this.currentSide = side;
+        this._syncSeekLayout();
         this.laneCount   = side === 'PM' ? 9 : 8;
         document.querySelectorAll('.side-btn').forEach(b=>b.classList.toggle('active',b.dataset.side===side));
         if (this.bmsText) {

@@ -2398,6 +2398,22 @@
 .png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:502; }
 .lanes-container:not(.pm-mode) { border-color:transparent; }
 .lane-fixed-frame { position:absolute; bottom:0; box-sizing:border-box; border:1px solid #fff; border-top:0; pointer-events:none; z-index:503; }
+#statusBar { padding:2px 8px; }
+#statusBar > .status-row:first-child { display:none; }
+#statusBar > .status-row:last-child { justify-content:flex-start; gap:8px; }
+.footer-numbers { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; min-width:0; font-size:9px; line-height:1.2; white-space:nowrap; }
+.footer-green-line { display:flex; gap:4px; max-width:100%; overflow:hidden; }
+.lane-live-counts { display:none; position:absolute; top:2px; z-index:504; pointer-events:none; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; font:7px/1.2 Arial,sans-serif; font-variant-numeric:tabular-nums; text-align:center; color:#eee; text-shadow:0 1px 2px #000; }
+.lane-live-counts span { background:rgba(0,0,0,.55); }
+.lane-live-counts b { display:block; font-size:9px; }
+.result-panel { width:min(340px,90%); max-height:90%; overflow:auto; padding:18px; background:#15191f; border:1px solid #667; border-radius:8px; color:#eee; font-variant-numeric:tabular-nums; }
+.result-heading { text-align:center; font-size:26px; font-weight:bold; margin-bottom:8px; }
+.result-rank { text-align:center; font-size:20px; margin-bottom:14px; }
+.result-stats { margin:0 0 14px; }
+.result-stat { display:flex; justify-content:space-between; padding:3px 0; }
+.result-stat dt,.result-stat dd { margin:0; }
+#resultOverlay { z-index:10000; align-items:center; justify-content:center; }
+#resultOverlay.open { display:flex; }
 </style>
 <script>
 /* ── ZIP ファイル名デコード（JSZip decodeFileName 用・同期） ──────────────
@@ -2546,6 +2562,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
         <div class="lane-fixed-frame" id="laneFixedFrame" aria-hidden="true"></div>
+        <div class="lane-live-counts" id="laneLiveCounts" aria-label="判定カウンター"></div>
         <div id="sudCover" class="sud-cover">
             <div class="sud-cover-info">
                 <span id="sudCoverVal"></span>
@@ -2587,8 +2604,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <!-- 行2: スコア・BPM・TIME・小節 -->
             <div class="status-row">
                 <span style="display:none;">Total:<span id="totalNotes">0</span></span>
-                <span>SCORE:<span id="scoreDisplay">0</span></span>
-                <span>BPM:<span id="bpmDisplay">0</span></span>
+                <span style="display:none;">SCORE:<span id="scoreDisplay">0</span></span>
                 <span style="display:none;">緑:<span id="statusGreenNum">—</span></span>
                 <span style="display:none;">SUD+:<span id="sudWhiteNum">OFF</span></span>
                 <span style="color:#ccc;"><span style="color:#ccc;">TIME</span><span id="statusElapsed">0:00</span></span>
@@ -2633,8 +2649,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
             <button class="saracho-btn" id="sarachoBtn">GC</button>
             <button class="rs-btn" id="rsBtn">RS</button>
-            <span id="footerGreenRange" title="最低BPMでの緑数字 - 最高BPMでの緑数字" style="margin-left:auto; font-size:9px; color:#00e84c; font-family:'Courier New',monospace; white-space:nowrap;"></span>
-            <span id="footerGreenNum" style="font-size:10px; color:#00e84c; font-family:'Courier New',monospace; font-weight:bold; text-align:right; white-space:nowrap;">—</span>
+            <div class="footer-numbers">
+                <div class="footer-green-line">
+                    <span id="footerGreenRange" title="最低BPMでの緑数字 - 最高BPMでの緑数字" style="font-size:9px;color:#00e84c;font-family:'Courier New',monospace;"></span>
+                    <span id="footerGreenNum" style="font-size:10px;color:#00e84c;font-family:'Courier New',monospace;font-weight:bold;">—</span>
+                </div>
+                <span>BPM:<span id="bpmDisplay">0</span></span>
+            </div>
         </div>
         <!-- LANE 行 -->
         <div class="loop-row">
@@ -2680,13 +2701,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
     </div>
 
+    <div class="detail-overlay" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="resultHeading">
+        <div class="detail-backdrop" id="resultBackdrop"></div>
+        <div class="result-panel" style="position:relative;">
+            <div class="result-heading" id="resultHeading"></div>
+            <div class="result-rank">DJ LEVEL <strong id="resultRank">F</strong></div>
+            <dl class="result-stats" id="resultStats"></dl>
+            <button class="btn btn-secondary" id="resultClose" style="width:100%;">閉じる</button>
+        </div>
+    </div>
 <!-- 詳細オプション オーバーレイ -->
     <div class="detail-overlay" id="detailOverlay">
         <div class="detail-backdrop" id="detailBackdrop"></div>
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.011</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.012</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -2982,6 +3012,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="autoJudgeGreatBtn">GREAT</button>
             </div>
             <!-- FAST/SLOW -->
+            <div class="detail-section">
+                <span class="detail-label">判定カウンター</span>
+                <button class="fx-btn" id="judgeCounterBtn">OFF</button>
+            </div>
             <div class="detail-section" id="fastSlowSection">
                 <span class="detail-label">FAST/SLOW</span>
                 <button class="fx-btn on" id="fastSlowBtn">ON</button>
@@ -3842,7 +3876,7 @@ class BMSViewer {
             // PLAYは判定選択ボタンを無効化するので最後に適用する。
             'autoPlayModeBtn playModeBtn playModeAutoWavBtn'
         ].map(ids => ids.split(' '));
-        const toggles = ('sudBtn liftBtn rsBtn fastSlowBtn autoTimingBtn wavBgm1Btn wavBgm2Btn wavKeyBtn metronomeBtn ' +
+        const toggles = ('sudBtn liftBtn rsBtn fastSlowBtn judgeCounterBtn autoTimingBtn wavBgm1Btn wavBgm2Btn wavKeyBtn metronomeBtn ' +
             'fxGateBtn fxRepBtn fxLpfBtn fxHpfBtn fxBpfBtn fxFlangerBtn fxPhaserBtn fxEchoBtn fxReverbBtn fxEqLowBtn fxEqMidBtn fxEqHighBtn').split(' ');
         const inputs = [...document.querySelectorAll('#detailOverlay input[type=number], #detailOverlay input[type=range], #fxOverlay input[type=range]')]
             .filter(el => !['loopStartInput','loopEndInput'].includes(el.id)).map(el => el.id);
@@ -3898,6 +3932,7 @@ class BMSViewer {
             if (ids[0].endsWith('CoverCssBtn') && data.choices[ids[0]] === undefined) data.choices[ids[0]] = ids[0];
             if (!ids.includes(data.choices[ids[0]])) throw new Error('選択項目が不正です。');
         }
+        if (data.toggles.judgeCounterBtn === undefined) data.toggles.judgeCounterBtn = false;
         for (const id of toggles) if (typeof data.toggles[id] !== 'boolean') throw new Error('ON/OFFの設定が不正です。');
         for (const id of inputs) {
             const el = document.getElementById(id);
@@ -5024,6 +5059,7 @@ class BMSViewer {
 
     /* ============================================================ イベント登録 */
     _bindEvents() {
+        this._initResults();
         this._initLaneCoverSkins();
         document.getElementById('openFileBtn').addEventListener('click', () =>
             document.getElementById('fileInput').click());
@@ -7506,8 +7542,81 @@ class BMSViewer {
     }
 
     /* ============================================================ 再生 */
+    _initResults() {
+        this.judgeCounterEnabled=false;
+        const labels=['P-GREAT','GREAT','GOOD','BAD','POOR','FAST','SLOW'];
+        const host=document.getElementById('laneLiveCounts');
+        for(const [i,label] of labels.entries()){
+            const cell=document.createElement('span');cell.append(label);
+            const value=document.createElement('b');value.id='liveJudgeCount'+i;value.textContent='0';cell.append(value);host.append(cell);
+        }
+        document.getElementById('judgeCounterBtn').addEventListener('click',()=>{
+            this.judgeCounterEnabled=!this.judgeCounterEnabled;
+            const btn=document.getElementById('judgeCounterBtn');btn.classList.toggle('on',this.judgeCounterEnabled);btn.textContent=this.judgeCounterEnabled?'ON':'OFF';
+            this._updateLiveCounters(true);
+        });
+        for(const id of ['resultClose','resultBackdrop'])document.getElementById(id).addEventListener('click',()=>this._closeResult());
+        document.addEventListener('keydown',e=>{if(e.code==='Escape'&&document.getElementById('resultOverlay').classList.contains('open')){e.preventDefault();this._closeResult();}});
+    }
+
+    _judgeCounts() {return [this._pgCount||0,this._grCount||0,this._gdCount||0,this._bdCount||0,this._prCount||0,this._fsCount||0,this._slCount||0];}
+
+    _updateLiveCounters(updateGeometry=false) {
+        const host=document.getElementById('laneLiveCounts');if(!host)return;
+        host.style.display=this.judgeCounterEnabled?'grid':'none';
+        if(!this.judgeCounterEnabled)return;
+        const h=(this._effH||470)/470;
+        if(updateGeometry){
+        const lane=document.getElementById('lanesContainer'),pa=document.querySelector('.play-area');
+        const lr=lane.getBoundingClientRect(),pr=pa.getBoundingClientRect(),scale=pr.width/parseFloat(getComputedStyle(pa).width);
+        host.style.left=(lr.left-pr.left)/scale+lane.clientLeft+'px';
+        host.style.width=parseFloat(getComputedStyle(lane).width)-lane.clientLeft-parseFloat(getComputedStyle(lane).borderRightWidth)+'px';
+        host.style.fontSize=7*h+'px';host.style.top=2*h+'px';
+        }
+        this._judgeCounts().forEach((value,i)=>{
+            const el=document.getElementById('liveJudgeCount'+i);if(el.textContent!==String(value))el.textContent=value;
+            el.style.fontSize=9*h+'px';
+        });
+    }
+
+    _djLevel(ex, notes) {
+        if(notes<=0)return 'F';
+        return ['AAA','AA','A','B','C','D','E','F'][Math.max(0,Math.min(7,8-Math.floor(9*ex/(2*notes))))];
+    }
+
+    _finishSong() {
+        if(this._resultEnded)return;
+        const counts=this._judgeCounts();
+        const notes=this.currentSide==='PM'?(this.noteEvents||[]).filter(e=>!e.isAutoBgm&&!e.isEnd).length:(this._iidxAutoTotalNotes||0);
+        const result={clear:!this._gaugeFailed&&this._isGaugeCleared(),rank:this._djLevel(counts[0]*2+counts[1],notes),counts:[...counts],comboBreak:this._comboBreakCount||0};
+        this._resultEnded=true;this._lastResult=result;
+        this._pausedMusicSec=this.currentPixelPos>=this.totalPx?this._positionToSec(this.maxBars+2):this._currentMusicSec();
+        this.isPlaying=false;cancelAnimationFrame(this.animFrameId);
+        this._stopAudio();this.audioPlayStart=0;this._clearInputState();
+        this.currentPixelPos=Math.min(this.currentPixelPos,this.totalPx);this._updatePositions();this._updateSeekBar();this._syncGaugeFailureControl();
+        const elapsed=Math.max(0,this._pausedMusicSec||0);
+        document.getElementById('statusElapsed').textContent=Math.floor(elapsed/60)+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
+        document.getElementById('positionDisplay').textContent=this._px2bar(this.currentPixelPos);
+        document.getElementById('bpmDisplay').textContent=Math.round(this._bpmAt(this.currentPixelPos));
+        document.getElementById('resultHeading').textContent=result.clear?'CLEAR':'FAILED';
+        document.getElementById('resultHeading').style.color=result.clear?'#0e8':'#f66';
+        document.getElementById('resultRank').textContent=result.rank;
+        const labels=['P-GREAT','GREAT','GOOD','BAD','POOR','COMBO BREAK','FAST','SLOW'];
+        const values=[...counts.slice(0,5),result.comboBreak,...counts.slice(5)];
+        const host=document.getElementById('resultStats');host.replaceChildren();
+        labels.forEach((label,i)=>{const row=document.createElement('div');row.className='result-stat';const name=document.createElement('dt'),value=document.createElement('dd');name.textContent=label;value.textContent=values[i];row.append(name,value);host.append(row);});
+        document.getElementById('resultOverlay').classList.add('open');document.getElementById('resultClose').focus();
+        this._updateLiveCounters(true);
+    }
+
+    _closeResult() {document.getElementById('resultOverlay')?.classList.remove('open');}
+
     _togglePlay() {
         if (this._isLoading || !this._readyToPlay || !this.bmsData) return;
+        if (!this.isPlaying && this._resultEnded) {
+            this.currentPixelPos=0;this.lastProcessedPx=0;this._pausedMusicSec=undefined;
+            this.audioPlayStart=0;this._syncCombo();this._resetPlayCounters();this._updatePositions();
+        }
         if (!this.isPlaying && this.isPlayMode && this._gaugeFailed) return;
         const btn=document.getElementById('playBtn');
         if (this.isPlaying) {
@@ -7606,24 +7715,6 @@ class BMSViewer {
                 }
                 if (this.isPlaying) this._startAudio(hasStops ? musicSec : null);
             }
-        } else {
-            if (this.totalPx > 0 && this.currentPixelPos >= this.totalPx) {
-                // 区間OFFで曲末に達したら停止（リピートしない）
-                // 曲末到達 → 停止して先頭に戻す
-                this.isPlaying = false;
-                cancelAnimationFrame(this.animFrameId);
-                this._stopAudio();
-                this.audioPlayStart = 0;  // マスタークロックリセット
-                this.currentPixelPos = 0; // 先頭に戻す
-                this.lastProcessedPx  = 0;
-                this._resetPlayCounters(); // 曲末: カウント・ゲージをリセット
-                this._updatePositions();   // 表示スクロールを先頭へ
-                const btn = document.getElementById('playBtn');
-                btn.textContent = '再生';
-                btn.classList.replace('btn-secondary', 'btn-success');
-                this._updateSeekBar();     // シークバーを0%（先頭）に
-                return;  // _animate ループ終了
-            }
         }
 
         const bpm = this._bpmAt(this.currentPixelPos);
@@ -7640,6 +7731,10 @@ class BMSViewer {
         this._lastMusicSec = musicSec;
         if (this.isPlayMode) this._checkMissedNotes(prevPx, this.currentPixelPos, undefined, now);
         else if (this._hasHcnEvents) this._advanceHcn(musicSec ?? this._px2sec(this.currentPixelPos), now);
+        if (!this.loopEnabled && this.totalPx > 0 && this.currentPixelPos >= this.totalPx) {
+            this._finishSong();
+            return;
+        }
         if (this.metronomeEnabled) this._checkMetronome(prevPx, this.currentPixelPos);
         // FPSスロットル: 目標FPSより速い場合はフレームをスキップ
         if (this._targetFps > 0) {
@@ -8036,6 +8131,7 @@ class BMSViewer {
         this._sudUpdateCoverDOM();
         this._liftUpdateCoverDOM();
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
+        this._updateLiveCounters(true);
     }
 
     _applyLaneWidths() {
@@ -8415,6 +8511,7 @@ class BMSViewer {
                 }
             }
             if (triggered) {
+                this._updateLiveCounters();
                 if (this.currentSide === 'PM') this._showPMCool(pmPositions);
                 else this._showPlayJudgment(this.autoJudgeDisplay || 'PGREAT', -1);
             }
@@ -8940,6 +9037,9 @@ class BMSViewer {
 
     // ── 判定カウント・スコア・ゲージリセット ────────────────────
     _resetPlayCounters() {
+        this._comboBreakCount=0;this._resultEnded=false;this._lastResult=null;
+        this._closeResult();
+        this._fsCount=0;this._slCount=0;
         this._clearInputState();
         this._resetHcnStates();
         this._resetIidxAutoAdjust();
@@ -8971,6 +9071,7 @@ class BMSViewer {
         }
         const gc = document.getElementById('greatCombo');
         if (gc) gc.textContent = 0;
+        this._updateLiveCounters();
         // ゲージ初期値にリセット
         const _isPmG = this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY';
         if (_isPmG) {
@@ -9035,6 +9136,7 @@ class BMSViewer {
         }
         const gc = document.getElementById('greatCombo');
         if (gc) gc.textContent = count;
+        this._updateLiveCounters();
         if (_isPmG2) {
             this._updateGrooveGauge(Math.max(1, Math.min(100, Math.round(this._gaugeValue / 1024 * 100))));
         } else {
@@ -9044,7 +9146,6 @@ class BMSViewer {
 
     // ── 判定適用（カウント・コンボ・表示） ──────────────────────
     _showFastSlow(deltaMs, judgment) {
-        if (!this.fastSlowEnabled) return;
         if (judgment === 'PGREAT') return;
         const isFast = deltaMs > 0;
         const label = isFast ? 'FAST' : 'SLOW';
@@ -9053,6 +9154,8 @@ class BMSViewer {
         const scEl = document.getElementById('slCount');
         if (fcEl) fcEl.textContent = this._fsCount;
         if (scEl) scEl.textContent = this._slCount;
+        this._updateLiveCounters();
+        if (!this.fastSlowEnabled) return;
         const disp = document.getElementById('fastSlowDisplay');
         if (!disp) return;
         disp.textContent = label;
@@ -9165,6 +9268,7 @@ class BMSViewer {
         }
         const key = { PGREAT:'_pgCount', GREAT:'_grCount', GOOD:'_gdCount', BAD:'_bdCount', POOR:'_prCount' }[judgment];
         if (key) this[key]++;
+        if (!isEmptyPoor && (judgment==='BAD'||judgment==='POOR')) this._comboBreakCount=(this._comboBreakCount||0)+1;
         const idMap = { PGREAT:'pgCount', GREAT:'grCount', GOOD:'gdCount', BAD:'bdCount', POOR:'prCount' };
         const el = document.getElementById(idMap[judgment]);
         if (el) el.textContent = this[key] || 0;
@@ -9189,6 +9293,10 @@ class BMSViewer {
         if (this.currentSide === 'PM' && dl !== undefined && !isMiss) this._triggerBomb(dl, judgment);
 
         this._showPlayJudgment(judgment, dl);
+        this._updateLiveCounters();
+        if (this.isPlayMode && this._gaugeFailed) {
+            queueMicrotask(()=>{if(this.isPlayMode&&this._gaugeFailed&&!this._resultEnded)this._finishSong();});
+        }
     }
 
     _setIidxGaugeIncrements(noteCount) {

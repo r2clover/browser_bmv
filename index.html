@@ -2739,7 +2739,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.025</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.026</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -10369,8 +10369,11 @@ class BMSViewer {
         if(rr){
             const center=(rr.left+rr.width/2-fr.left)/footerScale;
             const space=this.currentSide==='2P'?Math.min(center-left-width,footer.offsetWidth-center):Math.min(center,left-center);
-            area.style.setProperty('--iidx-gauge-number-x',center+'px');
-            area.style.setProperty('--iidx-gauge-number-width',Math.max(1,Math.min(92,space*2))+'px');
+            const numberWidth=Math.max(1,Math.min(92,space*2));
+            const towardSpace=this.currentSide==='2P'?center-left-width:left-center;
+            const inset=Math.min(12,Math.max(0,towardSpace-numberWidth/2-4));
+            area.style.setProperty('--iidx-gauge-number-x',(center+(this.currentSide==='2P'?-inset:inset))+'px');
+            area.style.setProperty('--iidx-gauge-number-width',numberWidth+'px');
         }
         area.classList.toggle('gauge-side-2p',this.currentSide==='2P');
     }

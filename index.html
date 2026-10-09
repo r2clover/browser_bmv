@@ -2396,6 +2396,8 @@
 .png-lane-covers .lanes-container { transform:none !important; left:calc(50% - var(--png-judge-lane-half,0px)); bottom:var(--png-judge-lift,0px); }
 .png-lane-covers .play-judge-positioner,.png-lane-covers .great-positioner { z-index:501; }
 .png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:502; }
+.lanes-container:not(.pm-mode) { border-color:transparent; }
+.lane-fixed-frame { position:absolute; bottom:0; box-sizing:border-box; border:1px solid #fff; border-top:0; pointer-events:none; z-index:503; }
 </style>
 <script>
 /* ── ZIP ファイル名デコード（JSZip decodeFileName 用・同期） ──────────────
@@ -2548,6 +2550,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="pm-judge-combo" id="pmJudgeCombo_R">0</span>
         </div>
         <div class="lanes-container" id="lanesContainer"></div>
+        <div class="lane-fixed-frame" id="laneFixedFrame" aria-hidden="true"></div>
         <div id="sudCover" class="sud-cover">
             <div class="sud-cover-info">
                 <span id="sudCoverVal"></span>
@@ -2688,7 +2691,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.004</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.005</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -8264,6 +8267,19 @@ class BMSViewer {
         const pa    = document.querySelector('.play-area');
         if (!cover || !lc || !pa) return;
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
+
+        // Keep the outer frame at the play-area floor; only the judgment position moves with LIFT.
+        const frame = document.getElementById('laneFixedFrame');
+        const isIIDX = this.currentSide !== 'PM';
+        if (frame) {
+            frame.style.display = isIIDX ? 'block' : 'none';
+            const laneRect = lc.getBoundingClientRect(), playRect = pa.getBoundingClientRect();
+            const playScale = playRect.width / parseFloat(getComputedStyle(pa).width);
+            frame.style.left = (laneRect.left - playRect.left) / playScale + 'px';
+            frame.style.width = laneRect.width / playScale + 'px';
+            frame.style.height = laneRect.height / playScale + 'px';
+        }
+        cover.style.bottom = isIIDX ? getComputedStyle(lc).borderBottomWidth : '0px';
 
         // lanes-container の translateY を更新（LIFT量だけ上シフト）
         lc.style.transform = this.liftEnabled

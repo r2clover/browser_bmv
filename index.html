@@ -2384,15 +2384,15 @@
 .sud-cover.cover-png::after,.lift-cover.cover-png::before { display:none; }
 .lane-cover-image { position:absolute; left:0; width:100%; max-width:none; pointer-events:none; z-index:0; }
 .cover-png .sud-cover-info,.cover-png .lift-cover-info { z-index:1; transition:none; }
-.cover-png #sudCoverVal,.cover-png #liftCoverVal { position:absolute; left:34.95%; width:23.6%; padding:0; text-align:center; font-size:var(--cover-number-size); font-family:Arial,sans-serif; color:#fff; text-shadow:0 1px 2px #000; }
-.cover-png #sudCoverGreenWrap,.cover-png .lift-cover-green-wrap { position:absolute; left:65.05%; width:23.6%; margin:0; align-items:center; text-align:center; }
-.cover-png #sudCoverGreen,.cover-png #liftCoverGreen { color:#00e84c; font-size:var(--cover-number-size); font-weight:bold; font-family:Arial,sans-serif; text-shadow:0 1px 2px #000; line-height:1; }
-.cover-png #sudCoverGreenRange,.cover-png #liftCoverGreenRange { display:block; position:absolute; left:0; right:0; color:#00e84c; font-size:var(--cover-range-size); white-space:nowrap; }
-.cover-png .sud-cover-info { bottom:calc(var(--cover-y-unit) * 19); height:calc(var(--cover-y-unit) * 23); }
-.cover-png .lift-cover-info { top:calc(var(--cover-y-unit) * 20); height:calc(var(--cover-y-unit) * 23); }
-.cover-png #sudCoverGreenRange { bottom:calc(var(--cover-y-unit) * 30); }
-.cover-png #liftCoverGreenRange { top:calc(var(--cover-y-unit) * 31); }
-.lift-cover:not(.cover-png) .lift-cover-green-wrap { display:none; }
+.cover-iidx #sudCoverVal,.cover-iidx #liftCoverVal { position:absolute; left:calc(100% * 119 / 432); width:calc(100% * 64 / 432); height:calc(var(--cover-y-unit) * 20); padding:0; text-align:center; font-size:var(--cover-number-size); line-height:1; font-family:Arial,sans-serif; color:#fff; text-shadow:0 1px 2px #000; }
+.cover-iidx #sudCoverGreenWrap,.cover-iidx .lift-cover-green-wrap { position:absolute; left:calc(100% * 249 / 432); width:calc(100% * 64 / 432); height:calc(var(--cover-y-unit) * 20); margin:0; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.cover-iidx #sudCoverGreen,.cover-iidx #liftCoverGreen { color:#00e84c; font-size:var(--cover-number-size); font-weight:bold; font-family:Arial,sans-serif; text-shadow:0 1px 2px #000; line-height:1; }
+.cover-iidx #sudCoverGreenRange,.cover-iidx #liftCoverGreenRange { display:block; position:absolute; left:calc(100% * -37 / 64); width:calc(100% * 138 / 64); height:calc(var(--cover-y-unit) * 20); color:#00e84c; font-size:var(--cover-range-size); line-height:1; text-align:center; white-space:nowrap; }
+.cover-iidx .sud-cover-info { bottom:calc(var(--cover-y-unit) * 3); height:calc(var(--cover-y-unit) * 20); }
+.cover-iidx .lift-cover-info { top:calc(var(--cover-y-unit) * 16); height:calc(var(--cover-y-unit) * 20); }
+.cover-iidx #sudCoverGreenRange { top:calc(var(--cover-y-unit) * -36.5); }
+.cover-iidx #liftCoverGreenRange { top:calc(var(--cover-y-unit) * 25.5); }
+.lift-cover:not(.cover-iidx) .lift-cover-green-wrap { display:none; }
 .png-lane-covers .lanes-container { transform:none !important; left:calc(50% - var(--png-judge-lane-half,0px)); bottom:var(--png-judge-lift,0px); }
 .png-lane-covers .play-judge-positioner,.png-lane-covers .great-positioner { z-index:501; }
 .png-lane-covers .lane-explosion,.png-lane-covers .lane-ring { z-index:502; }
@@ -2686,7 +2686,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.007</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.009</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7518,7 +7518,6 @@ class BMSViewer {
             }
             this._clearInputState();
             this.isPlaying=false; cancelAnimationFrame(this.animFrameId);
-            this._pauseLaneCoverFade();
             this._stopAudio();                          // ★ WAV停止
             btn.textContent='再生'; btn.classList.replace('btn-secondary','btn-success');
         } else {
@@ -7532,7 +7531,6 @@ class BMSViewer {
                 } else this._resetPlayCounters();
             }
             this._hcnAutoPause = null;
-            this._startLaneCoverFade();
             this.isPlaying=true; btn.textContent='停止';
             btn.classList.replace('btn-success','btn-secondary');
             this._startAudio(this.loopEnabled ? this._px2sec(this.currentPixelPos) : resumeSec);
@@ -7965,6 +7963,10 @@ class BMSViewer {
         document.querySelector('.play-area').classList.toggle('png-lane-covers',this.currentSide!=='PM'&&(this.sudCoverSkin!=='CSS'||this.liftCoverSkin!=='CSS'));
         if(this._flatLaneStack())this._syncPNGJudgeGeometry();
         const cover=document.getElementById(kind+'Cover');
+        cover.classList.toggle('cover-iidx',this.currentSide!=='PM');
+        cover.style.setProperty('--cover-y-unit',(this._effH||470)/723+'px');
+        cover.style.setProperty('--cover-number-size',20*(this._effH||470)/723+'px');
+        cover.style.setProperty('--cover-range-size',20*(this._effH||470)/723+'px');
         const skin=this.currentSide==='PM'?null:LANE_COVER_SKINS.find(s=>s.id===this[kind+'CoverSkin']);
         cover.classList.toggle('cover-png',!!skin);
         let image=cover.querySelector('.lane-cover-image');
@@ -7976,9 +7978,6 @@ class BMSViewer {
             image.style.top=kind==='sud'?(this.sudCoverUnits-723)*(this._effH||470)/723+'px':'0px';
             // LIFT uses its own selected image without the HIDDEN+ reuse flip.
             image.style.transform=skin.flipHorizontal2P&&this.currentSide==='2P'?'scaleX(-1)':'none';
-            cover.style.setProperty('--cover-y-unit',(this._effH||470)/723+'px');
-            cover.style.setProperty('--cover-number-size',23*(this._effH||470)/723+'px');
-            cover.style.setProperty('--cover-range-size',13*(this._effH||470)/723+'px');
             const lane=document.getElementById('lanesContainer'),pa=document.querySelector('.play-area');
             const lr=lane.getBoundingClientRect(),pr=pa.getBoundingClientRect();
             const scale=pr.width/parseFloat(getComputedStyle(pa).width);
@@ -7987,7 +7986,8 @@ class BMSViewer {
             cover.style.width=432*unit+'px';
             if(kind==='sud')cover.style.top='0px';
         }else if(image)image.style.display='none';
-        this._syncLaneCoverPanels();this._updateLaneCoverFade();
+        cover.style.opacity='1';
+        this._syncLaneCoverPanels();
     }
 
     _syncLaneCoverPanels() {
@@ -8006,23 +8006,6 @@ class BMSViewer {
     }
 
     _flatLaneStack() {return this.currentSide!=='PM'&&(this.judgeMode==='PNG'||this.sudCoverSkin!=='CSS'||this.liftCoverSkin!=='CSS');}
-
-    _laneCoverAlpha(elapsedMs) {return Math.max(0,Math.min(1,(elapsedMs-1000)/(1000/6)));}
-    _startLaneCoverFade() {
-        if(this._coverFadeSource!==this.bmsData){this._coverFadeSource=this.bmsData;this._coverFadeElapsedMs=0;}
-        this._coverFadeStartMs=performance.now();
-    }
-    _pauseLaneCoverFade() {
-        if(this._coverFadeStartMs!==undefined){this._coverFadeElapsedMs=(this._coverFadeElapsedMs||0)+Math.max(0,performance.now()-this._coverFadeStartMs);this._coverFadeStartMs=undefined;}
-        this._updateLaneCoverFade();
-    }
-    _updateLaneCoverFade(now=performance.now()) {
-        const started=this._coverFadeSource===this.bmsData&&this._coverFadeSource;
-        const elapsed=(this._coverFadeElapsedMs||0)+(this.isPlaying&&this._coverFadeStartMs!==undefined?Math.max(0,now-this._coverFadeStartMs):0);
-        const opacity=this.currentSide==='PM'||!started?1:this._laneCoverAlpha(elapsed);
-        for(const kind of ['sud','lift']){const cover=document.getElementById(kind+'Cover');if(cover&&cover.style.opacity!==String(opacity))cover.style.opacity=String(opacity);}
-        this._syncLaneCoverPanels();
-    }
 
     _laneWidthsForHeight(height) {
         // Reference: 4 white*54 + 3 black*42 + scratch*92 = 434 units.
@@ -9411,7 +9394,8 @@ class BMSViewer {
         const referenceSize = Math.round(120 * h / 940 * laneScale);
         const sizeScale = (Number(document.getElementById('judgeSizeInput').value) || referenceSize) / referenceSize;
         const stripWidth = parseFloat(getComputedStyle(lanes).width) - lanes.clientLeft - (parseFloat(getComputedStyle(lanes).borderRightWidth) || 0);
-        const sx = stripWidth / 434 * sizeScale, sy = h / 723 * sizeScale;
+        // Preserve the source aspect ratio at 100% lane width; narrower lanes only scale X.
+        const sx = stripWidth / 434 * sizeScale, sy = sx / laneScale;
         const dp = this.bmsData?.isDPChart;
         // One unit of inset at either edge: visible sprite origin is lane-left + 1.
         const cx = lanes.offsetLeft + lanes.clientLeft + stripWidth * (dp ? 217 : this.currentSide === '2P' ? 215 : 219) / 434;
@@ -10445,7 +10429,6 @@ class BMSViewer {
     }
 
     _updatePositions(updateSeek = true) {
-        this._updateLaneCoverFade();
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
         const pngCNTimeMs = this.chargeStyle === 'PNG_LIGHT' ? performance.now() : 0;
         const cur=this.currentPixelPos;

@@ -253,6 +253,8 @@
         }
 
 
+        .play-selected-background { position:absolute;top:0;left:50%;transform:translateX(-50%);width:var(--selected-bg-width,100%);height:100%;max-width:none;object-fit:cover;object-position:center;pointer-events:none;z-index:0;display:none; }
+        .play-area.bga-active.bga-enabled .play-selected-background { visibility:hidden; }
         .play-side-background { position:absolute;inset:0;z-index:580;pointer-events:none;display:none; }
         .side-background-panel { position:absolute;top:0;bottom:0;overflow:hidden;background:#000; }
         .side-background-panel:first-child { left:0;width:var(--side-bg-left,0px); }
@@ -283,10 +285,10 @@
         .lanes-container { position:absolute; bottom:0; left:50%; transform:translateX(-50%); display:flex; gap:0; overflow:hidden; border-left:1px solid #fff; border-bottom:1px solid #fff; border-right:1px solid #fff; }
         .lane { width:var(--white-lane-width); height:var(--eff-h); position:relative; border:none; border-right:1px solid #555; background:#111; overflow:hidden; contain:layout style; }
         .lane.scratch   { width:var(--scratch-width); background:#000; }
-        .play-area.bga-active .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.scratch,
-        .play-area.bga-active .lane.black-key { background:rgba(0,0,0,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.white-key  { background:rgba(24,24,24,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane           { background:rgba(17,17,17,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.scratch,
+        .play-area:is(.bga-active,.has-selected-background) .lane.black-key { background:rgba(0,0,0,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.white-key  { background:rgba(24,24,24,var(--bga-lane-alpha,0.95)); }
         .lane.black-key { width:var(--black-lane-width); background:#000; }
         .lane.white-key { background:#181818; }
         /* ── PM レーン ── */
@@ -295,11 +297,11 @@
         .lane.pm-green  { width:var(--pm-green-w);  background:#1a3a12; }
         .lane.pm-blue   { width:var(--pm-blue-w);   background:#1e3040; }
         .lane.pm-red    { width:var(--pm-red-w);    background:#3c0a12; }
-        .play-area.bga-active .lane.pm-white  { background:rgba(56,56,56,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.pm-yellow { background:rgba(74,52,0,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.pm-green  { background:rgba(26,58,18,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.pm-blue   { background:rgba(30,48,64,var(--bga-lane-alpha,0.95)); }
-        .play-area.bga-active .lane.pm-red    { background:rgba(60,10,18,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.pm-white  { background:rgba(56,56,56,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.pm-yellow { background:rgba(74,52,0,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.pm-green  { background:rgba(26,58,18,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.pm-blue   { background:rgba(30,48,64,var(--bga-lane-alpha,0.95)); }
+        .play-area:is(.bga-active,.has-selected-background) .lane.pm-red    { background:rgba(60,10,18,var(--bga-lane-alpha,0.95)); }
         /* PM レーン境界線・外枠: 黒 */
         .pm-mode .lane { border-right-color: #000; }
         .lanes-container.pm-mode { border-color: #000; }
@@ -2477,6 +2479,15 @@
 .lanes-container:not(.pm-mode) { border-color:transparent; }
 .lane-fixed-frame { position:absolute; bottom:0; box-sizing:border-box; border:1px solid #fff; border-top:0; pointer-events:none; z-index:503; }
 .play-area .play-judge-positioner,.play-area .great-positioner,.play-area .png-judge-display { z-index:505; }
+/* Game effects share a foreground context above covers, frames, graph and seek rail.
+   Match play-area coordinates without moving its opaque backgrounds to the foreground. */
+.play-effects-overlay { position:absolute;left:0;bottom:0;width:100%;height:var(--eff-h);transform-origin:bottom center;z-index:610;pointer-events:none; }
+.lane-effects-container { z-index:506;position:absolute;left:50%;transform:translateX(-50%);height:var(--eff-h);pointer-events:none; }
+.play-effects-overlay .play-judge-positioner,.play-effects-overlay .great-positioner,
+.play-effects-overlay .pm-judge-positioner,.play-effects-overlay .png-judge-display { z-index:505; }
+.play-effects-overlay .lane-explosion,.play-effects-overlay .lane-ring { z-index:506; }
+.play-effects-overlay.judge-png-default .play-judge-positioner,
+.play-effects-overlay.judge-png-default .great-positioner { display:none; }
 #statusBar { display:none; }
 #statusBar > .status-row:first-child { display:none; }
 #statusBar > .status-row:last-child { justify-content:flex-start; gap:8px; }
@@ -2614,6 +2625,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
     <div class="play-area-wrapper" id="playAreaWrapper">
     <div class="play-area">
+        <img id="playSelectedBackground" class="play-selected-background" alt="" aria-hidden="true">
         <video id="bgaVideo" muted loop playsinline preload="auto" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;will-change:transform;transform:translateZ(0);"></video>
         <img id="bgaImage" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;z-index:0;">
         <div class="loading" id="loading" style="display:none;">読み込み中...</div>
@@ -2817,7 +2829,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.036</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.038</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -6394,7 +6406,7 @@ class BMSViewer {
 
 <span class="help-h1">【BGA】</span>
 ・表示/非表示：ZIPに含まれる動画・画像ファイルをBGAとして表示します
-・背景透過率：BGA映像の不透明度を調整します（0%で完全透明）
+・背景透過率：レーン背景の透過率を調整します（0%で不透明、100%で透明）。BGAまたは選択した背景画像がレーン越しに見えるようになります。
 
 <span class="help-h1">【判定文字】</span>
 ・PGREAT：JUST GREAT風の演出（色変化アニメーション）で表示します
@@ -7247,6 +7259,7 @@ class BMSViewer {
     /* ============================================================ レーン描画 */
     _renderLanes() {
         const c=document.getElementById('lanesContainer'); c.innerHTML='';
+        const effects=this._ensureForemostEffects().lanes;effects.replaceChildren();
         c.classList.toggle('pm-mode', this.currentSide === 'PM');
         const PM_COLORS = ['pm-white','pm-yellow','pm-green','pm-blue','pm-red','pm-blue','pm-green','pm-yellow','pm-white'];
         const PM_LABELS = ['白','黄','緑','青','赤','青','緑','黄','白'];
@@ -7286,7 +7299,7 @@ class BMSViewer {
         this._rebuildAutoLaneBtns();
         // 最後のレーンの右ボーダーを除去（lanes-container の border-right に委ねる）
         { const lanes = c.querySelectorAll('.lane'); if (lanes.length) lanes[lanes.length-1].style.borderRight = 'none'; }
-        // 爆発リング要素を lanes-container 直接子として配置
+        // ボムとリングはカバーや外枠から独立した前面レイヤーに配置
         requestAnimationFrame(() => {
             const expHalf = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--explosion-sz')) / 2;
             this.explosionElements = {};
@@ -7294,13 +7307,13 @@ class BMSViewer {
                 const expl = document.createElement('div');
                 expl.className = 'lane-explosion';
                 expl.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - expHalf) + 'px';
-                c.appendChild(expl);
+                effects.appendChild(expl);
                 this.explosionElements[i] = expl;
                 // 拡散リング
                 const ring = document.createElement('div');
                 ring.className = 'lane-ring';
                 ring.style.left = (lane.offsetLeft + lane.offsetWidth / 2 - expHalf) + 'px';
-                c.appendChild(ring);
+                effects.appendChild(ring);
                 this.ringElements[i] = ring;
             });
             this._syncLaneEffectGeometry();
@@ -8233,6 +8246,11 @@ class BMSViewer {
         const host=this._sideBackground;if(!host)return;
         const skin=LANE_COVER_SKINS.find(s=>s.id===this.backgroundSkin);
         host.style.display=skin?'block':'none';
+        const pa=document.querySelector('.play-area'),image=document.getElementById('playSelectedBackground');
+        pa.classList.toggle('has-selected-background',!!skin);
+        image.style.display=skin?'block':'none';image.style.opacity=String(this.backgroundBrightness/100);
+        if(skin && image.dataset.skin!==skin.id){image.src=skin.src;image.dataset.skin=skin.id;}
+        if(this._applyBgaOpacity)this._applyBgaOpacity(Number(document.getElementById('bgaOpacitySlider').value));
         host.style.setProperty('--side-bg-brightness',String(this.backgroundBrightness/100));
         if(skin && host.dataset.skin!==skin.id){
             for(const img of host.querySelectorAll('img'))img.src=skin.src;
@@ -8246,6 +8264,8 @@ class BMSViewer {
         const wr=wrapper.getBoundingClientRect(),lr=lane.getBoundingClientRect(),scale=wr.width/wrapper.offsetWidth;
         if(!scale)return;
         host.style.setProperty('--side-bg-width',wrapper.offsetWidth+'px');
+        // LOW doubles play-area coordinates: match the side images in screen space.
+        document.getElementById('playSelectedBackground').style.setProperty('--selected-bg-width',wrapper.offsetWidth/(this._displayScale||1)+'px');
         host.style.setProperty('--side-bg-left',Math.max(0,(lr.left-wr.left)/scale)+'px');
         host.style.setProperty('--side-bg-right',Math.max(0,(wr.right-lr.right)/scale)+'px');
     }
@@ -8331,6 +8351,32 @@ class BMSViewer {
             '--pm-blue-w':38 * scale, '--pm-red-w':44 * scale};
     }
 
+    _ensureForemostEffects() {
+        if(this._foremostEffects)return this._foremostEffects;
+        const pa=document.querySelector('.play-area'),root=document.createElement('div');
+        root.id='playEffectsOverlay';root.setAttribute('aria-hidden','true');
+        const lanes=document.createElement('div');lanes.className='lane-effects-container';root.appendChild(lanes);
+        pa.parentElement.appendChild(root);
+        // Keep existing judgment nodes and animation state; only their parent changes.
+        for(const node of pa.querySelectorAll(':scope > .great-positioner,:scope > .play-judge-positioner,:scope > .pm-judge-positioner,:scope > .png-judge-display'))root.appendChild(node);
+        const sync=()=>{
+            const classes='play-effects-overlay '+[...pa.classList].filter(c=>c!=='play-area').join(' ');
+            if(root.className!==classes)root.className=classes;
+            const transform=pa.style.transform||'scale(2)';
+            if(root.style.transform!==transform)root.style.transform=transform;
+        };
+        sync();
+        const observer=new MutationObserver(sync);observer.observe(pa,{attributes:true,attributeFilter:['class','style']});
+        return this._foremostEffects={root,lanes,observer};
+    }
+
+    _syncForemostEffectsGeometry() {
+        if(!this._foremostEffects)return;
+        const c=document.getElementById('lanesContainer'),host=this._foremostEffects.lanes;
+        host.style.width=c.clientWidth+'px';
+        host.style.bottom=((this.liftEnabled?this.liftCoverPx:0)+(parseFloat(getComputedStyle(c).borderBottomWidth)||0))+'px';
+    }
+
     _syncLaneEffectGeometry() {
         const container = document.getElementById('lanesContainer');
         if (!container) return;
@@ -8352,6 +8398,7 @@ class BMSViewer {
         this._liftUpdateCoverDOM();
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry(true);
         this._updateLiveCounters(true);
+        this._syncForemostEffectsGeometry();
         this._syncAppearanceGeometry();
         this._syncSeekGeometry();
         this._syncIIDXGaugeGeometry();
@@ -8591,6 +8638,7 @@ class BMSViewer {
         lc.style.transform = this.liftEnabled
             ? `translateX(-50%) translateY(-${this.liftCoverPx}px)`
             : 'translateX(-50%)';
+        this._syncForemostEffectsGeometry();
 
         if (!this.liftEnabled) {
             cover.style.display = 'none';
@@ -9684,7 +9732,7 @@ class BMSViewer {
             const root = document.createElement('div'); root.className = 'png-judge-display'; root.style.display = 'none';
             const label = new Image(); label.alt = ''; root.appendChild(label);
             const digits = Array.from({length:5}, () => {const im = new Image(); im.alt = ''; root.appendChild(im); return im;});
-            document.querySelector('.play-area').appendChild(root);
+            this._ensureForemostEffects().root.appendChild(root);
             this._pngJudgeDOM = {root,label,digits};
         }
         // Update on the next HUD frame while retaining the last rendered HUD.

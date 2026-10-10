@@ -253,13 +253,13 @@
         }
 
 
-        .play-selected-background { position:absolute;top:0;left:50%;transform:translateX(-50%);width:var(--selected-bg-width,100%);height:100%;max-width:none;object-fit:cover;object-position:center;pointer-events:none;z-index:0;display:none; }
+        .play-selected-background { position:absolute;top:0;left:50%;transform:translateX(-50%);width:var(--selected-bg-width,100%);height:var(--selected-bg-height,100%);max-width:none;object-fit:cover;object-position:center;pointer-events:none;z-index:0;display:none; }
         .play-area.bga-active.bga-enabled .play-selected-background { visibility:hidden; }
         .play-side-background { position:absolute;inset:0;z-index:580;pointer-events:none;display:none; }
         .side-background-panel { position:absolute;top:0;bottom:0;overflow:hidden;background:#000; }
         .side-background-panel:first-child { left:0;width:var(--side-bg-left,0px); }
         .side-background-panel:last-child { right:0;width:var(--side-bg-right,0px); }
-        .side-background-panel img { position:absolute;top:0;left:0;width:var(--side-bg-width,780px);height:100%;max-width:none;object-fit:cover;object-position:center;opacity:var(--side-bg-brightness,.5); }
+        .side-background-panel img { position:absolute;top:0;left:0;width:var(--side-bg-width,780px);height:var(--side-bg-height,100%);max-width:none;object-fit:cover;object-position:center;opacity:var(--side-bg-brightness,.5); }
         .side-background-panel:last-child img { left:calc(var(--side-bg-right,0px) - var(--side-bg-width,780px)); }
         .play-area.bga-active.bga-enabled ~ .play-side-background { visibility:hidden; }
         #appearanceOverlay { position:fixed;inset:0;z-index:2100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);padding:12px; }
@@ -1837,6 +1837,12 @@
         .play-footer {
             flex-shrink:0; background:#000; border-top:1px solid #000;
         }
+        .play-footer { position:relative; }
+        .play-footer.has-selected-background { border-top-color:transparent; }
+        .gauge-background { display:none;position:absolute;inset:-1px 0 0;overflow:hidden;pointer-events:none; }
+        .gauge-background img { position:absolute;left:0;top:var(--gauge-bg-top,0px);width:100%;height:var(--gauge-bg-height,100%);max-width:none;object-fit:cover;object-position:center;opacity:var(--side-bg-brightness,.5); }
+        .play-footer > .groove-gauge-area { position:relative;z-index:1; }
+        .container:has(.play-area.bga-active.bga-enabled) .gauge-background { visibility:hidden; }
         /* グルーブゲージ */
         .groove-gauge-area {
             display:flex; align-items:center; padding:3px 8px; gap:6px; height:20px; box-sizing:border-box;
@@ -2708,6 +2714,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
     <!-- play-footer: グルーブゲージ + ステータスバー -->
     <div class="play-footer">
+        <div class="gauge-background" id="gaugeBackground" aria-hidden="true"><img alt=""></div>
         <!-- グルーブゲージ -->
         <div class="groove-gauge-area">
             <div class="iidx-gauge-bezel" aria-hidden="true"></div>
@@ -2834,7 +2841,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.039</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.040</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -8217,6 +8224,9 @@ class BMSViewer {
         this.backgroundSkin='NONE';this.backgroundBrightness=50;
         const overlay=document.getElementById('appearanceOverlay'),host=document.getElementById('backgroundStyleButtons');
         this._sideBackground=document.getElementById('playSideBackground');
+        this._appearanceResizeObserver=new ResizeObserver(()=>this._syncAppearanceGeometry());
+        this._appearanceResizeObserver.observe(document.getElementById('playAreaWrapper'));
+        this._appearanceResizeObserver.observe(document.querySelector('.play-footer'));
         for(const skin of [{id:'NONE',label:'なし（黒）'},...LANE_COVER_SKINS]){
             const btn=document.createElement('button');btn.className='fx-btn'+(skin.id==='NONE'?' on':'');
             btn.id=skin.id==='NONE'?'backgroundNoneBtn':'background_'+skin.id+'Btn';btn.textContent=skin.label;
@@ -8258,6 +8268,11 @@ class BMSViewer {
         if(skin && image.dataset.skin!==skin.id){image.src=skin.src;image.dataset.skin=skin.id;}
         if(this._applyBgaOpacity)this._applyBgaOpacity(Number(document.getElementById('bgaOpacitySlider').value));
         host.style.setProperty('--side-bg-brightness',String(this.backgroundBrightness/100));
+        const gauge=document.getElementById('gaugeBackground');
+        gauge.style.display=skin?'block':'none';
+        gauge.parentElement.classList.toggle('has-selected-background',!!skin);
+        gauge.style.setProperty('--side-bg-brightness',String(this.backgroundBrightness/100));
+        if(skin && gauge.dataset.skin!==skin.id){gauge.querySelector('img').src=skin.src;gauge.dataset.skin=skin.id;}
         if(skin && host.dataset.skin!==skin.id){
             for(const img of host.querySelectorAll('img'))img.src=skin.src;
             host.dataset.skin=skin.id;
@@ -8270,8 +8285,16 @@ class BMSViewer {
         const wr=wrapper.getBoundingClientRect(),lr=lane.getBoundingClientRect(),scale=wr.width/wrapper.offsetWidth;
         if(!scale)return;
         host.style.setProperty('--side-bg-width',wrapper.offsetWidth+'px');
-        // LOW doubles play-area coordinates: match the side images in screen space.
-        document.getElementById('playSelectedBackground').style.setProperty('--selected-bg-width',wrapper.offsetWidth/(this._displayScale||1)+'px');
+        // All segments use one full scene image, clipped only by their respective regions.
+        const footer=document.querySelector('.play-footer'),fr=footer.getBoundingClientRect();
+        const height=(fr.bottom-wr.top)/scale,playScale=this._displayScale||1;
+        host.style.setProperty('--side-bg-height',height+'px');
+        const underlay=document.getElementById('playSelectedBackground');
+        underlay.style.setProperty('--selected-bg-width',wrapper.offsetWidth/playScale+'px');
+        underlay.style.setProperty('--selected-bg-height',height/playScale+'px');
+        const gauge=document.getElementById('gaugeBackground');
+        gauge.style.setProperty('--gauge-bg-height',height+'px');
+        gauge.style.setProperty('--gauge-bg-top',-(fr.top-wr.top)/scale+'px');
         host.style.setProperty('--side-bg-left',Math.max(0,(lr.left-wr.left)/scale)+'px');
         host.style.setProperty('--side-bg-right',Math.max(0,(wr.right-lr.right)/scale)+'px');
     }

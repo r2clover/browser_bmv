@@ -230,6 +230,30 @@
             font-size:9px; color:#555; margin-top:2px; pointer-events:none;
         }
 
+
+        /* Current EX graph: single narrow bar in the side opposite the seek rail. */
+        .score-graph { position:absolute;top:8px;bottom:8px;right:4px;width:56px;z-index:590;pointer-events:none;display:none;contain:layout style;--score-graph-height:896px; }
+        .score-graph.score-graph-left { left:4px;right:auto; }
+        .score-graph-heading { height:18px;display:flex;align-items:center;justify-content:space-between;color:#9ca8bb;font:10px/1 monospace; }
+        .score-graph-ex { color:#fff;font:bold 14px/1 monospace;font-variant-numeric:tabular-nums;white-space:nowrap; }
+        .score-graph-plot { position:absolute;top:24px;bottom:4px;left:0;right:0;border-bottom:1px solid #a2a9b5; }
+        .score-graph-rule { position:absolute;left:0;right:0;border-top:1px solid #8787ff;color:#8787ff;font:bold 14px/1 monospace; }
+        .score-graph-rule span { position:absolute;left:0;bottom:2px; }
+        .score-graph-rule.reached { color:#ff0;border-color:#ff0; }
+        .score-graph-rule.score-graph-max { top:0;color:#a2a9b5;border-color:#a2a9b5;font-size:9px; }
+        .score-graph-fill { position:absolute;left:27px;right:3px;bottom:0;overflow:hidden; }
+        .score-graph-column,.score-graph-texture,.score-graph-frame { position:absolute;background-repeat:no-repeat;opacity:.8; }
+        .score-graph-column { left:0;right:0;top:calc(var(--score-graph-height) * -2 / 690);height:var(--score-graph-height);background-image:var(--score-graph-column-image);background-size:100% 100%; }
+        .score-graph-texture { left:1px;right:1px;top:calc(var(--score-graph-height) * 2 / 690);height:calc(var(--score-graph-height) * 3);background-image:var(--score-graph-blue-image);background-repeat:repeat-y;background-size:100% var(--score-graph-height);animation:scoreGraphFlow 10s linear infinite;animation-play-state:paused; }
+        .score-graph.running .score-graph-texture { animation-play-state:running; }
+        .score-graph-frame { left:0;right:0;top:0;height:calc(var(--score-graph-height) * 692 / 690);background-image:var(--score-graph-frame-image);background-size:100% 100%; }
+        @keyframes scoreGraphFlow { from { transform:translateY(0); } to { transform:translateY(-66.6666666667%); } }
+        :root {
+            --score-graph-blue-image:url("data:image/png;base64,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");
+            --score-graph-frame-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAF4AAAK0CAYAAACKkoqjAAAGTElEQVR4nO3UTWrCYBRAUW3ckTuxu9Rh1+EWXIk/JSEpQeis9Q48Bx7vixKEa8j2eDx+bXi5j9f/JKPdMAxT/MPh8Dn/Ec8zzHu3ul7Ou3meP1vuWfY429Vee8xzn2c83+bzuK/z+TrPbbWXWb5f7rn/MpvVfqxmuZ6cz+fH5XLZ/JPpDTNG4sl+v5/mr51Op5+zV01E+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxEeOHfiyc+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCC/9ePPER4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfEX7T+Abw/DNQIsF30AAAAABJRU5ErkJggg==");
+            --score-graph-column-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAF4AAAKyCAYAAABcy2m+AAAF3ElEQVR4nO3SQQ0AIRAEQQ5969/O4YJ+UGVgks58M/Mvrtv3JxE+5PER4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCC/8Wj48IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPDCv8XjI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCB8RPiJ8RPiI8BHhI8JHhI8IHxE+InxE+IjwEeEjwkeEjwgfET4ifET4iPAR4SPCR4SPCL8aB/c0B0ccluKuAAAAAElFTkSuQmCC");
+        }
+
         /* プレイエリア */
         .play-area-wrapper { flex:none; height:var(--lane-h); overflow:hidden; position:relative; display:flex; flex-direction:column; }
         .play-area { margin-top:auto; height:var(--eff-h); width:100%; transform:scale(2); transform-origin:bottom center; position:relative; overflow:hidden; isolation:isolate; background:#000; --pm-beam-h:1175px; }
@@ -2618,6 +2642,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             </div>
         </div>
     </div>
+        <aside class="score-graph" id="scoreGraph" aria-label="現在のEXスコアグラフ">
+            <div class="score-graph-heading"><span>EX</span><span class="score-graph-ex" id="scoreGraphEX">0</span></div>
+            <div class="score-graph-plot">
+                <div class="score-graph-rule score-graph-max"><span>MAX</span></div>
+                <div class="score-graph-rule" data-rank="AAA"><span>AAA</span></div>
+                <div class="score-graph-rule" data-rank="AA"><span>AA</span></div>
+                <div class="score-graph-rule" data-rank="A"><span>A</span></div>
+                <div class="score-graph-fill" id="scoreGraphFill" style="top:100%">
+                    <div class="score-graph-column"></div><div class="score-graph-texture"></div><div class="score-graph-frame"></div>
+                </div>
+            </div>
+        </aside>
         <!-- 縦シークバー: 上が先頭、下が曲末 -->
         <div class="seek-wrap" id="seekWrap">
             <div class="seek-inner">
@@ -2760,7 +2796,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.033</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.034</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7595,6 +7631,7 @@ class BMSViewer {
         }, 0);
         this._setIidxGaugeIncrements(Math.max(1, iidxCount));
         this._iidxAutoTotalNotes = iidxCount;
+        this._updateScoreGraph();
         this._pmGrInc = Math.max(2, Math.floor(3072 / _gN)); // 最低2（辛ゲージ避け）
         this._pmGdInc = Math.floor(this._pmGrInc / 2);
 
@@ -7622,6 +7659,7 @@ class BMSViewer {
     _judgeCounts() {return [this._pgCount||0,this._grCount||0,this._gdCount||0,this._bdCount||0,this._prCount||0,this._fsCount||0,this._slCount||0];}
 
     _updateLiveCounters(updateGeometry=false) {
+        if(!this.isPlaying)this._updateScoreGraph();
         const host=document.getElementById('laneLiveCounts');if(!host)return;
         host.style.display=this.judgeCounterEnabled?'grid':'none';
         if(!this.judgeCounterEnabled)return;
@@ -10641,6 +10679,54 @@ class BMSViewer {
         if (playArea) playArea.classList.toggle('gauge-dead', clamped === 0);
     }
 
+    _scoreGraphOffset(score, maximum) {
+        return maximum>0 ? Math.max(0,Math.min(690,Math.ceil((1-score/maximum)*690))) : 690;
+    }
+
+    _updateScoreGraph() {
+        let dom=this._scoreGraphDOM;
+        if(!dom){
+            const host=document.getElementById('scoreGraph');if(!host)return;
+            dom=this._scoreGraphDOM={host,fill:document.getElementById('scoreGraphFill'),
+                ex:document.getElementById('scoreGraphEX'),lines:[...host.querySelectorAll('[data-rank]')]};
+        }
+        const visible=this.currentSide!=='PM' && !!this.bmsData;
+        const running=visible && !!this.isPlaying && (this._score || 0)>0;
+        if(dom.visible!==visible){dom.host.style.display=visible?'block':'none';dom.visible=visible;}
+        if(dom.running!==running){dom.host.classList.toggle('running',running);dom.running=running;}
+        const side=this.currentSide;
+        if(dom.side!==side){dom.host.classList.toggle('score-graph-left',side==='2P');dom.side=side;}
+        if(!visible)return;
+        const maximum=Math.max(0,(this._iidxAutoTotalNotes || 0)*2),score=Math.max(0,this._score || 0);
+        if(dom.score===score && dom.maximum===maximum)return;
+        const offset=this._scoreGraphOffset(score,maximum);
+        dom.fill.style.top=(offset/690*100)+'%';
+        // Keep the native maximum and ceil rounding; do not normalize to song progress.
+        for(const [k,line] of dom.lines.entries()){
+            const border=Math.floor(((8-k)*maximum+8)/9);
+            if(dom.maximum!==maximum)line.style.top=(this._scoreGraphOffset(border,maximum)/690*100)+'%';
+            line.classList.toggle('reached',maximum>0 && score>=border);
+        }
+        const text=String(score).padStart(4,'0'),leading=Math.max(0,text.length-String(score).length);
+        if(!dom.digits){dom.ex.textContent='';dom.digits=[];}
+        while(dom.digits.length<text.length){const span=document.createElement('span');dom.ex.appendChild(span);dom.digits.push(span);}
+        while(dom.digits.length>text.length)dom.digits.pop().remove();
+        for(const [i,span] of dom.digits.entries()){
+            if(span.textContent!==text[i])span.textContent=text[i];
+            const alpha=i<leading?'.5':'1';if(span._graphAlpha!==alpha){span.style.opacity=alpha;span._graphAlpha=alpha;}
+        }
+        dom.host.setAttribute('aria-label','EX SCORE '+score+' / '+maximum);
+        dom.score=score;dom.maximum=maximum;
+    }
+
+    _syncScoreGraphGeometry(wrapper,wr,lr,scale) {
+        this._updateScoreGraph();
+        const dom=this._scoreGraphDOM;if(!dom || this.currentSide==='PM')return;
+        const margin=(this.currentSide==='1P'?wr.right-lr.right:lr.left-wr.left)/scale;
+        dom.host.style.width=Math.max(1,Math.min(56,margin-8))+'px';
+        dom.host.style.setProperty('--score-graph-height',Math.max(1,wrapper.clientHeight-44)+'px');
+    }
+
     /* ── シークバー更新 ── */
     _syncSeekLayout() {
         const rail=document.getElementById('seekWrap'),track=document.getElementById('seekTrack');
@@ -10656,10 +10742,11 @@ class BMSViewer {
 
     _syncSeekGeometry() {
         this._syncSeekLayout();
-        if(this.currentSide==='PM'){this._updateSeekBar();return;}
+        if(this.currentSide==='PM'){this._updateScoreGraph();this._updateSeekBar();return;}
         const wrapper=document.querySelector('.play-area-wrapper'),lane=document.getElementById('lanesContainer'),rail=document.getElementById('seekWrap');
         if(!wrapper||!lane||!rail)return;
         const wr=wrapper.getBoundingClientRect(),lr=lane.getBoundingClientRect(),scale=wr.width/wrapper.offsetWidth;
+        this._syncScoreGraphGeometry(wrapper,wr,lr,scale);
         const margin=(this.currentSide==='1P'?lr.left-wr.left:wr.right-lr.right)/scale;
         const width=Math.max(8,Math.min(40,margin-8));
         rail.style.width=width+'px';
@@ -10837,6 +10924,7 @@ class BMSViewer {
     }
 
     _updatePositions(updateSeek = true) {
+        this._updateScoreGraph();
         this._drawIIDXGauge();
         if (this._flatLaneStack()) this._syncPNGJudgeGeometry();
         const pngCNTimeMs = this.chargeStyle === 'PNG_LIGHT' ? performance.now() : 0;

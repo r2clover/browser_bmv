@@ -2760,7 +2760,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.030</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.031</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -9544,7 +9544,9 @@ class BMSViewer {
             if (state.startMs === null) state.startMs = state.kind === 'PGREAT' ? firstHUDMs : now;
             this._drawPNGJudgment(now);
             this._pngJudgeRAF = null;
-            if (now - state.startMs < 500 || this.isPlaying) this._pngJudgeRAF = requestAnimationFrame(tick);
+            // Held CN judgments refresh within 333ms, before this 500ms lifetime ends.
+            // Once expired, the next actual judgment starts the loop again.
+            if (now - state.startMs < 500) this._pngJudgeRAF = requestAnimationFrame(tick);
         };
         this._pngJudgeRAF = requestAnimationFrame(tick);
     }
@@ -10138,10 +10140,19 @@ class BMSViewer {
         return lane === 0 ? 'scratch' : lane % 2 ? 'white' : 'black';
     }
 
+    _restartEffectAnimations(el) {
+        if(!el)return;
+        // Restart CSS animations without forcing a layout via offsetWidth.
+        for(const animation of el.getAnimations()){
+            animation.currentTime=0;
+            animation.play();
+        }
+    }
+
     _playChargeSprite(el, name) {
         this._clearChargeSprite(el);
-        void el.offsetWidth;
         el.classList.add('iidx-ln-sprite', 'ln-' + name);
+        this._restartEffectAnimations(el);
     }
 
     _triggerChargeTransition(dl) {
@@ -10151,8 +10162,8 @@ class BMSViewer {
         if (this.bombMode === 'PNG') this._playChargeSprite(el, 'cn-' + this._lnLaneKind(dl));
         else {
             this._clearChargeSprite(el);
-            void el.offsetWidth;
             el.classList.add('iidx-css-charge', 'css-ln-' + this._lnLaneKind(dl), this.bombMode === 'B' ? 'charge-enter-lite' : 'charge-enter');
+            this._restartEffectAnimations(el);
         }
     }
 
@@ -10170,9 +10181,9 @@ class BMSViewer {
         if (this.bombMode === 'PNG' && this.currentSide !== 'PM') {
             this._playChargeSprite(el, 'push-' + this._lnLaneKind(dl));
         } else {
-            void el.offsetWidth;
             el.classList.add(this.bombMode === 'B' ? 'explode-hold-lite' : 'explode-hold');
             if (this.currentSide !== 'PM') el.classList.add('iidx-css-charge', 'css-ln-' + this._lnLaneKind(dl));
+            this._restartEffectAnimations(el);
         }
         if (transition) this._triggerChargeTransition(dl);
     }
@@ -10184,8 +10195,9 @@ class BMSViewer {
         this._clearChargeSprite(el);
         if (this.bombMode === 'PNG' && this.currentSide !== 'PM') this._playChargeSprite(el, 'hcn-break');
         else {
-            void el.offsetWidth; el.classList.add('hcn-break');
+            el.classList.add('hcn-break');
             if (this.currentSide !== 'PM') el.classList.add('iidx-css-charge');
+            this._restartEffectAnimations(el);
         }
     }
 
@@ -10205,13 +10217,14 @@ class BMSViewer {
             el.classList.add('iidx-css-bomb');
             ring?.classList.add('iidx-css-ring');
         }
-        void el.offsetWidth;
         if (this.bombMode === 'PNG') el.classList.add('explode-png');
         else if (this.bombMode === 'B') el.classList.add('explode-lite');
         else {
             el.classList.add('explode');
             ring?.classList.add('ring-expand');
         }
+        this._restartEffectAnimations(el);
+        this._restartEffectAnimations(ring);
     }
 
     /* ── エフェクト: GREAT 表示 ── */

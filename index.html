@@ -2760,7 +2760,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.031</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.033</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5529,6 +5529,7 @@ class BMSViewer {
         // チャージノーツ A/B/PM_POP/PM_POP_FACE/PM_BEAT_C
         const _setChargeStyle = (style) => {
             this.chargeStyle = style;
+            this._syncPNGChargeParts();
             const pa = document.querySelector('.play-area');
             ['chargeStyleABtn','chargeStyleBBtn','chargeStylePMPopFaceBtn','chargeStylePMPopLiteBtn','chargeStylePMBeatPopBtn','chargeStylePMBeatCBtn','chargeStylePngLightBtn'].forEach(id =>
                 document.getElementById(id).classList.remove('on'));
@@ -7057,6 +7058,8 @@ class BMSViewer {
             on ? ` | 🔁 ${this.loopStart}〜${this.loopEnd}小節${_modeLabel ? ' ('+_modeLabel+')' : ''}` : '';
     }
     _rebuildOverlay() {
+        this._restoreDrawDOM();
+        this._drawDOMSource = null; this._drawDOMEligible = null; this._drawDOMMounted = null;
         this.noteElements = this.noteElements.filter(el => { if(el._isOverlay){el.remove();return false;} return true; });
         this._clearDrawIndex();
         if (!this.loopEnabled||!this.barStartPx.length) return;
@@ -7308,6 +7311,7 @@ class BMSViewer {
 
     renderNotes() {
         this.noteElements.forEach(el=>el.remove()); this.noteElements=[]; this.lnElements=[];
+        this._drawDOMSource = null; this._drawDOMEligible = null; this._drawDOMMounted = null;
         this._clearDrawIndex();
         if (!this.bmsData) return;
         this._syncIidxAdjustProfile();
@@ -7535,6 +7539,8 @@ class BMSViewer {
                 }
             }
         }
+
+        this._syncPNGChargeParts();
 
         // ── noteEvents リスト構築（判定ライン通過検出用） ──
         this.noteEvents = [];
@@ -7870,16 +7876,38 @@ class BMSViewer {
         return pressed ? 1 + Math.floor(tick / 8) % 2 : 0;
     }
 
-    _updatePNGChargeState(el, cur, headPos, timeMs = performance.now()) {
-        if (el._pixelEndPos === undefined || el._dl === undefined) return;
-        const ownsTail = tail => !!tail && (tail._wavPosFrac === el._pngEndPosition
+    _syncPNGChargeParts() {
+        const png = this.chargeStyle === 'PNG_LIGHT' && this.currentSide !== 'PM';
+        for (const el of this.lnElements || []) {
+            if (el._pngPartsDetached === png) continue;
+            if (!el._cssChargeChildren) {
+                el._cssChargeChildren = [...el.children];
+                el._cssChargeParts = el._cssChargeChildren.filter(child => child === el._dimMask || child.className.endsWith('-cap'));
+            }
+            if (png) {
+                for (const child of el._cssChargeParts) child.remove();
+            } else {
+                for (const child of el._cssChargeChildren) el.appendChild(child);
+                if (el._dimMask) el._dimMask.style.display = el._dimMaskHidden ? 'none' : '';
+                if (el._headCap) el._headCap.style.display = el._headCapHidden ? 'none' : '';
+            }
+            el._pngPartsDetached = png;
+        }
+    }
+
+    _pngCNOwnsTail(el, tail) {
+        return !!tail && (tail._wavPosFrac === el._pngEndPosition
             || (el.classList.contains('ln-mss') && tail._headEvent?._wavPosFrac >= el._pngHeadPosition
                 && tail._headEvent._wavPosFrac < el._pngEndPosition && tail._wavPosFrac <= el._pngEndPosition));
+    }
+
+    _updatePNGChargeState(el, cur, headPos, timeMs = performance.now()) {
+        if (el._pixelEndPos === undefined || el._dl === undefined) return;
         const hcn = this._hcnStates?.get(el._dl);
-        const ownHcn = hcn && ownsTail(hcn.tail);
+        const ownHcn = hcn && this._pngCNOwnsTail(el, hcn.tail);
         const held = this._heldLN?.get(el._dl);
         const beforeEnd = cur < el._pixelEndPos;
-        const pressed = beforeEnd && (this.isPlayMode ? (ownHcn ? hcn.held : ownsTail(held?.tailEvent))
+        const pressed = beforeEnd && (this.isPlayMode ? (ownHcn ? hcn.held : this._pngCNOwnsTail(el, held?.tailEvent))
             : cur >= headPos && this.isPlaying);
         const broken = beforeEnd && this.isPlayMode && ownHcn && !hcn.held && !hcn.breakSuppressed;
         if (el._pngHeld !== !!pressed) { el.classList.toggle('png-cn-held', !!pressed); el._pngHeld = !!pressed; }
@@ -10429,17 +10457,35 @@ class BMSViewer {
             value:Math.max(0,Math.min(100,Math.floor((this._gaugeValue || 0)/100)*2))};
     }
 
+    _getGaugeDOM() {
+        if (this._gaugeDOM) return this._gaugeDOM;
+        const canvas=document.getElementById('iidxGaugeCanvas'),bar=document.getElementById('grooveGaugeBar');
+        if (!canvas || !bar) return null;
+        const lamp=document.getElementById('iidxGaugeLamp'),number=document.getElementById('iidxGaugeNumber');
+        return this._gaugeDOM={canvas,ctx:canvas.getContext('2d'),lamp,lc:lamp.getContext('2d'),
+            number,nc:number.getContext('2d'),bar,label:document.getElementById('grooveGaugePct'),
+            stat:document.getElementById('gaugePctStat'),area:bar.closest('.groove-gauge-area'),
+            footer:bar.closest('.play-footer'),playArea:document.querySelector('.play-area')};
+    }
+
+    _paintIIDXGaugeLayer(ctx,img,side,value,alpha,additive) {
+        ctx.save();ctx.beginPath();
+        ctx.rect(15+(side==='2p'?Math.floor((100-value)*4.5):0),0,side==='2p'?450:Math.floor(value*4.5),30);
+        ctx.clip();ctx.globalAlpha=alpha;ctx.globalCompositeOperation=additive?'lighter':'source-over';
+        ctx.drawImage(img,15,0);ctx.restore();
+    }
+
     _drawIIDXGauge(now=performance.now()) {
-        const canvas=document.getElementById('iidxGaugeCanvas');
-        if(!canvas || !this.currentSide || this.currentSide==='PM' || (this._gaugeType || '').startsWith('PM_'))return;
+        if(!this.currentSide || this.currentSide==='PM' || (this._gaugeType || '').startsWith('PM_'))return;
+        const dom=this._getGaugeDOM();if(!dom)return;
+        const {canvas,ctx,lc,nc}=dom;
         if(!this._gaugeImages){
             this._gaugeImages={};
-            const area=canvas.closest('.groove-gauge-area');
-            area.style.setProperty('--gauge-frame-top','url("'+PNG_GAUGE_ASSETS.groove_frame_top.src+'")');
-            area.style.setProperty('--gauge-frame-bottom','url("'+PNG_GAUGE_ASSETS.groove_frame_bottom.src+'")');
+            dom.area.style.setProperty('--gauge-frame-top','url("'+PNG_GAUGE_ASSETS.groove_frame_top.src+'")');
+            dom.area.style.setProperty('--gauge-frame-bottom','url("'+PNG_GAUGE_ASSETS.groove_frame_bottom.src+'")');
             for(const [name,asset] of Object.entries(PNG_GAUGE_ASSETS)){
                 const img=new Image();this._gaugeImages[name]=img;
-                img.onload=()=>this._drawIIDXGauge();img.src=asset.src;
+                img.onload=()=>{this._gaugeAssetRevision=(this._gaugeAssetRevision || 0)+1;this._drawIIDXGauge();};img.src=asset.src;
             }
         }
         const spec=this._iidxGaugeSpec(),img=this._gaugeImages[spec.image];
@@ -10451,36 +10497,35 @@ class BMSViewer {
         let lampFrame=state.lampStart===null?60:Math.floor(Math.max(0,now-state.lampStart)*60/1000);
         if(spec.value>=spec.threshold && lampFrame>=59){state.lampStart=now;lampFrame=0;}
         state.previous=spec.value;
-        const lampCanvas=document.getElementById('iidxGaugeLamp'),lc=lampCanvas.getContext('2d');
-        lc.clearRect(0,0,30,34);
         const lamp=this._gaugeImages['gauge_up_'+spec.side+'_blink'];
-        if(lampFrame<60 && lampFrame%4<2 && lamp.complete && lamp.naturalWidth){
-            lc.save();lc.globalCompositeOperation='lighter';lc.drawImage(lamp,0,0);lc.restore();
+        const lampOn=!!(lampFrame<60 && lampFrame%4<2 && lamp.complete && lamp.naturalWidth);
+        if(state.lampOn!==lampOn){
+            lc.clearRect(0,0,30,34);
+            if(lampOn){lc.save();lc.globalCompositeOperation='lighter';lc.drawImage(lamp,0,0);lc.restore();}
+            state.lampOn=lampOn;
         }
-        // Sample once per rendered HUD frame. Idle previews do not run an animation loop.
+        // Preserve RNG sampling even when the resulting pixels do not change.
         const tick=Math.floor(now*120/1000);
         if(tick!==state.tick){state.tick=tick;state.missing=this.isPlaying?Math.floor(Math.random()*4):0;}
-        const lit=Math.max(0,spec.value-state.missing*2),ctx=canvas.getContext('2d'),x=15;
-        ctx.clearRect(0,0,480,64);
-        // The native 30px texture has four transparent bottom rows: center its visible 26px.
-        ctx.save();ctx.translate(0,2);
-        const layer=(value,alpha,additive,draw)=>{
-            ctx.save();ctx.beginPath();
-            ctx.rect(x+(spec.side==='2p'?Math.floor((100-value)*4.5):0),0,spec.side==='2p'?450:Math.floor(value*4.5),30);
-            ctx.clip();ctx.globalAlpha=alpha;ctx.globalCompositeOperation=additive?'lighter':'source-over';
-            draw();ctx.restore();
-        };
-        layer(100,.2,false,()=>ctx.drawImage(img,x,0));
-        layer(lit,1,false,()=>ctx.drawImage(img,x,0));
-        if(spec.kind==='exhard')layer(lit,Math.abs(Math.sin((Math.floor(now*60/1000)*4%360)*Math.PI/180)),true,()=>ctx.drawImage(img,x,0));
-        if(spec.value>=2){
-            const dotKind=spec.kind==='exhard'?'exhard':spec.threshold===0||spec.value>=spec.threshold?'hard':'normal';
-            const dot=this._gaugeImages['playm_gauge_'+dotKind+'_dot'];
-            if(dot.complete && dot.naturalWidth)ctx.drawImage(dot,x+(spec.side==='2p'?100-spec.value:spec.value-2)*4.5,0);
+        const lit=Math.max(0,spec.value-state.missing*2),x=15;
+        const glow=spec.kind==='exhard'?Math.abs(Math.sin((Math.floor(now*60/1000)*4%360)*Math.PI/180)):0;
+        const bodyKey=spec.value+'/'+lit+'/'+glow+'/'+(this._gaugeAssetRevision || 0);
+        if(state.bodyKey!==bodyKey){
+            ctx.clearRect(0,0,480,64);
+            // The native 30px texture has four transparent bottom rows: center its visible 26px.
+            ctx.save();ctx.translate(0,2);
+            this._paintIIDXGaugeLayer(ctx,img,spec.side,100,.2,false);
+            this._paintIIDXGaugeLayer(ctx,img,spec.side,lit,1,false);
+            if(spec.kind==='exhard')this._paintIIDXGaugeLayer(ctx,img,spec.side,lit,glow,true);
+            if(spec.value>=2){
+                const dotKind=spec.kind==='exhard'?'exhard':spec.threshold===0||spec.value>=spec.threshold?'hard':'normal';
+                const dot=this._gaugeImages['playm_gauge_'+dotKind+'_dot'];
+                if(dot.complete && dot.naturalWidth)ctx.drawImage(dot,x+(spec.side==='2p'?100-spec.value:spec.value-2)*4.5,0);
+            }
+            ctx.restore();state.bodyKey=bodyKey;
         }
-        ctx.restore();
         if(state.numberValue!==spec.value){
-            const counter=document.getElementById('iidxGaugeNumber'),nc=counter.getContext('2d');nc.clearRect(0,0,130,34);
+            nc.clearRect(0,0,130,34);
             const digits=String(spec.value),positions=[0,25,63];let ready=true;
             for(let i=0;i<digits.length;i++){
                 const digit=this._gaugeImages['playm_gg_0'+digits[i]];
@@ -10493,18 +10538,16 @@ class BMSViewer {
     }
 
     _updateGrooveGauge(pct) {
-        // pct: 0〜100の数値
-        const bar   = document.getElementById('grooveGaugeBar');
-        const label = document.getElementById('grooveGaugePct');
-        const stat  = document.getElementById('gaugePctStat');
-        if (!bar) return;
+        const dom=this._getGaugeDOM();if(!dom)return;
+        const {bar,label,stat}=dom;
         const pm=this.currentSide==='PM'||(this._gaugeType || '').startsWith('PM_');
-        bar.closest('.groove-gauge-area').classList.toggle('iidx-gauge',!pm);
-        bar.closest('.play-footer').classList.toggle('iidx-gauge-footer',!pm);
+        dom.area.classList.toggle('iidx-gauge',!pm);
+        dom.footer.classList.toggle('iidx-gauge-footer',!pm);
         if(!pm){
             const value=this._iidxGaugeSpec().value;
-            if(label)label.textContent=value+'%';if(stat)stat.textContent=value;
-            document.querySelector('.play-area')?.classList.toggle('gauge-dead',value===0);
+            if(label && label.textContent!==value+'%')label.textContent=value+'%';
+            if(stat && stat.textContent!==String(value))stat.textContent=value;
+            dom.playArea?.classList.toggle('gauge-dead',value===0);
             // During play the main HUD paints once per rendered frame, not once per note.
             if(!this.isPlaying)this._drawIIDXGauge();return;
         }
@@ -10515,11 +10558,11 @@ class BMSViewer {
         bar.style.width = '100%';
         const _isPmG3 = this._gaugeType === 'PM_NORMAL' || this._gaugeType === 'PM_HARD' || this._gaugeType === 'PM_EASY';
         if (_isPmG3) {
-            if (label) label.textContent = this._gaugeValue; // 1024段階の生の値
-            if (stat)  stat.textContent  = this._gaugeValue;
+            if (label && label.textContent!==String(this._gaugeValue)) label.textContent = this._gaugeValue; // 1024段階の生の値
+            if (stat && stat.textContent!==String(this._gaugeValue)) stat.textContent = this._gaugeValue;
         } else {
-            if (label) label.textContent = Math.floor(clamped) + '%';
-            if (stat)  stat.textContent  = Math.floor(clamped);
+            if (label && label.textContent!==Math.floor(clamped)+'%') label.textContent = Math.floor(clamped) + '%';
+            if (stat && stat.textContent!==String(Math.floor(clamped))) stat.textContent = Math.floor(clamped);
         }
 
         // ゲージタイプ別カラー
@@ -10594,7 +10637,7 @@ class BMSViewer {
         if (label) label.style.color = labelColor;
 
         // 0%で play-area 背景を赤に
-        const playArea = document.querySelector('.play-area');
+        const playArea = dom.playArea;
         if (playArea) playArea.classList.toggle('gauge-dead', clamped === 0);
     }
 
@@ -10699,6 +10742,45 @@ class BMSViewer {
         this._drawIndexLength = 0;
         this._drawLastPx = null;
         this._drawActiveRecords = [];
+    }
+
+    // Keep stable node identities for seeks/holds; only connected PNG nodes participate in rendering.
+    _syncDrawDOM(seamless) {
+        const mode = this.currentSide === 'PM' ? '' : `${this.notesStyle === 'PNG_LIGHT'}:${this.chargeStyle === 'PNG_LIGHT'}`;
+        if (this._drawDOMSource !== this.noteElements || this._drawDOMMode !== mode) {
+            this._restoreDrawDOM();
+            this._drawDOMSource = this.noteElements;
+            this._drawDOMMode = mode;
+            this._drawDOMEligible = new Set();
+            this._drawDOMMounted = new Set();
+            for (const [order, el] of this.noteElements.entries()) {
+                el._drawParent = el.parentNode || el._drawParent;
+                el._drawOrder = order;
+                if (this.currentSide !== 'PM' && ((this.notesStyle === 'PNG_LIGHT' && el.classList.contains('note'))
+                    || (this.chargeStyle === 'PNG_LIGHT' && (el.classList.contains('note-ln') || el.classList.contains('mss-divider'))))) {
+                    this._drawDOMEligible.add(el);
+                    if (el.parentNode) this._drawDOMMounted.add(el);
+                }
+            }
+        }
+        if (!this.isPlaying || seamless || !this._drawIndexValid) { this._restoreDrawDOM(); return; }
+        const wanted = new Set();
+        for (const record of this._drawActiveRecords) if (this._drawDOMEligible.has(record.el)) wanted.add(record.el);
+        for (const el of this._drawDOMMounted) if (!wanted.has(el)) el.remove();
+        for (const el of wanted) if (!el.parentNode && el._drawParent) {
+            // Children are bounded by the visible range; preserve original overlap order.
+            let next = null;
+            for (const child of el._drawParent.children) if (child._drawOrder > el._drawOrder) { next = child; break; }
+            el._drawParent.insertBefore(el, next);
+        }
+        this._drawDOMMounted = wanted;
+    }
+
+    _restoreDrawDOM() {
+        if (!this._drawDOMEligible || ![...this._drawDOMEligible].some(el => !el.parentNode)) return;
+        // Append all drawing siblings in their original order, behind no new stacking context.
+        for (const el of this._drawDOMSource || []) if (el._drawParent) el._drawParent.appendChild(el);
+        this._drawDOMMounted = new Set(this._drawDOMEligible);
     }
 
     _getPositionUpdateElements(cur, seamless) {
@@ -10811,11 +10893,11 @@ class BMSViewer {
             if (el._dimMask) {
                 const shouldHide = cur >= effPos;
                 if (el._dimMaskHidden !== shouldHide) {
-                    el._dimMask.style.display = shouldHide ? 'none' : '';
+                    if (!el._pngPartsDetached) el._dimMask.style.display = shouldHide ? 'none' : '';
                     el._dimMaskHidden = shouldHide;
                 }
             }
-            if (this.chargeStyle === 'PNG_LIGHT' && this.currentSide !== 'PM') this._updatePNGChargeState(el, cur, effPos, pngCNTimeMs);
+            if (this.chargeStyle === 'PNG_LIGHT' && this.currentSide !== 'PM' && el._pixelEndPos !== undefined && el._dl !== undefined) this._updatePNGChargeState(el, cur, effPos, pngCNTimeMs);
             // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（AUTOのみ、PLAYは_onLaneReleaseで処理）
             if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined &&
                 !el._endBombed && this.isPlaying && cur >= el._pixelEndPos) {
@@ -10842,14 +10924,15 @@ class BMSViewer {
                 const shouldPin = this.lnHeadPin && _pinOk && cur >= effPos && cur < effEnd;
                 if (shouldPin) {
                     el._headNote.style.translate = '0px ' + (-(cur - effPos)) + 'px';
-                    if (!el._headCapHidden) { el._headCap.style.display = 'none'; el._headCapHidden = true; }
+                    if (!el._headCapHidden) { if (!el._pngPartsDetached) el._headCap.style.display = 'none'; el._headCapHidden = true; }
                 } else if (el._headCapHidden) {
                     el._headNote.style.translate = '';
-                    el._headCap.style.display = '';
+                    if (!el._pngPartsDetached) el._headCap.style.display = '';
                     el._headCapHidden = false;
                 }
             }
         }
+        this._syncDrawDOM(_smls);
         if (updateSeek) this._updateSeekBar();
     }
 

@@ -2482,6 +2482,11 @@
 /* Game effects share a foreground context above covers, frames, graph and seek rail.
    Match play-area coordinates without moving its opaque backgrounds to the foreground. */
 .play-effects-overlay { position:absolute;left:0;bottom:0;width:100%;height:var(--eff-h);transform-origin:bottom center;z-index:610;pointer-events:none; }
+/* Blend at the outer foreground context, where the lane/background is the backdrop.
+   A transformed intermediate parent otherwise turns opaque PNG black into a black box. */
+.play-bomb-overlay { z-index:611;mix-blend-mode:screen; }
+.play-charge-overlay { z-index:612;mix-blend-mode:screen; }
+@supports (mix-blend-mode:plus-lighter) { .play-charge-overlay { mix-blend-mode:plus-lighter; } }
 .lane-effects-container { z-index:506;position:absolute;left:50%;transform:translateX(-50%);height:var(--eff-h);pointer-events:none; }
 .play-effects-overlay .play-judge-positioner,.play-effects-overlay .great-positioner,
 .play-effects-overlay .pm-judge-positioner,.play-effects-overlay .png-judge-display { z-index:505; }
@@ -2829,7 +2834,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.038</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.039</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7259,7 +7264,8 @@ class BMSViewer {
     /* ============================================================ レーン描画 */
     _renderLanes() {
         const c=document.getElementById('lanesContainer'); c.innerHTML='';
-        const effects=this._ensureForemostEffects().lanes;effects.replaceChildren();
+        const foreground=this._ensureForemostEffects(),effects=foreground.lanes;
+        for(const host of [effects,foreground.screen,foreground.additive])host.replaceChildren();
         c.classList.toggle('pm-mode', this.currentSide === 'PM');
         const PM_COLORS = ['pm-white','pm-yellow','pm-green','pm-blue','pm-red','pm-blue','pm-green','pm-yellow','pm-white'];
         const PM_LABELS = ['白','黄','緑','青','赤','青','緑','黄','白'];
@@ -8357,24 +8363,41 @@ class BMSViewer {
         root.id='playEffectsOverlay';root.setAttribute('aria-hidden','true');
         const lanes=document.createElement('div');lanes.className='lane-effects-container';root.appendChild(lanes);
         pa.parentElement.appendChild(root);
+        const makeLayer=(id)=>{
+            const overlay=document.createElement('div');overlay.id=id;overlay.setAttribute('aria-hidden','true');
+            const host=document.createElement('div');host.className='lane-effects-container';overlay.appendChild(host);
+            pa.parentElement.appendChild(overlay);return {overlay,host};
+        };
+        const screen=makeLayer('playBombOverlay'),additive=makeLayer('playChargeOverlay');
         // Keep existing judgment nodes and animation state; only their parent changes.
         for(const node of pa.querySelectorAll(':scope > .great-positioner,:scope > .play-judge-positioner,:scope > .pm-judge-positioner,:scope > .png-judge-display'))root.appendChild(node);
         const sync=()=>{
             const classes='play-effects-overlay '+[...pa.classList].filter(c=>c!=='play-area').join(' ');
-            if(root.className!==classes)root.className=classes;
             const transform=pa.style.transform||'scale(2)';
-            if(root.style.transform!==transform)root.style.transform=transform;
+            for(const [overlay,extra] of [[root,''],[screen.overlay,' play-bomb-overlay'],[additive.overlay,' play-charge-overlay']]){
+                if(overlay.className!==classes+extra)overlay.className=classes+extra;
+                if(overlay.style.transform!==transform)overlay.style.transform=transform;
+            }
         };
         sync();
         const observer=new MutationObserver(sync);observer.observe(pa,{attributes:true,attributeFilter:['class','style']});
-        return this._foremostEffects={root,lanes,observer};
+        return this._foremostEffects={root,lanes,screen:screen.host,additive:additive.host,observer};
+    }
+
+    _placeEffectInLayer(el, layer='lanes') {
+        const layers=this._foremostEffects;
+        // Leave standalone previews and unrelated effect nodes in their own hosts.
+        if(!layers||![layers.lanes,layers.screen,layers.additive].includes(el?.parentElement))return;
+        if(el.parentElement!==layers[layer])layers[layer].appendChild(el);
     }
 
     _syncForemostEffectsGeometry() {
         if(!this._foremostEffects)return;
-        const c=document.getElementById('lanesContainer'),host=this._foremostEffects.lanes;
-        host.style.width=c.clientWidth+'px';
-        host.style.bottom=((this.liftEnabled?this.liftCoverPx:0)+(parseFloat(getComputedStyle(c).borderBottomWidth)||0))+'px';
+        const c=document.getElementById('lanesContainer');
+        const width=c.clientWidth+'px',bottom=((this.liftEnabled?this.liftCoverPx:0)+(parseFloat(getComputedStyle(c).borderBottomWidth)||0))+'px';
+        for(const host of [this._foremostEffects.lanes,this._foremostEffects.screen,this._foremostEffects.additive]){
+            host.style.width=width;host.style.bottom=bottom;
+        }
     }
 
     _syncLaneEffectGeometry() {
@@ -10347,6 +10370,7 @@ class BMSViewer {
     _clearChargeSprite(el) {
         if (!el) return;
         el.className = 'lane-explosion lane-charge-fx';
+        this._placeEffectInLayer(el);
     }
 
     _lnLaneKind(dl) {
@@ -10366,6 +10390,7 @@ class BMSViewer {
     _playChargeSprite(el, name) {
         this._clearChargeSprite(el);
         el.classList.add('iidx-ln-sprite', 'ln-' + name);
+        this._placeEffectInLayer(el,name==='hcn-break'?'lanes':'additive');
         this._restartEffectAnimations(el);
     }
 
@@ -10431,6 +10456,7 @@ class BMSViewer {
             el.classList.add('iidx-css-bomb');
             ring?.classList.add('iidx-css-ring');
         }
+        this._placeEffectInLayer(el,this.bombMode==='PNG'?'screen':'lanes');
         if (this.bombMode === 'PNG') el.classList.add('explode-png');
         else if (this.bombMode === 'B') el.classList.add('explode-lite');
         else {

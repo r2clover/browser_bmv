@@ -1804,18 +1804,32 @@
             bottom: 0;
             left: -3px; right: -3px;   /* 両端を少しはみ出して隙間を埋める */
             height: 5px;
-            background: #ff2222;
-            box-shadow: 0 -6px 12px rgba(0,220,200,0.85), 0 -2px 6px rgba(0,255,220,0.6);
+            background: transparent;
             z-index: 12;
             pointer-events: none;
             border-radius: 2px;
         }
+        #mainJudgmentLine::after {
+            content:''; position:absolute; inset:0;
+            border-radius:inherit; background:#ff2222;
+        }
+        /* Rasterize each glow once; beat changes only update compositor opacity. */
+        .judgment-line-glow {
+            position:absolute; inset:0; border-radius:inherit;
+            pointer-events:none; will-change:opacity;
+        }
+        .judgment-line-glow-wide { box-shadow:0 -6px 12px rgba(0,220,200,0.85); }
+        .judgment-line-glow-tight { box-shadow:0 -2px 6px rgba(0,255,220,0.6); }
+        .pm-mode .judgment-line-glow { display:none; }
         /* PM モード判定ライン: 縦グラデーション赤帯 */
         .pm-mode #mainJudgmentLine {
             height: 10px;
-            background: linear-gradient(to bottom, #660000 0%, #bb1111 25%, #ff4444 50%, #bb1111 75%, #660000 100%);
+
             box-shadow: none;
             border-radius: 0;
+        }
+        .pm-mode #mainJudgmentLine::after {
+            background:linear-gradient(to bottom, #660000 0%, #bb1111 25%, #ff4444 50%, #bb1111 75%, #660000 100%);
         }
         .lane-label    { position:absolute; bottom:-22px; width:100%; text-align:center; font-size:10px; color:#999; }
 
@@ -2842,7 +2856,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.046</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.047</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -7340,6 +7354,14 @@ class BMSViewer {
         if (oldJl) oldJl.remove();
         const jl = document.createElement('div');
         jl.id = 'mainJudgmentLine';
+        // First CSS shadow is painted above the second: retain that order.
+        jl._glowLayers = ['tight','wide'].map(kind => {
+            const glow = document.createElement('div');
+            glow.className = 'judgment-line-glow judgment-line-glow-' + kind;
+            glow.setAttribute('aria-hidden', 'true');
+            jl.appendChild(glow);
+            return glow;
+        });
         c.appendChild(jl);
         this._elJudgLine = jl; // 毎フレーム getElementById を回避するためキャッシュ
     }
@@ -8048,23 +8070,14 @@ class BMSViewer {
     }
 
     _updateJLGlow() {
-        const jl = this._elJudgLine;
-        if (!jl) return;
-        // PMモードはグロー非表示
-        if (this.currentSide === 'PM') {
-            jl.style.boxShadow = 'none';
-            return;
-        }
+        const layers = this._elJudgLine?._glowLayers;
+        if (!layers) return;
         const ppb = this._beatPpb;
-        if (!ppb || ppb <= 0) {
-            jl.style.boxShadow = '0 -6px 12px rgba(0,220,200,0.85), 0 -2px 6px rgba(0,255,220,0.6)';
-            return;
-        }
-        const phase = (this.currentPixelPos % ppb) / ppb;  // 0=拍頭, 1=次拍直前
-        const t = 1 - phase;  // 1=最大輝度, 0=消灯
-        const a1 = (0.85 * t).toFixed(3);
-        const a2 = (0.60 * t).toFixed(3);
-        jl.style.boxShadow = `0 -6px 12px rgba(0,220,200,${a1}), 0 -2px 6px rgba(0,255,220,${a2})`;
+        const t = this.currentSide === 'PM' ? 0 : (!(ppb > 0) ? 1
+            : 1 - (this.currentPixelPos % ppb) / ppb);
+        // Retain the former per-shadow alpha rounding and their overlap colors.
+        this._setVisualStyle(layers[0], 'opacity', String(Number((0.60 * t).toFixed(3)) / 0.60));
+        this._setVisualStyle(layers[1], 'opacity', String(Number((0.85 * t).toFixed(3)) / 0.85));
     }
 
     /* ── エフェクト: コンボ同期 ── */

@@ -2891,7 +2891,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.049</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.050</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3083,6 +3083,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">チャージノーツ処理</span>
                 <button class="fx-btn on" id="lnModeABtn">判定ライン通過</button>
                 <button class="fx-btn"    id="lnModeBBtn">判定ラインに残す</button>
+            </div>
+            <div class="detail-section nowrap" id="laneSurfaceSection">
+                <span class="detail-label">レーン背景・小節線</span>
+                <button class="fx-btn" id="laneSurfaceCssBtn">CSS</button>
+                <button class="fx-btn on" id="laneSurfacePngBtn">PNG</button>
             </div>
             <div class="detail-section nowrap" id="beamSkinSection">
                 <span class="detail-label">キービーム画像</span>
@@ -3969,6 +3974,7 @@ class BMSViewer {
         this.notesStyle       = 'A';     // ノーツ A/B
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamStyle     = 'PNG';
+        this.laneSurfaceStyle = 'PNG';
         this.keyBeamLength    = 'OFF';   // キービーム SHORT/NORMAL/VERYSHORT/LONG/OFF
         this.bombMode         = 'PNG';   // ボム: A/B/OFF/PNG (saved choices override default)
         this.isPlayMode       = false;   // false=オートプレイ / true=プレイモード
@@ -4073,7 +4079,7 @@ class BMSViewer {
             'sudModeABtn sudModeBBtn sudModeCBtn', 'sudNumAlwaysBtn sudNumOnOpBtn',
             'notesStyleABtn notesStyleBBtn notesStylePMPopFaceBtn notesStylePMPopLiteBtn notesStylePMBeatPopBtn notesStylePMBeatCBtn notesStylePngLightBtn',
             'chargeStyleABtn chargeStyleBBtn chargeStylePMPopFaceBtn chargeStylePMPopLiteBtn chargeStylePMBeatPopBtn chargeStylePMBeatCBtn chargeStylePngLightBtn',
-            'lnModeABtn lnModeBBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
+            'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
             'noteHVeryShortBtn noteHShortBtn noteHNormalBtn noteHLongBtn', 'bombABtn bombBBtn bombOffBtn bombPngBtn',
             'bpmLineBtn bpmNumBtn bpmOffBtn', 'bgaOnBtn bgaOffBtn',
             'judgeJustBtn judgeNormalBtn judgeSimpleBtn pmJudgeCoolBtn judgeOffBtn judgePngBtn',
@@ -4136,6 +4142,7 @@ class BMSViewer {
             data.values.iidxJudgeAdjInput = Math.max(-100, Math.min(100, data.values.iidxJudgeAdjInput));
         }
         for (const ids of groups) {
+            if(ids[0]==='laneSurfacePngBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='beamDefaultBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]='beamDefaultBtn';
             if (ids[0]==='backgroundNoneBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if (ids[0].endsWith('CoverCssBtn') && data.choices[ids[0]] === undefined) data.choices[ids[0]] = ids[0];
@@ -5802,6 +5809,7 @@ class BMSViewer {
             // キービームボタン切り替え（IIDX: SHORT/NORMAL/LONG/OFF, PM: pmノーマル/pmライト）
             const _beamIidxIds = ['beamShortBtn','beamNormalBtn','beamVeryShortBtn','beamLongBtn'];
             document.getElementById('beamSkinSection').style.display=isPM?'none':'';
+            document.getElementById('laneSurfaceSection').style.display=isPM?'none':'';
             _beamIidxIds.forEach(id => document.getElementById(id).style.display = isPM ? 'none' : '');
             document.getElementById('beamOffBtn').style.display = '';
             document.getElementById('pmBeamNormalBtn').style.display = isPM ? '' : 'none';
@@ -5855,6 +5863,12 @@ class BMSViewer {
             if (len === 'PM_LITE') pa.classList.add('beam-pm-lite');
             this._syncPNGKeyBeamSkin();
         };
+        for(const [id,style] of [['laneSurfacePngBtn','PNG'],['laneSurfaceCssBtn','CSS']])document.getElementById(id).addEventListener('click',()=>{
+            this.laneSurfaceStyle=style;
+            document.getElementById('laneSurfacePngBtn').classList.toggle('on',style==='PNG');
+            document.getElementById('laneSurfaceCssBtn').classList.toggle('on',style==='CSS');
+            this._syncLaneSurface();
+        });
         for(const [id,style] of [['beamDefaultBtn','PNG'],['beamCssBtn','CSS']])document.getElementById(id).addEventListener('click',()=>{
             this._clearPNGKeyBeams();this.keyBeamStyle=style;
             document.getElementById('beamDefaultBtn').classList.toggle('on',style==='PNG');
@@ -7347,18 +7361,23 @@ class BMSViewer {
 
 
     /* ============================================================ レーン描画 */
+    _syncLaneSurface() {
+        const c=document.getElementById('lanesContainer');
+        c.classList.toggle('png-lane-surface',this.currentSide!=='PM' && this.laneSurfaceStyle==='PNG');
+        if(this.currentSide!=='PM'){
+            c.style.setProperty('--png-lane-image',`url("${PNG_LANE_SURFACE_ASSETS['lane'+this.currentSide].src}")`);
+            for(const [key,asset] of [['--png-bar-image','bar'],['--png-bar-loop-start','loopStart'],['--png-bar-loop-end','loopEnd']])
+                c.style.setProperty(key,`url("${PNG_LANE_SURFACE_ASSETS[asset].src}")`);
+        }
+    }
+
     _renderLanes() {
         this._clearPNGKeyBeams();
         const c=document.getElementById('lanesContainer'); c.innerHTML='';
         const foreground=this._ensureForemostEffects(),effects=foreground.lanes;
         for(const host of [effects,foreground.screen,foreground.additive])host.replaceChildren();
         c.classList.toggle('pm-mode', this.currentSide === 'PM');
-        c.classList.toggle('png-lane-surface',this.currentSide!=='PM');
-        if(this.currentSide!=='PM'){
-            c.style.setProperty('--png-lane-image',`url("${PNG_LANE_SURFACE_ASSETS['lane'+this.currentSide].src}")`);
-            for(const [key,asset] of [['--png-bar-image','bar'],['--png-bar-loop-start','loopStart'],['--png-bar-loop-end','loopEnd']])
-                c.style.setProperty(key,`url("${PNG_LANE_SURFACE_ASSETS[asset].src}")`);
-        }
+        this._syncLaneSurface();
 
         const PM_COLORS = ['pm-white','pm-yellow','pm-green','pm-blue','pm-red','pm-blue','pm-green','pm-yellow','pm-white'];
         const PM_LABELS = ['白','黄','緑','青','赤','青','緑','黄','白'];

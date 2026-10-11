@@ -2902,7 +2902,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.051</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.052</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -11191,7 +11191,10 @@ class BMSViewer {
         if(!png)this._setVisualStyle(document.getElementById('seekThumb'),'opacity','1');
     }
 
-    _seekPNGPosition(ratio) {return (29+Math.floor(Math.max(0,Math.min(1,ratio))*607))/674*100;}
+    // Groove spans y=21..653 in the rail crop. Keep the complete 30px point
+    // (including glow) inside it: centers y=36..638, below S and above E.
+    _seekPNGPosition(ratio) {return (36+Math.floor(Math.max(0,Math.min(1,ratio))*602))/674*100;}
+    _seekPNGProgress(ratio) {return Math.max(0,Math.min(1,(ratio*674-36)/602));}
 
     _seekPNGAlpha(bpm,beatCount) {
         const frames=Math.floor(7200/Math.max(1,Math.round(bpm)));
@@ -11233,18 +11236,19 @@ class BMSViewer {
 
     _updateSeekBar() {
         this._syncSeekLayout();
-        if (!this.bmsData || this.totalPx <= 0) return;
+        const hasChart=!!this.bmsData&&this.totalPx>0;
         const png=this._usesPNGSeek();
-        const endSec=png?this._px2sec(this.totalPx):0;
+        const endSec=png&&hasChart?this._px2sec(this.totalPx):0;
         const pausedSec=this._pausedMusicSec;
-        const currentSec=png?(this.isPlaying&&Number.isFinite(this._frameMusicSec)?this._frameMusicSec:
+        const currentSec=png&&hasChart?(this.isPlaying&&Number.isFinite(this._frameMusicSec)?this._frameMusicSec:
             Number.isFinite(pausedSec)&&Math.abs(this._pos2px(this._secToPosition(pausedSec))-this.currentPixelPos)<.01?pausedSec:this._px2sec(this.currentPixelPos)):0;
-        const pct = Math.max(0,Math.min(1,png&&endSec>0?currentSec/endSec:this.currentPixelPos/this.totalPx))*100;
+        const pct = hasChart?Math.max(0,Math.min(1,png&&endSec>0?currentSec/endSec:this.currentPixelPos/this.totalPx))*100:0;
         const pointPct=png?this._seekPNGPosition(pct/100):pct;
         const horizontal=this.currentSide==='PM',fill=this._elSeekFill||document.getElementById('seekFill'),thumb=this._elSeekThumb||document.getElementById('seekThumb');
         this._setVisualStyle(fill,'width',horizontal?pct+'%':'8px');this._setVisualStyle(fill,'height',horizontal?'100%':pct+'%');
         this._setVisualStyle(thumb,'left',horizontal?pct+'%':'50%');this._setVisualStyle(thumb,'top',horizontal?'50%':pointPct+'%');
-        if(png){
+        if(png&&!hasChart)this._setVisualStyle(thumb,'opacity','1');
+        if(png&&hasChart){
             const bar=this._px2bar(this.currentPixelPos),start=this._px2sec(this.barStartPx[bar]||0);
             const beatCount=Math.floor(Math.max(0,currentSec-start)*120/Math.max(.1,this.realSpeed)+1e-7)+1;
             this._setVisualStyle(thumb,'opacity',String(this._seekPNGAlpha(this._bpmAt(this.currentPixelPos),beatCount)));
@@ -11254,7 +11258,7 @@ class BMSViewer {
         // seekLabelLeft/Right は削除済み（Phase1レイアウト変更）
         // ループ区間オーバーレイ
         const lr = this._elSeekLoop || document.getElementById('seekLoopRange');
-        if (this.loopEnabled && this.barStartPx.length) {
+        if (hasChart && this.loopEnabled && this.barStartPx.length) {
             const position=px=>png?this._seekPNGPosition(endSec>0?this._px2sec(px)/endSec:0):px/this.totalPx*100;
             const sp = position(this.barStartPx[this.loopStart] || 0);
             const ep = position(this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || 0);
@@ -11292,7 +11296,7 @@ class BMSViewer {
         const track = document.getElementById('seekTrack');
         const rect  = track.getBoundingClientRect();
         let pct = Math.max(0, Math.min(1, this.currentSide==='PM'?(coordinate-rect.left)/rect.width:(coordinate-rect.top)/rect.height));
-        if(this._usesPNGSeek())pct=Math.max(0,Math.min(1,(pct*674-29)/607));
+        if(this._usesPNGSeek())pct=this._seekPNGProgress(pct);
         let targetSec=this._usesPNGSeek()?pct*this._px2sec(this.totalPx):undefined;
         let targetPx = targetSec!==undefined?this._pos2px(this._secToPosition(targetSec)):pct*this.totalPx;
         // ループON時は区間内にクランプ

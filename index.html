@@ -2902,7 +2902,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.052</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.053</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -11191,10 +11191,10 @@ class BMSViewer {
         if(!png)this._setVisualStyle(document.getElementById('seekThumb'),'opacity','1');
     }
 
-    // Groove spans y=21..653 in the rail crop. Keep the complete 30px point
-    // (including glow) inside it: centers y=36..638, below S and above E.
-    _seekPNGPosition(ratio) {return (36+Math.floor(Math.max(0,Math.min(1,ratio))*602))/674*100;}
-    _seekPNGProgress(ratio) {return Math.max(0,Math.min(1,(ratio*674-36)/602));}
+    // Move centers 3 native pixels closer to each groove end (y=33..641).
+    // The bright core stays in the groove; the soft halo stays between S and E.
+    _seekPNGPosition(ratio) {return (33+Math.floor(Math.max(0,Math.min(1,ratio))*608))/674*100;}
+    _seekPNGProgress(ratio) {return Math.max(0,Math.min(1,(ratio*674-33)/608));}
 
     _seekPNGAlpha(bpm,beatCount) {
         const frames=Math.floor(7200/Math.max(1,Math.round(bpm)));

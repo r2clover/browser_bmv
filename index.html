@@ -959,6 +959,7 @@
         /* Independent static size factors preserve existing animation timelines. */
         .lane-explosion,.lane-ring { scale:var(--normal-bomb-scale,1); }
         .lane-explosion.lane-charge-fx { scale:var(--cn-bomb-scale,1); }
+        .common-scroll-layer { position:absolute;inset:0;z-index:22;pointer-events:none;will-change:transform; }
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
@@ -2944,7 +2945,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.078</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.079</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3146,6 +3147,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">判定ライン・発光</span>
                 <button class="fx-btn" id="judgeLineCssBtn">CSS</button>
                 <button class="fx-btn on" id="judgeLinePngBtn">PNG</button>
+            </div>
+            <div class="detail-section" style="flex-wrap:wrap;">
+                <span class="detail-label">ノーツスクロール</span>
+                <button class="fx-btn on" id="scrollIndividualBtn">従来</button>
+                <button class="fx-btn" id="scrollCommonBtn">共通</button>
+                <span style="width:100%;font-size:10px;color:#aaa;">共通：レーン単位で移動。シームレスリピート中は従来方式。</span>
             </div>
             <div class="detail-section nowrap" id="laneSurfaceSection">
                 <span class="detail-label">レーン背景・小節線</span>
@@ -4066,6 +4073,7 @@ class BMSViewer {
         this.notesStyle       = 'A';     // ノーツ A/B
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamStyle     = 'PNG';
+        this.noteScrollMode = 'INDIVIDUAL';
         this.gaugeLampEnabled = true;
         this.normalBombScale = 1;
         this.cnBombScale = 1;
@@ -4177,7 +4185,7 @@ class BMSViewer {
             'sudModeABtn sudModeBBtn sudModeCBtn', 'sudNumAlwaysBtn sudNumOnOpBtn',
             'notesStyleABtn notesStyleBBtn notesStylePMPopFaceBtn notesStylePMPopLiteBtn notesStylePMBeatPopBtn notesStylePMBeatCBtn notesStylePngLightBtn',
             'chargeStyleABtn chargeStyleBBtn chargeStylePMPopFaceBtn chargeStylePMPopLiteBtn chargeStylePMBeatPopBtn chargeStylePMBeatCBtn chargeStylePngLightBtn',
-            'gaugeLampOnBtn gaugeLampOffBtn', 'keyDecorationGreenBtn keyDecorationBlueBtn keyDecorationOffBtn', 'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'seekPngBtn seekCssBtn', 'judgeLinePngBtn judgeLineCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
+            'scrollIndividualBtn scrollCommonBtn', 'gaugeLampOnBtn gaugeLampOffBtn', 'keyDecorationGreenBtn keyDecorationBlueBtn keyDecorationOffBtn', 'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'seekPngBtn seekCssBtn', 'judgeLinePngBtn judgeLineCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
             'noteHVeryShortBtn noteHShortBtn noteHNormalBtn noteHLongBtn', 'bombABtn bombBBtn bombOffBtn bombPngBtn',
             'bpmLineBtn bpmNumBtn bpmOffBtn', 'bgaOnBtn bgaOffBtn',
             'judgeJustBtn judgeNormalBtn judgeSimpleBtn pmJudgeCoolBtn judgeOffBtn judgePngBtn',
@@ -4240,6 +4248,7 @@ class BMSViewer {
             data.values.iidxJudgeAdjInput = Math.max(-100, Math.min(100, data.values.iidxJudgeAdjInput));
         }
         for (const ids of groups) {
+            if(ids[0]==='scrollIndividualBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='gaugeLampOnBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='keyDecorationGreenBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='judgeLinePngBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
@@ -5982,6 +5991,12 @@ class BMSViewer {
             document.getElementById('seekCssBtn').classList.toggle('on',style==='CSS');
             this._syncSeekSkin();this._syncSeekGeometry();
         });
+        for(const [id,mode] of [['scrollIndividualBtn','INDIVIDUAL'],['scrollCommonBtn','COMMON']])document.getElementById(id).addEventListener('click',()=>{
+            this._resetCommonScroll();this.noteScrollMode=mode;
+            document.getElementById('scrollIndividualBtn').classList.toggle('on',mode==='INDIVIDUAL');
+            document.getElementById('scrollCommonBtn').classList.toggle('on',mode==='COMMON');
+            this._clearDrawIndex();this._updatePositions();
+        });
         for(const [id,on] of [['gaugeLampOnBtn',true],['gaugeLampOffBtn',false]])document.getElementById(id).addEventListener('click',()=>{
             this.gaugeLampEnabled=on;
             document.getElementById('gaugeLampOnBtn').classList.toggle('on',on);
@@ -7660,6 +7675,7 @@ class BMSViewer {
     }
 
     renderNotes() {
+        this._resetCommonScroll();
         this.noteElements.forEach(el=>el.remove()); this.noteElements=[]; this.lnElements=[];
         this._drawDOMSource = null; this._drawDOMEligible = null; this._drawDOMMounted = null;
         this._clearDrawIndex();
@@ -11521,6 +11537,7 @@ class BMSViewer {
     }
 
     _clearDrawIndex() {
+        this._resetCommonScroll();
         this._lnAnimationSource = null;
         this._lnAnimationSet = null;
         this._drawIndexRoot = null;
@@ -11532,9 +11549,46 @@ class BMSViewer {
         this._drawUpdateElements = [];
     }
 
+    _resetCommonScroll() {
+        const state=this._commonScroll;if(!state)return;
+        this._restoreDrawDOM();
+        for(const el of state.elements){
+            if(el._commonScrollParent){el._commonScrollParent.appendChild(el);el._drawParent=el._commonScrollParent;}
+            el.style.translate='0px '+(this.currentPixelPos-(el._drawPixelPos??el._pixelPos))+'px';
+            el._offscreen=undefined;
+            delete el._commonScrollParent;delete el._commonScrollPosition;delete el._commonScrollAnchor;
+        }
+        for(const layer of state.layers)layer.remove();
+        this._commonScroll=null;this._drawDOMSource=null;this._drawDOMMode=null;
+    }
+
+    _prepareCommonScroll(cur,seamless) {
+        const enabled=this.noteScrollMode==='COMMON'&&this.isPlaying&&!seamless&&this._drawIndexValid;
+        if(!enabled){this._resetCommonScroll();return null;}
+        let state=this._commonScroll;
+        if(!state){
+            this._restoreDrawDOM();
+            state=this._commonScroll={layers:[],elements:[],anchor:cur};
+            const parents=new Map();
+            for(const el of this.noteElements){
+                const parent=el.parentNode||el._drawParent;
+                if(!parent?.classList.contains('lane')||!el.matches('.note,.note-ln,.mss-divider'))continue;
+                let layer=parents.get(parent);
+                if(!layer){layer=document.createElement('div');layer.className='common-scroll-layer';parent.appendChild(layer);parents.set(parent,layer);state.layers.push(layer);}
+                el._commonScrollParent=parent;el._drawParent=layer;layer.appendChild(el);state.elements.push(el);
+            }
+            this._drawDOMSource=null;this._drawDOMMode=null;
+        }
+        // Rebase occasionally to keep compositor coordinates bounded on long songs/seeks.
+        if(Math.abs(cur-state.anchor)>2048)state.anchor=cur;
+        const transform='translateY('+(cur-state.anchor)+'px)';
+        for(const layer of state.layers)if(layer.style.transform!==transform)layer.style.transform=transform;
+        return state;
+    }
+
     // Keep stable node identities for seeks/holds; only connected PNG nodes participate in rendering.
     _syncDrawDOM(seamless) {
-        const mode = this.currentSide === 'PM' ? '' : `${this.notesStyle === 'PNG_LIGHT'}:${this.chargeStyle === 'PNG_LIGHT'}`;
+        const mode = this.currentSide === 'PM' ? '' : `${this.notesStyle === 'PNG_LIGHT'}:${this.chargeStyle === 'PNG_LIGHT'}:${!!this._commonScroll}`;
         if (this._drawDOMSource !== this.noteElements || this._drawDOMMode !== mode) {
             this._restoreDrawDOM();
             this._drawDOMSource = this.noteElements;
@@ -11544,8 +11598,8 @@ class BMSViewer {
             for (const [order, el] of this.noteElements.entries()) {
                 el._drawParent = el.parentNode || el._drawParent;
                 el._drawOrder = order;
-                if (this.currentSide !== 'PM' && ((this.notesStyle === 'PNG_LIGHT' && el.classList.contains('note'))
-                    || (this.chargeStyle === 'PNG_LIGHT' && (el.classList.contains('note-ln') || el.classList.contains('mss-divider'))))) {
+                if (el._commonScrollParent || (this.currentSide !== 'PM' && ((this.notesStyle === 'PNG_LIGHT' && el.classList.contains('note'))
+                    || (this.chargeStyle === 'PNG_LIGHT' && (el.classList.contains('note-ln') || el.classList.contains('mss-divider')))))) {
                     this._drawDOMEligible.add(el);
                     if (el.parentNode) this._drawDOMMounted.add(el);
                 }
@@ -11655,7 +11709,9 @@ class BMSViewer {
         const _smlsSp = _smls ? (this.barStartPx[this.loopStart] || 0) : 0;
         const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
         const _smlsSpan = _smlsEp - _smlsSp;
-        for (const el of this._getPositionUpdateElements(cur, _smls)) {
+        const targets=this._getPositionUpdateElements(cur, _smls);
+        const common=this._prepareCommonScroll(cur,_smls);
+        for (const el of targets) {
             // シームレス: ep 以降の本来の譜面は非表示にして退避
             if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay) {
                 if (el._offscreen !== true) {
@@ -11681,7 +11737,7 @@ class BMSViewer {
                     const pushDown = el._pixelEndPos !== undefined
                         ? (drawEnd - drawPos + 100)  // LN/BSS: 高さ+余白分
                         : 200;                                     // 通常ノート
-                    el.style.translate = '0px ' + pushDown + 'px';
+                    if(!common||!el._commonScrollParent)el.style.translate = '0px ' + pushDown + 'px';
                     el._offscreen = true;
                 }
                 continue;
@@ -11690,14 +11746,19 @@ class BMSViewer {
             if (effPos - cur > 960) {
                 // 一度画面内に入ったノートが後退シークで上方に出た場合、translate をリセット
                 if (el._offscreen === false) {
-                    el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
+                    if(!common||!el._commonScrollParent)el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
                     el._offscreen = undefined;
                 }
                 continue;
             }
             el._offscreen = false;
             // translate のみ変更（Reflow不要・GPU合成のみで完結）
-            el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
+            if(common&&el._commonScrollParent){
+                if(el._commonScrollPosition!==effPos||el._commonScrollAnchor!==common.anchor){
+                    el.style.translate='0px '+(common.anchor-effPos)+'px';
+                    el._commonScrollPosition=effPos;el._commonScrollAnchor=common.anchor;
+                }
+            }else el.style.translate = '0px ' + (-(effPos - cur)) + 'px';
             // LN/BSS/MSS: 判定ライン前/後 暗幕（変化時のみ書き込みでリフロー削減）
             if (el._dimMask) {
                 const shouldHide = cur >= effPos;

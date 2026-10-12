@@ -2945,7 +2945,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.079</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.080</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3152,7 +3152,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <span class="detail-label">ノーツスクロール</span>
                 <button class="fx-btn on" id="scrollIndividualBtn">従来</button>
                 <button class="fx-btn" id="scrollCommonBtn">共通</button>
-                <span style="width:100%;font-size:10px;color:#aaa;">共通：レーン単位で移動。シームレスリピート中は従来方式。</span>
+                <span style="width:100%;font-size:10px;color:#aaa;">共通：レーン単位で移動。シームレスにも対応。</span>
             </div>
             <div class="detail-section nowrap" id="laneSurfaceSection">
                 <span class="detail-label">レーン背景・小節線</span>
@@ -7838,6 +7838,7 @@ class BMSViewer {
             lanes[dl].appendChild(el); this.noteElements.push(el); this.lnElements.push(el);
         });
 
+        const mssLoopOwners=new Map();
         // ── MSS 描画: セグメントをグループ化して1本の帯として描画 ──
         {
             const mssAll = this.bmsData.notes
@@ -7850,10 +7851,10 @@ class BMSViewer {
                 if (dl < 0 || dl >= this.laneCount) continue;
                 if (note._mssFirst) {
                     if (grp) groups.push(grp); // 安全策：未閉じを押し出す
-                    grp = { firstNote: note, dl, swappedLane, dividerPxs: [], lastNote: null };
+                    grp = { firstNote: note, dl, swappedLane, dividerPxs: [], lastNote: null, members:[note] };
                 } else if (grp) {
                     // 中間ノーツ: 始点px を区切りラインとして記録
-                    grp.dividerPxs.push(this._pos2px(note.position));
+                    grp.dividerPxs.push(this._pos2px(note.position));grp.members.push(note);
                 }
                 if (note._mssLast && grp) {
                     grp.lastNote = note;
@@ -7863,8 +7864,9 @@ class BMSViewer {
             }
             if (grp && grp.lastNote) groups.push(grp); // 末尾未押し出し分
 
-            for (const { firstNote, dl, swappedLane, dividerPxs, lastNote } of groups) {
+            for (const { firstNote, dl, swappedLane, dividerPxs, lastNote, members } of groups) {
                 if (!lastNote) continue;
+                for(const member of members)mssLoopOwners.set(member,firstNote.position);
                 const startPx = this._pos2px(firstNote.position);
                 const endPx   = this._pos2px(lastNote.endPosition);
                 const height  = Math.max(endPx - startPx, 4);
@@ -7899,7 +7901,7 @@ class BMSViewer {
                 // 中間ノーツの区切りライン（lane 内の絶対位置に配置）
                 for (const px of dividerPxs) {
                     const div = document.createElement('div'); div.className='mss-divider';
-                    div._pixelPos   = px;
+                    div._pixelPos   = px;div._loopOwnerStart=startPx;
                     div.style.bottom = '0'; div.style.translate='0px '+(-(px-this.currentPixelPos))+'px';
                     lanes[dl].appendChild(div); this.noteElements.push(div);
                 }
@@ -7923,6 +7925,7 @@ class BMSViewer {
             const px      = this._pos2px(_wavPos);
             const laneType = swappedLane===0 ? 'scratch' : [1,3,5,7].includes(swappedLane) ? 'white-key' : 'black-key';
             const headEv = { px, _wavPosFrac: _wavPos, dl, laneType, swappedLane, wavId: note._rawVal||null };
+            if(mssLoopOwners.has(note))headEv._loopOwnerStart=this._pos2px(mssLoopOwners.get(note));
             headEv.isHCN = !!note.isHCN && this.currentSide !== 'PM';
             this.noteEvents.push(headEv);
             // LN/BSS/MSS: 終端にも判定イベントを追加（head↔tail相互参照）
@@ -8135,6 +8138,10 @@ class BMSViewer {
                     musicSec = startSec + (musicSec - endSec) % (endSec - startSec);
                     this.currentPixelPos = this._pos2px(this._secToPosition(musicSec));
                 }
+                if(this.loopMode==='seamless'){
+                    for(const el of this.lnElements||[]){if(el._holdBombing)this._stopHoldBomb(el._dl);el._holdBombing=false;el._endBombed=false;}
+                    this._cutSeamlessHolds(this._px2sec(ep));
+                }
                 this._syncCombo();
                 this._resetPlayCounters();
                 // S/H-RANDOM: ループごとに新しいランダム配置を生成
@@ -8274,10 +8281,10 @@ class BMSViewer {
         const hcn = this._hcnStates?.get(el._dl);
         const ownHcn = hcn && this._pngCNOwnsTail(el, hcn.tail);
         const held = this._heldLN?.get(el._dl);
-        const beforeEnd = cur < el._pixelEndPos;
-        const pressed = beforeEnd && (this.isPlayMode ? (ownHcn ? hcn.held : this._pngCNOwnsTail(el, held?.tailEvent))
+        const beforeEnd = cur < (el._loopDrawEnd??el._pixelEndPos);
+        const pressed = !el._loopPreview && beforeEnd && (this.isPlayMode ? (ownHcn ? hcn.held : this._pngCNOwnsTail(el, held?.tailEvent))
             : cur >= headPos && this.isPlaying);
-        const broken = beforeEnd && this.isPlayMode && ownHcn && !hcn.held && !hcn.breakSuppressed;
+        const broken = !el._loopPreview && beforeEnd && this.isPlayMode && ownHcn && !hcn.held && !hcn.breakSuppressed;
         if (el._pngHeld !== !!pressed) { el.classList.toggle('png-cn-held', !!pressed); el._pngHeld = !!pressed; }
         if (el._pngBroken !== !!broken) { el.classList.toggle('png-cn-break', !!broken); el._pngBroken = !!broken; }
         const frame = this._pngCNBeamFrame(pressed, broken, timeMs);
@@ -8293,7 +8300,7 @@ class BMSViewer {
         const phaseChanged = this._lnAnimFrameCount === 0 || this._lnAnimFrameCount === 8;
         const isF2 = this._lnAnimFrameCount >= 8;
         const seamless = this.loopEnabled && this.loopMode === 'seamless';
-        const indexed = !seamless && this._drawIndexValid && this._drawIndexSource === this.noteElements && this._drawLastPx === this.currentPixelPos;
+        const indexed = (!seamless||this.noteScrollMode==='COMMON') && this._drawIndexValid && this._drawIndexSource === this.noteElements && this._drawLastPx === this.currentPixelPos;
         if (!indexed && !phaseChanged && this._lnAnimationSource === this.lnElements) return;
         if (this._lnAnimationSource !== this.lnElements) {
             this._lnAnimationSource = this.lnElements;
@@ -8420,6 +8427,7 @@ class BMSViewer {
             if (el._pixelEndPos !== undefined) {
                 el._drawPixelEndPos = calcAdjPx(el._pixelEndPos, drawOffset);
                 el.style.height = Math.max(4, el._drawPixelEndPos - el._drawPixelPos) + 'px';
+                if(el._loopSavedHeight!==undefined)el._loopSavedHeight=el.style.height;
             }
             el._offscreen = undefined;
         }
@@ -8432,7 +8440,7 @@ class BMSViewer {
         if (this.isPlayMode) { this.combo = 0; this.lastProcessedPx = this.currentPixelPos; return; }
         const iidx = this.currentSide !== 'PM';
         const sec = this.bmsData?.stopEvents?.length ? this._currentMusicSec() : (iidx ? this._px2sec(this.currentPixelPos) : null);
-        this.combo = this.noteEvents.filter(e => !e.isAutoBgm && (sec !== null ? (iidx ? e._judgeSec : e._visualSec) < sec : (e.adjPxVisual ?? e.px) < this.currentPixelPos)).length;
+        this.combo = this.noteEvents.filter(e => !e.isAutoBgm && !this._seamlessEventExcluded(e) && (sec !== null ? (iidx ? e._judgeSec : e._visualSec) < sec : (e.adjPxVisual ?? e.px) < this.currentPixelPos)).length;
         this.lastProcessedPx = this.currentPixelPos;
     }
 
@@ -9157,7 +9165,7 @@ class BMSViewer {
             const pmPositions = new Set();
             for (let i = visualStart; i < judgeEvents.length; i++) {
                 const e = judgeEvents[i];
-                if (e.isAutoBgm) continue; // DP BGMノーツは視覚効果なし
+                if (e.isAutoBgm||this._seamlessEventExcluded(e)) continue; // DP BGMノーツは視覚効果なし
                 const _ePx = e[visualField] ?? e.px;
                 if (_ePx <= from) continue;
                 if (_ePx > to)   break;
@@ -9188,7 +9196,7 @@ class BMSViewer {
         if (this.isPlayMode && this.autoLanes && this.autoLanes.size > 0) {
             for (let i = visualStart; i < judgeEvents.length; i++) {
                 const e = judgeEvents[i];
-                if (e.isAutoBgm || !this.autoLanes.has(e.dl) || e.judged) continue;
+                if (e.isAutoBgm || this._seamlessEventExcluded(e) || !this.autoLanes.has(e.dl) || e.judged) continue;
                 const _ePx = e[visualField] ?? e.px;
                 if (_ePx <= from) continue;
                 if (_ePx > to)   break;
@@ -9205,6 +9213,7 @@ class BMSViewer {
         const _pass2Ev = (_isNormalPlay && this._bgmNoteEvents) ? this._bgmNoteEvents : events;
         for (let i = this._noteLowerBound(_pass2Ev, from, soundField); i < _pass2Ev.length; i++) {
             const e = _pass2Ev[i];
+            if(this._seamlessEventExcluded(e))continue;
             if (_isNormalPlay && !e.isAutoBgm && !(this.autoLanes && this.autoLanes.has(e.dl))) continue; // 通常PLAYモード: キー音はスキップ（オートレーンは除く）
             const _ePx2 = e[soundField] ?? e.px;
             if (_ePx2 <= from) continue;
@@ -9758,6 +9767,10 @@ class BMSViewer {
             const musicSec = this.bmsData?.stopEvents?.length ? this._currentMusicSec() : this._px2sec(this.currentPixelPos);
             for (const e of this.noteEvents) {
                 if (e.isAutoBgm) continue;
+                if(this._seamlessEventExcluded(e)){
+                    // A clipped tail still accepts an ordinary early-release miss; only the boundary cut is silent.
+                    e.judged=!e.isEnd||this._seamlessEventExcluded(e._headEvent);continue;
+                }
                 if (e._missSec < musicSec) {
                     e.judged = true;
                     if (e._tailEvent) e._tailEvent.judged = true;
@@ -9776,7 +9789,7 @@ class BMSViewer {
         const notes = this.noteEvents || [];
         const iidx = this.currentSide !== 'PM';
         const sec = this.bmsData?.stopEvents?.length ? this._currentMusicSec() : (iidx ? this._px2sec(curPx) : null);
-        const count = notes.filter(e => !e.isAutoBgm && (iidx || !e.isEnd) && (sec !== null ? (iidx ? e._judgeSec : e._visualSec) < sec : (e.adjPxVisual ?? e.px) <= curPx)).length;
+        const count = notes.filter(e => !e.isAutoBgm && !this._seamlessEventExcluded(e) && (iidx || !e.isEnd) && (sec !== null ? (iidx ? e._judgeSec : e._visualSec) < sec : (e.adjPxVisual ?? e.px) <= curPx)).length;
 
         this._pgCount = count;
         this._grCount = 0; this._gdCount = 0; this._bdCount = 0; this._prCount = 0;
@@ -10403,7 +10416,7 @@ class BMSViewer {
     }
 
     _startHcn(head, held, firstReleasePending = held) {
-        if (!head.isHCN || !head._tailEvent) return;
+        if (!head.isHCN || !head._tailEvent || this._seamlessEventExcluded(head)) return;
         const states = this._hcnStates || (this._hcnStates = new Map());
         states.set(head.dl, {head, tail:head._tailEvent, held, firstReleasePending});
         if (!held) this._startBreakBomb(head.dl);
@@ -10455,6 +10468,7 @@ class BMSViewer {
                         if (head._tailEvent._judgeSec > tickMusicSec) this._startHcn(head, true, false);
                     }
                 }
+                this._cutSeamlessHolds(tickMusicSec);
                 this._expireHcn(tickMusicSec);
                 for (const [dl, state] of this._hcnStates || []) {
                     if (this.autoLanes?.has(dl) && this.isPlayMode) { this._endHcn(dl); continue; }
@@ -10537,7 +10551,7 @@ class BMSViewer {
         for (let i = first; i < laneNotes.length; i++) {
             const e = laneNotes[i];
             if (e._judgeSec > lastSec) break;
-            if (e.judged) continue;
+            if (e.judged||this._seamlessEventExcluded(e)) continue;
             const delta = this._noteDeltaMs(e, musicSec) - offset; // 正=早押し
             if (iidx ? !(delta < 350 && delta >= -250) : !this._calcJudgment(delta, dl)) continue;
             const abs = Math.abs(delta);
@@ -10595,6 +10609,7 @@ class BMSViewer {
         if (this._isLoading || !this.isPlaying) return;
         if (this.autoLanes && this.autoLanes.has(dl)) return; // オートレーンは入力を無視
         if (!this.isPlayMode) return;
+        this._cutSeamlessHolds(this._inputMusicSec(timeStamp));
         const hcnMusicSec = this._hasHcnEvents ? this._inputMusicSec(timeStamp) : null;
         if (hcnMusicSec !== null) {
             this._advanceHcn(hcnMusicSec, timeStamp, false);
@@ -10673,7 +10688,7 @@ class BMSViewer {
             if (this.currentSide === 'PM' ? e._missSec >= musicSec
                 : Math.floor(musicSec / Math.max(0.1, this.realSpeed) * (this._iidxActualFps || 120) + 1e-9) <= e._judgeFrame + 30) break;
             this._missCursor++;
-            if (e.isAutoBgm || e.judged || (this.autoLanes && this.autoLanes.has(e.dl))) continue;
+            if (e.isAutoBgm || this._seamlessEventExcluded(e) || e.judged || (this.autoLanes && this.autoLanes.has(e.dl))) continue;
             e.judged = true;
             if (e._tailEvent) e._tailEvent.judged = true;
             if (e.isHCN && !e.isEnd) this._startHcn(e, false, false);
@@ -11537,6 +11552,7 @@ class BMSViewer {
     }
 
     _clearDrawIndex() {
+        this._seamlessDrawKey=null;
         this._resetCommonScroll();
         this._lnAnimationSource = null;
         this._lnAnimationSet = null;
@@ -11547,6 +11563,76 @@ class BMSViewer {
         this._drawActiveRecords = [];
         this._drawQueryRecords = [];
         this._drawUpdateElements = [];
+    }
+
+    _seamlessBounds() {
+        if(!this.loopEnabled||this.loopMode!=='seamless'||!this.barStartPx.length)return null;
+        const start=this.barStartPx[this.loopStart]||0,end=this.barStartPx[Math.min(this.loopEnd,this.barStartPx.length-1)]||start;
+        if(end<=start)return null;
+        if(this._seamlessBoundsCache?.start!==start||this._seamlessBoundsCache?.end!==end)this._seamlessBoundsCache={start,end,span:end-start};
+        return this._seamlessBoundsCache;
+    }
+
+    _seamlessEventExcluded(event) {
+        const bounds=this._seamlessBounds();
+        if(!bounds||!event||event.isAutoBgm)return false;
+        const head=event._headEvent||event;
+        return (head._loopOwnerStart??head.px)<bounds.start||event.px>=bounds.end;
+    }
+
+    _cutSeamlessHolds(musicSec) {
+        const bounds=this._seamlessBounds();
+        if(!bounds||musicSec<this._px2sec(bounds.end))return;
+        for(const [dl,held] of this._heldLN||[]){
+            if(held.tailEvent?.px>=bounds.end){held.tailEvent.judged=true;this._heldLN.delete(dl);this._stopHoldBomb(dl);}
+        }
+        for(const [dl,state] of this._hcnStates||[]){
+            if(state.tail.px>=bounds.end){state.tail.judged=true;this._endHcn(dl);}
+        }
+    }
+
+    _syncSeamlessDraw() {
+        const bounds=this._seamlessBounds(),key=bounds?bounds.start+':'+bounds.end:'';
+        if(this._seamlessDrawSource===this.noteElements&&this._seamlessDrawKey===key)return;
+        this._clearDrawIndex();this._restoreDrawDOM();
+        for(let i=this.noteElements.length-1;i>=0;i--)if(this.noteElements[i]._loopPreview){this.noteElements[i].remove();this.noteElements.splice(i,1);}
+        this._seamlessDrawSource=this.noteElements;this._seamlessDrawKey=key;
+        const previews=[];
+        if(bounds){
+            for(const [dl,held] of this._heldLN||[])if(this._seamlessEventExcluded(held.tailEvent?._headEvent||held.tailEvent)) {this._heldLN.delete(dl);this._stopHoldBomb(dl);}
+            for(const [dl,state] of this._hcnStates||[])if(this._seamlessEventExcluded(state.head))this._endHcn(dl);
+        }
+        for(const el of this.noteElements){
+            if(el._loopSavedHeight!==undefined){el.style.height=el._loopSavedHeight;delete el._loopSavedHeight;}
+            if(el._loopSavedDisplay!==undefined){el.style.display=el._loopSavedDisplay;delete el._loopSavedDisplay;}
+            delete el._loopDrawEnd;el._loopExcluded=false;
+            if(!bounds||el._isOverlay)continue;
+            const start=el._pixelPos,end=el._pixelEndPos;
+            el._loopExcluded=(el._loopOwnerStart??start)<bounds.start||start>=bounds.end;
+            if(el._loopExcluded){el._loopSavedDisplay=el.style.display;el.style.display='none';}
+            else if(end!==undefined&&end>=bounds.end){
+                el._loopSavedHeight=el.style.height;
+                el._loopDrawEnd=bounds.end;
+                el.style.height=Math.max(0,bounds.end-(el._drawPixelPos??start))+'px';
+            }
+            if(end!==undefined&&!el._loopExcluded){
+                const preview=el.cloneNode(true);
+                preview._loopPreview=true;preview._pixelPos=start+bounds.span;
+                preview._pixelEndPos=Math.min(end,bounds.end)+bounds.span;
+                preview._drawPixelPos=(el._drawPixelPos??start)+bounds.span;
+                preview._drawPixelEndPos=(el._loopDrawEnd??el._drawPixelEndPos??end)+bounds.span;
+                preview.style.translate='0px '+(this.currentPixelPos-preview._drawPixelPos)+'px';
+                for(const part of [el._headNote,el._headCap])if(part?.parentNode===el){const copy=preview.children[[...el.children].indexOf(part)];copy.style.translate='';copy.style.display='';}
+                preview._dl=el._dl;preview._pngPartsDetached=el._pngPartsDetached;
+                preview.classList.remove('png-cn-held','png-cn-break');
+                preview.style.setProperty('--png-cn-active-beam','var(--png-cn-beam0)');
+                preview._dimMask=el._dimMask?.parentNode===el?preview.children[[...el.children].indexOf(el._dimMask)]:null;
+                if(preview._dimMask)preview._dimMask.style.display='';
+                el.parentNode?.appendChild(preview);previews.push(preview);
+            }
+        }
+        this.noteElements.push(...previews);
+        this._drawDOMSource=null;
     }
 
     _resetCommonScroll() {
@@ -11563,7 +11649,7 @@ class BMSViewer {
     }
 
     _prepareCommonScroll(cur,seamless) {
-        const enabled=this.noteScrollMode==='COMMON'&&this.isPlaying&&!seamless&&this._drawIndexValid;
+        const enabled=this.noteScrollMode==='COMMON'&&this.isPlaying&&this._drawIndexValid;
         if(!enabled){this._resetCommonScroll();return null;}
         let state=this._commonScroll;
         if(!state){
@@ -11605,7 +11691,7 @@ class BMSViewer {
                 }
             }
         }
-        if (!this.isPlaying || seamless || !this._drawIndexValid) { this._restoreDrawDOM(); return; }
+        if (!this.isPlaying || (seamless&&!this._commonScroll) || !this._drawIndexValid) { this._restoreDrawDOM(); return; }
         const wanted=this._drawDOMWanted||(this._drawDOMWanted=new Set());wanted.clear();
         for (const record of this._drawActiveRecords) if (this._drawDOMEligible.has(record.el)) wanted.add(record.el);
         for (const el of this._drawDOMMounted) if (!wanted.has(el)) el.remove();
@@ -11643,15 +11729,15 @@ class BMSViewer {
             || this._drawIndexLength !== this.noteElements.length)) this._clearDrawIndex();
         if(!this._drawActiveRecords)this._drawActiveRecords=[];
         // 停止中・特殊な折り返しは従来の全件処理を使い、シークや設定変更の挙動を保つ。
-        if (!this.isPlaying || seamless) {
+        if (!this.isPlaying || (seamless&&this.noteScrollMode!=='COMMON')) {
             this._drawLastPx = null;
             this._drawActiveRecords.length=0;
             return this.noteElements;
         }
         if (this._drawIndexSource !== this.noteElements || this._drawIndexLength !== this.noteElements.length) {
             const records = this.noteElements.map((el, order) => ({
-                el, order, start: el._drawPixelPos ?? el._pixelPos, end: el._drawPixelEndPos ?? el._pixelEndPos ?? el._drawPixelPos ?? el._pixelPos
-            }));
+                el, order, start: el._drawPixelPos ?? el._pixelPos, end: el._loopDrawEnd ?? el._drawPixelEndPos ?? el._pixelEndPos ?? el._drawPixelPos ?? el._pixelPos
+            })).filter(record=>!record.el._loopExcluded);
             this._drawIndexValid = records.every(r => Number.isFinite(r.start) && Number.isFinite(r.end) && r.end >= r.start);
             records.sort((a, b) => a.start - b.start || a.order - b.order);
             const build = (lo, hi) => {
@@ -11673,6 +11759,20 @@ class BMSViewer {
         const visible=this._drawQueryRecords||(this._drawQueryRecords=[]);visible.length=0;
         const generation=this._drawQueryGeneration=(this._drawQueryGeneration||0)+1;
         this._queryDrawRecords(this._drawIndexRoot,cur-151,cur+961,visible,generation);
+        if(seamless){
+            const bounds=this._seamlessBounds(),extra=this._drawLoopQuery||(this._drawLoopQuery=[]);extra.length=0;
+            this._queryDrawRecords(this._drawIndexRoot,cur-bounds.span-151,cur-bounds.span+961,extra,generation);
+            for(const record of visible)record._loopQueryGeneration=generation;
+            for(const record of extra)if(record._loopQueryGeneration!==generation){record._loopQueryGeneration=generation;visible.push(record);}
+            let count=0;
+            for(const record of visible){
+                let start=record.start;
+                if(record.el._pixelEndPos===undefined&&start>=bounds.start&&start<bounds.end&&start<cur-100&&start+bounds.span>cur)start+=bounds.span;
+                if(start<=cur+961&&start+(record.end-record.start)>=cur-151){record._visibleGeneration=generation;visible[count++]=record;}
+                else record._visibleGeneration=0;
+            }
+            visible.length=count;
+        }
         const previousPx = this._drawLastPx;
         const previousActive = this._drawActiveRecords;
         this._drawLastPx = cur;
@@ -11709,11 +11809,13 @@ class BMSViewer {
         const _smlsSp = _smls ? (this.barStartPx[this.loopStart] || 0) : 0;
         const _smlsEp = _smls ? (this.barStartPx[Math.min(this.loopEnd, this.barStartPx.length-1)] || _smlsSp) : 0;
         const _smlsSpan = _smlsEp - _smlsSp;
+        this._syncSeamlessDraw();
         const targets=this._getPositionUpdateElements(cur, _smls);
         const common=this._prepareCommonScroll(cur,_smls);
         for (const el of targets) {
+            if(el._loopExcluded)continue;
             // シームレス: ep 以降の本来の譜面は非表示にして退避
-            if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay) {
+            if (_smls && _smlsSpan > 0 && el._pixelPos >= _smlsEp && !el._isOverlay && !el._loopPreview) {
                 if (el._offscreen !== true) {
                     el.style.translate = '0px 200px';
                     el._offscreen = true;
@@ -11722,9 +11824,9 @@ class BMSViewer {
             }
             // シームレス: ループ範囲内のノートが cur の後方にある場合、span 分先にシフトして表示
             const drawPos = el._drawPixelPos ?? el._pixelPos;
-            const drawEnd = el._drawPixelEndPos ?? el._pixelEndPos;
+            const drawEnd = el._loopDrawEnd ?? el._drawPixelEndPos ?? el._pixelEndPos;
             let effPos = drawPos;
-            if (_smls && _smlsSpan > 0 && effPos >= _smlsSp && effPos < _smlsEp && effPos < cur - 100) {
+            if (_smls && _smlsSpan > 0 && el._pixelEndPos===undefined && effPos >= _smlsSp && effPos < _smlsEp && effPos < cur - 100) {
                 const shifted = effPos + _smlsSpan;
                 if (shifted > cur) effPos = shifted;
             }
@@ -11769,21 +11871,21 @@ class BMSViewer {
             }
             if (this.chargeStyle === 'PNG_LIGHT' && this.currentSide !== 'PM' && el._pixelEndPos !== undefined && el._dl !== undefined) this._updatePNGChargeState(el, cur, effPos, pngCNTimeMs);
             // LN/BSS/MSS: 終点（尾）が判定ラインを通過した瞬間にボム発火（AUTOのみ、PLAYは_onLaneReleaseで処理）
-            if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined &&
-                !el._endBombed && this.isPlaying && cur >= el._pixelEndPos) {
+            if (!this.isPlayMode && !el._loopPreview && el._pixelEndPos !== undefined && el._dl !== undefined &&
+                !el._endBombed && el._loopDrawEnd===undefined && effPos===drawPos && this.isPlaying && cur >= effEnd) {
                 el._endBombed = true;
                 this._triggerBomb(el._dl, 'PGREAT');
                 this._triggerExplosion(el._dl);
             }
             // AUTO mode hold bomb: 頭〜尾の間だけループ表示
-            if (!this.isPlayMode && el._pixelEndPos !== undefined && el._dl !== undefined && this.isPlaying) {
-                const inHold = cur >= effPos && cur < el._pixelEndPos;
+            if (!this.isPlayMode && !el._loopPreview && el._pixelEndPos !== undefined && el._dl !== undefined && this.isPlaying) {
+                const inHold = effPos===drawPos && cur >= effPos && cur < effEnd;
                 if (inHold && !el._holdBombing) {
                     el._holdBombing = true;
                     this._startHoldBomb(el._dl);
                 } else if (!inHold && el._holdBombing) {
                     el._holdBombing = false;
-                    this._triggerChargeTransition(el._dl);
+                    if(el._loopDrawEnd===undefined)this._triggerChargeTransition(el._dl);
                     this._stopHoldBomb(el._dl);
                 }
             }

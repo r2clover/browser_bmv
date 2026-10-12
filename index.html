@@ -956,6 +956,9 @@
         .beam-pm-lite .lane-bomb.pm-j-great  { background: rgba(255,220,0,0.35); }
         .beam-pm-lite .lane-bomb.pm-j-good   { background: rgba(220,20,60,0.35); }
         .beam-pm-lite .lane-bomb.pm-j-bad    { background: rgba(68,136,255,0.35); }
+        /* Independent static size factors preserve existing animation timelines. */
+        .lane-explosion,.lane-ring { scale:var(--normal-bomb-scale,1); }
+        .lane-explosion.lane-charge-fx { scale:var(--cn-bomb-scale,1); }
         /* ── 爆発リングエフェクト ── */
         .lane-explosion {
             position:absolute; border-radius:50%;
@@ -1945,9 +1948,10 @@
         .iidx-gauge #iidxGaugeNumber { z-index:1; }
         .iidx-gauge .iidx-gauge-lamp-base { display:block; position:absolute; top:calc(50% + 4px); transform:translateY(-50%); left:calc(var(--iidx-gauge-left,64px) - 21px); width:30px; height:34px; }
         .iidx-gauge .iidx-gauge-lamp-right { left:calc(var(--iidx-gauge-left,64px) + var(--iidx-gauge-width,652px) - 9px); }
+        .iidx-gauge.gauge-lamps-off .iidx-gauge-lamp-base { display:none; }
         #iidxGaugeLampRight { position:absolute;left:0;top:0;width:30px;height:34px;z-index:1;transform:scaleX(-1); }
         #iidxGaugeLamp { position:absolute; left:0; top:0; width:30px; height:34px; z-index:1; }
-        .iidx-gauge .iidx-gauge-caption { display:flex; justify-content:flex-end; position:absolute; left:var(--iidx-gauge-left,64px); width:var(--iidx-gauge-width,652px); top:calc(50% - var(--iidx-gauge-width,652px) * .033407572 - 23px + 4px); color:#929fa6; font:9px/12px Arial,sans-serif; letter-spacing:1.4px; }
+        .iidx-gauge .iidx-gauge-caption { display:flex; justify-content:flex-end; position:absolute; left:calc(var(--iidx-gauge-left,64px) + 4px); width:calc(var(--iidx-gauge-width,652px) - 8px); top:calc(50% - var(--iidx-gauge-width,652px) * .033407572 - 23px + 4px); color:#929fa6; font:9px/12px Arial,sans-serif; letter-spacing:1.4px; }
         .iidx-gauge.gauge-side-2p .iidx-gauge-caption { justify-content:flex-start; }
         .iidx-gauge .iidx-gauge-caption > span {
             display:block;padding:1px 5px;border:1px solid #58636a;border-right-width:3px;border-radius:3px;
@@ -2940,7 +2944,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.077</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.078</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3148,6 +3152,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn" id="laneSurfaceCssBtn">CSS</button>
                 <button class="fx-btn on" id="laneSurfacePngBtn">PNG</button>
             </div>
+            <div class="detail-section nowrap" id="gaugeLampSection">
+                <span class="detail-label">ゲージ左右点滅</span>
+                <button class="fx-btn" id="gaugeLampOffBtn">OFF</button>
+                <button class="fx-btn on" id="gaugeLampOnBtn">ON</button>
+            </div>
             <div class="detail-section nowrap" id="keyDecorationSection">
                 <span class="detail-label">鍵盤画像</span>
                 <button class="fx-btn on" id="keyDecorationGreenBtn">GREEN</button>
@@ -3189,6 +3198,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn"    id="noteHLongBtn">LONG</button>
             </div>
             <!-- ボム -->
+            <div class="detail-section">
+                <label class="detail-label" for="normalBombSizeInput">通常ボムサイズ</label>
+                <input type="range" id="normalBombSizeInput" min="50" max="200" step="5" value="100" style="flex:1;min-width:60px;">
+                <output id="normalBombSizeValue" for="normalBombSizeInput" style="min-width:42px;text-align:right;">100%</output>
+            </div>
+            <div class="detail-section">
+                <label class="detail-label" for="cnBombSizeInput">CNボムサイズ</label>
+                <input type="range" id="cnBombSizeInput" min="50" max="200" step="5" value="100" style="flex:1;min-width:60px;">
+                <output id="cnBombSizeValue" for="cnBombSizeInput" style="min-width:42px;text-align:right;">100%</output>
+            </div>
             <div class="detail-section nowrap">
                 <span class="detail-label">ボム</span>
                 <button class="fx-btn"    id="bombABtn">通常</button>
@@ -4047,6 +4066,9 @@ class BMSViewer {
         this.notesStyle       = 'A';     // ノーツ A/B
         this.chargeStyle      = 'A';     // チャージノーツ A/B
         this.keyBeamStyle     = 'PNG';
+        this.gaugeLampEnabled = true;
+        this.normalBombScale = 1;
+        this.cnBombScale = 1;
         this.keyDecorationSkin = 'GREEN';
         this.laneSurfaceStyle = 'PNG';
         this.seekStyle = 'PNG';
@@ -4155,7 +4177,7 @@ class BMSViewer {
             'sudModeABtn sudModeBBtn sudModeCBtn', 'sudNumAlwaysBtn sudNumOnOpBtn',
             'notesStyleABtn notesStyleBBtn notesStylePMPopFaceBtn notesStylePMPopLiteBtn notesStylePMBeatPopBtn notesStylePMBeatCBtn notesStylePngLightBtn',
             'chargeStyleABtn chargeStyleBBtn chargeStylePMPopFaceBtn chargeStylePMPopLiteBtn chargeStylePMBeatPopBtn chargeStylePMBeatCBtn chargeStylePngLightBtn',
-            'keyDecorationGreenBtn keyDecorationBlueBtn keyDecorationOffBtn', 'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'seekPngBtn seekCssBtn', 'judgeLinePngBtn judgeLineCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
+            'gaugeLampOnBtn gaugeLampOffBtn', 'keyDecorationGreenBtn keyDecorationBlueBtn keyDecorationOffBtn', 'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'seekPngBtn seekCssBtn', 'judgeLinePngBtn judgeLineCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
             'noteHVeryShortBtn noteHShortBtn noteHNormalBtn noteHLongBtn', 'bombABtn bombBBtn bombOffBtn bombPngBtn',
             'bpmLineBtn bpmNumBtn bpmOffBtn', 'bgaOnBtn bgaOffBtn',
             'judgeJustBtn judgeNormalBtn judgeSimpleBtn pmJudgeCoolBtn judgeOffBtn judgePngBtn',
@@ -4218,6 +4240,7 @@ class BMSViewer {
             data.values.iidxJudgeAdjInput = Math.max(-100, Math.min(100, data.values.iidxJudgeAdjInput));
         }
         for (const ids of groups) {
+            if(ids[0]==='gaugeLampOnBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='keyDecorationGreenBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='judgeLinePngBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='seekPngBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
@@ -4232,6 +4255,7 @@ class BMSViewer {
         for (const id of inputs) {
             const el = document.getElementById(id);
             // v0990以前の設定に追加項目がない場合は中立値で移行する。
+            if (['normalBombSizeInput','cnBombSizeInput'].includes(id) && data.values[id]===undefined)data.values[id]=100;
             if (id==='backgroundBrightness' && data.values[id]===undefined)data.values[id]=50;
             if (id === 'iidxJudgeAdjInput' && data.values[id] === undefined) data.values[id] = 0;
             // ゲージのminは現在のモードによって変わる。
@@ -5957,6 +5981,20 @@ class BMSViewer {
             document.getElementById('seekPngBtn').classList.toggle('on',style==='PNG');
             document.getElementById('seekCssBtn').classList.toggle('on',style==='CSS');
             this._syncSeekSkin();this._syncSeekGeometry();
+        });
+        for(const [id,on] of [['gaugeLampOnBtn',true],['gaugeLampOffBtn',false]])document.getElementById(id).addEventListener('click',()=>{
+            this.gaugeLampEnabled=on;
+            document.getElementById('gaugeLampOnBtn').classList.toggle('on',on);
+            document.getElementById('gaugeLampOffBtn').classList.toggle('on',!on);
+            document.querySelector('.groove-gauge-area').classList.toggle('gauge-lamps-off',!on);
+            this._drawIIDXGauge();
+        });
+        for(const kind of ['normal','cn'])document.getElementById(kind+'BombSizeInput').addEventListener('input',e=>{
+            const value=Math.max(50,Math.min(200,Number(e.target.value)||100));
+            this[kind+'BombScale']=value/100;
+            document.documentElement.style.setProperty('--'+kind+'-bomb-scale',String(value/100));
+            document.getElementById(kind+'BombSizeValue').textContent=value+'%';
+            this._syncForemostEffectsGeometry();
         });
         for(const [id,skin] of [['keyDecorationGreenBtn','GREEN'],['keyDecorationBlueBtn','BLUE'],['keyDecorationOffBtn','OFF']])document.getElementById(id).addEventListener('click',()=>{
             this.keyDecorationSkin=skin;
@@ -8688,7 +8726,7 @@ class BMSViewer {
         const width=c.clientWidth,line=(this.liftEnabled?this.liftCoverPx:0)+(parseFloat(getComputedStyle(c).borderBottomWidth)||0);
         // Largest lnote00 frame is 303/80 times explosion size, centered on the line.
         // Two explosion sizes per side include its small sprite translations and filtering margin.
-        const pad=(this._effH||470)/470*160,scale=this._displayScale||1;
+        const pad=(this._effH||470)/470*160*Math.max(this.normalBombScale||1,this.cnBombScale||1),scale=this._displayScale||1;
         // Bombs escape the play wrapper's clip, but stop before the control footer.
         const wrapper=c.parentElement.parentElement,outer=wrapper.parentElement;
         const outerRect=outer.getBoundingClientRect(),wrapperRect=wrapper.getBoundingClientRect();
@@ -11149,7 +11187,7 @@ class BMSViewer {
         if(spec.value>=spec.threshold && lampFrame>=59){state.lampStart=now;lampFrame=0;}
         state.previous=spec.value;
         const lamp=this._gaugeImages['gauge_up_'+spec.side+'_blink'];
-        const lampOn=!!(lampFrame<60 && lampFrame%4<2 && lamp.complete && lamp.naturalWidth);
+        const lampOn=!!(this.gaugeLampEnabled!==false && lampFrame<60 && lampFrame%4<2 && lamp.complete && lamp.naturalWidth);
         if(state.lampOn!==lampOn){
             lc.clearRect(0,0,30,34);
             if(lampOn){lc.save();lc.globalCompositeOperation='lighter';lc.drawImage(lamp,0,0);lc.restore();}

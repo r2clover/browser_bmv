@@ -1875,8 +1875,8 @@
         .bar-line.loop-start-line{ background:#00ff88 !important; height:3px !important; box-shadow:0 0 8px #00ff88; z-index:6; }
         .bar-line.loop-end-line  { background:#ff4466 !important; height:3px !important; box-shadow:0 0 8px #ff4466; z-index:6; }
 
-        .bpm-change-notice { display:none;position:absolute;box-sizing:border-box;text-align:center;white-space:nowrap;line-height:1.5;font-family:Consolas,monospace;font-weight:900;letter-spacing:-0.04em;color:#55b5ff;border:3px solid #338ed6;border-radius:3px;background:rgba(0,0,0,.88);pointer-events:none; }
-        .bpm-change-notice[data-direction="down"] { color:#ff777d;border-color:#dc6069; }
+        .bpm-change-notice { display:none;position:absolute;box-sizing:border-box;text-align:center;white-space:nowrap;line-height:1.5;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:normal;color:#55b5ff;pointer-events:none; }
+        .bpm-change-notice[data-direction="down"] { color:#ff777d; }
         .bpm-marker { position:absolute; left:0; right:0; height:2px; background:rgba(255,200,0,0.6); z-index:11; pointer-events:none; }
         .bpm-label  {
             position:absolute; right:2px; font-size:8px; color:#FFD700;
@@ -2947,7 +2947,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.081</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.083</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -5426,8 +5426,8 @@ class BMSViewer {
         const key=[h,this._currentLaneScale,this.currentSide,lift,this._judgeBaseHeight,text.length].join('/');
         if(this._bpmNoticeGeometryKey!==key){
             const geometry=this._syncPNGJudgeGeometry();if(!geometry){hide();return;}
-            const width=geometry.stripWidth,font=Math.min(width*.07,width*.82/(text.length*.62));
-            const box=Math.max(width*.46,text.length*font*.62+width*.04),height=font*1.5+6;
+            const width=geometry.stripWidth,font=20*h/723;
+            const box=Math.max(width*.46,text.length*font*.62+width*.04),height=font*1.5;
             const y=515*h/723-lift+90*h/470-(this._judgeBaseHeight??90*h/470);
             const laneRect=geometry.lanes.getBoundingClientRect(),rootRect=node.parentElement.getBoundingClientRect();
             const scale=rootRect.width/node.parentElement.offsetWidth;

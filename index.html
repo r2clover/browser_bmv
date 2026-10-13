@@ -1875,6 +1875,8 @@
         .bar-line.loop-start-line{ background:#00ff88 !important; height:3px !important; box-shadow:0 0 8px #00ff88; z-index:6; }
         .bar-line.loop-end-line  { background:#ff4466 !important; height:3px !important; box-shadow:0 0 8px #ff4466; z-index:6; }
 
+        .bpm-change-notice { display:none;position:absolute;box-sizing:border-box;text-align:center;white-space:nowrap;line-height:1.5;font-family:Consolas,monospace;font-weight:900;letter-spacing:-0.04em;color:#55b5ff;border:3px solid #338ed6;border-radius:3px;background:rgba(0,0,0,.88);pointer-events:none; }
+        .bpm-change-notice[data-direction="down"] { color:#ff777d;border-color:#dc6069; }
         .bpm-marker { position:absolute; left:0; right:0; height:2px; background:rgba(255,200,0,0.6); z-index:11; pointer-events:none; }
         .bpm-label  {
             position:absolute; right:2px; font-size:8px; color:#FFD700;
@@ -2945,7 +2947,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="detail-panel">
             <div class="detail-panel-header">
                 <span>詳細オプション</span>
-                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.080</span>
+                <span style="font-size:16px; color:#666; font-weight:normal; margin-left:auto; margin-right:12px;">v1.081</span>
                 <button class="detail-close" id="detailClose">✕</button>
             </div>
             <div class="detail-body">
@@ -3228,6 +3230,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 <button class="fx-btn on" id="bpmLineBtn">ライン表示</button>
                 <button class="fx-btn"    id="bpmNumBtn">数字のみ</button>
                 <button class="fx-btn"    id="bpmOffBtn">OFF</button>
+            </div>
+            <div class="detail-section nowrap">
+                <span class="detail-label">BPM変化予告</span>
+                <button class="fx-btn on" id="bpmNoticeOffBtn">OFF</button>
+                <button class="fx-btn" id="bpmNoticeOnBtn">ON</button>
+                <span style="font-size:10px;color:#aaa;">最大4拍前から表示</span>
             </div>
             <!-- BGA -->
             <div class="detail-section nowrap">
@@ -4050,6 +4058,7 @@ class BMSViewer {
         this.maxBars         = 0;
         this.barStartPx      = [];
         this.totalPx         = 0;
+        this.bpmNoticeEnabled = false;
         this.bpmEvents       = [];    // [{pixelPos, bpm}] ※baseBPM(RS適用前)を保持
 
         this.loopStart       = 0;
@@ -4187,7 +4196,7 @@ class BMSViewer {
             'chargeStyleABtn chargeStyleBBtn chargeStylePMPopFaceBtn chargeStylePMPopLiteBtn chargeStylePMBeatPopBtn chargeStylePMBeatCBtn chargeStylePngLightBtn',
             'scrollIndividualBtn scrollCommonBtn', 'gaugeLampOnBtn gaugeLampOffBtn', 'keyDecorationGreenBtn keyDecorationBlueBtn keyDecorationOffBtn', 'lnModeABtn lnModeBBtn', 'laneSurfacePngBtn laneSurfaceCssBtn', 'seekPngBtn seekCssBtn', 'judgeLinePngBtn judgeLineCssBtn', 'beamDefaultBtn beamCssBtn', 'beamShortBtn beamNormalBtn beamVeryShortBtn beamLongBtn pmBeamNormalBtn pmBeamLiteBtn beamOffBtn',
             'noteHVeryShortBtn noteHShortBtn noteHNormalBtn noteHLongBtn', 'bombABtn bombBBtn bombOffBtn bombPngBtn',
-            'bpmLineBtn bpmNumBtn bpmOffBtn', 'bgaOnBtn bgaOffBtn',
+            'bpmLineBtn bpmNumBtn bpmOffBtn', 'bpmNoticeOffBtn bpmNoticeOnBtn', 'bgaOnBtn bgaOffBtn',
             'judgeJustBtn judgeNormalBtn judgeSimpleBtn pmJudgeCoolBtn judgeOffBtn judgePngBtn',
             'autoJudgePgreatBtn autoJudgeGreatBtn', 'muteNormalBtn muteBypassBtn',
             'bgPlayOffBtn bgPlayOnBtn', 'fps30Btn fps60Btn fps120Btn fps144Btn fpsUnlimitedBtn',
@@ -4248,6 +4257,7 @@ class BMSViewer {
             data.values.iidxJudgeAdjInput = Math.max(-100, Math.min(100, data.values.iidxJudgeAdjInput));
         }
         for (const ids of groups) {
+            if(ids[0]==='bpmNoticeOffBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='scrollIndividualBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='gaugeLampOnBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
             if(ids[0]==='keyDecorationGreenBtn' && data.choices[ids[0]]===undefined)data.choices[ids[0]]=ids[0];
@@ -4472,6 +4482,7 @@ class BMSViewer {
             .map(ev => ({ pixelPos: this._pos2px(ev.position), baseBpm: ev.bpm }))
             .sort((a, b) => a.pixelPos - b.pixelPos);
         this._buildBeatMap();
+        this._buildBpmNoticeIndex();
         // _precompute() で barStartPx が変わるたびに noteEvents[].px を再計算
         this._recomputeNoteEventPx();
     }
@@ -5353,6 +5364,78 @@ class BMSViewer {
         const scale=(this.barPxScale&&this.barPxScale[bar])||1;
         const h=this._barLen(bar)*this.pixelsPerBar*scale;
         return bar + (h>0 ? Math.min(1,(px-this.barStartPx[bar])/h) : 0);
+    }
+
+    _buildBpmNoticeIndex() {
+        if(!this.bmsData)return;
+        const beats=[0];
+        for(let bar=0;bar<this.barStartPx.length;bar++)beats.push(beats[bar]+4*this._barLen(bar));
+        this._bpmNoticeBarBeats=beats;
+        const events=[];let base=Number(this.bmsData.headers.bpm)||130;
+        for(let i=0;i<this.bpmEvents.length;){
+            let ev=this.bpmEvents[i++];
+            while(i<this.bpmEvents.length&&this.bpmEvents[i].pixelPos===ev.pixelPos)ev=this.bpmEvents[i++];
+            const to=Number(ev.baseBpm);if(!Number.isFinite(to)||to<=0||to===base)continue;
+            const position=this._px2posFrac(ev.pixelPos),bar=Math.floor(position);
+            const beat=(beats[bar]??beats[beats.length-1])+4*this._barLen(bar)*(position-bar);
+            events.push({beat,from:base,to});base=to;
+        }
+        this._bpmNoticeEvents=events;this._bpmNoticeSource=this.bpmEvents;
+    }
+
+    _bpmNoticeBeat(px) {
+        const position=this._px2posFrac(px),bar=Math.floor(position);
+        return (this._bpmNoticeBarBeats[bar]??this._bpmNoticeBarBeats.at(-1))+4*this._barLen(bar)*(position-bar);
+    }
+
+    _bpmNoticeUpperBound(beat) {
+        const events=this._bpmNoticeEvents;let lo=0,hi=events.length;
+        while(lo<hi){const mid=(lo+hi)>>>1;if(events[mid].beat<=beat+1e-8)lo=mid+1;else hi=mid;}
+        return lo;
+    }
+
+    _nextBpmNotice() {
+        if(this._bpmNoticeSource!==this.bpmEvents)this._buildBpmNoticeIndex();
+        const events=this._bpmNoticeEvents,beat=this._bpmNoticeBeat(this.currentPixelPos);
+        let next=events[this._bpmNoticeUpperBound(beat)],targetBeat=next?.beat;
+        if(this.loopEnabled){
+            const startPx=this._loopStartPx(),endPx=this.barStartPx[Math.min(this.loopEnd,this.barStartPx.length-1)];
+            const start=this._bpmNoticeBeat(startPx),end=this._bpmNoticeBeat(endPx);
+            if(end>start&&beat>=start&&beat<end&&(!next||next.beat>=end-1e-8)){
+                const atStart=this._bpmNoticeUpperBound(start),beforeEnd=this._bpmNoticeUpperBound(end-1e-7);
+                const initial=Number(this.bmsData.headers.bpm)||130;
+                const from=events[beforeEnd-1]?.to??initial,to=events[atStart-1]?.to??initial;
+                if(from!==to){next={from,to};targetBeat=end;}
+                else {next=events[atStart];targetBeat=next&&next.beat<end?next.beat+end-start:undefined;}
+            }
+        }
+        return next&&Number.isFinite(targetBeat)&&targetBeat-beat<=4+1e-8&&targetBeat>beat+1e-8?next:null;
+    }
+
+    _updateBpmNotice() {
+        const hide=()=>{if(this._bpmNoticeDOM&&this._bpmNoticeDOM.style.display!=='none')this._bpmNoticeDOM.style.display='none';};
+        if(!this.bpmNoticeEnabled||!this.bmsData){hide();return;}
+        const next=this._nextBpmNotice();if(!next){hide();return;}
+        let node=this._bpmNoticeDOM;
+        if(!node){node=this._bpmNoticeDOM=document.createElement('div');node.id='bpmChangeNotice';node.className='bpm-change-notice';this._ensureForemostEffects().root.appendChild(node);}
+        const format=value=>String(Number((value*this.realSpeed).toFixed(2)));
+        const text=format(next.from)+' » '+format(next.to),direction=next.to>next.from?'up':'down';
+        if(node.textContent!==text)node.textContent=text;
+        if(node.dataset.direction!==direction)node.dataset.direction=direction;
+        const h=this._effH||470,lift=this.liftEnabled?this.liftCoverPx:0;
+        const key=[h,this._currentLaneScale,this.currentSide,lift,this._judgeBaseHeight,text.length].join('/');
+        if(this._bpmNoticeGeometryKey!==key){
+            const geometry=this._syncPNGJudgeGeometry();if(!geometry){hide();return;}
+            const width=geometry.stripWidth,font=Math.min(width*.07,width*.82/(text.length*.62));
+            const box=Math.max(width*.46,text.length*font*.62+width*.04),height=font*1.5+6;
+            const y=515*h/723-lift+90*h/470-(this._judgeBaseHeight??90*h/470);
+            const laneRect=geometry.lanes.getBoundingClientRect(),rootRect=node.parentElement.getBoundingClientRect();
+            const scale=rootRect.width/node.parentElement.offsetWidth;
+            node.style.left=((laneRect.left-rootRect.left+laneRect.width/2)/scale-box/2)+'px';
+            node.style.top=Math.max(4,y-height-6*h/470)+'px';node.style.width=box+'px';node.style.fontSize=font+'px';
+            this._bpmNoticeGeometryKey=key;
+        }
+        if(node.style.display!=='block')node.style.display='block';
     }
 
     /* ★ 現在ピクセル位置のBPM（baseBPM × realSpeed） */
@@ -6263,6 +6346,12 @@ class BMSViewer {
         document.getElementById('bpmLineBtn').addEventListener('click', () => _setBpmMode('LINE'));
         document.getElementById('bpmNumBtn').addEventListener('click',  () => _setBpmMode('NUM'));
         document.getElementById('bpmOffBtn').addEventListener('click',  () => _setBpmMode('OFF'));
+        for(const [id,on] of [['bpmNoticeOffBtn',false],['bpmNoticeOnBtn',true]])document.getElementById(id).addEventListener('click',()=>{
+            this.bpmNoticeEnabled=on;
+            document.getElementById('bpmNoticeOffBtn').classList.toggle('on',!on);
+            document.getElementById('bpmNoticeOnBtn').classList.toggle('on',on);
+            this._updateBpmNotice();
+        });
 
         // BGA 表示 / 非表示
         const _setBgaVisible = async (show) => {
@@ -10123,6 +10212,7 @@ class BMSViewer {
         lanes.style.setProperty('--png-judge-lane-half', lanes.offsetWidth / 2 + 'px');
         lanes.style.setProperty('--png-judge-lift', lift + 'px');
         // Read the resulting position only when geometry changes, before the hot drawing path.
+        this._bpmNoticeGeometryKey=null;
         return this._pngJudgeGeometry={lanes,key,stripWidth,clientLeft,offsetLeft:lanes.offsetLeft};
     }
 
@@ -11798,6 +11888,7 @@ class BMSViewer {
     }
 
     _updatePositions(updateSeek = true) {
+        this._updateBpmNotice();
         if(!this.isPlaying&&this._usesIidxJudgeLine())this._updateJLGlow();
         this._updateScoreGraph();
         this._drawIIDXGauge();
